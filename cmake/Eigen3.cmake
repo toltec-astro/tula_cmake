@@ -71,7 +71,7 @@ if (TARGET eigen)
 endif()
 
 include(make_tula_target)
-make_tula_target(Eigen3 eigen3_libs)
+make_tula_target(Eigen3 ${eigen3_libs})
 target_compile_definitions(tula_Eigen3 INTERFACE ${eigen3_defs})
 if (VERBOSE_MESSAGE)
     foreach (def ${eigen3_defs})
