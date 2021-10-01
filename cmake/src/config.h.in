@@ -1,0 +1,11 @@
+#pragma once
+
+#define @_build_prefix@_PROJECT_NAME "@PROJECT_NAME@"
+#define @_build_prefix@_PROJECT_DESCRIPTION "@PROJECT_DESCRIPTION@"
+#define @_build_prefix@_PROJECT_HOMEPAGE_URL "@PROJECT_HOMEPAGE_URL@"
+#define @_build_prefix@_PROJECT_IS_TOP_LEVEL "@PROJECT_IS_TOP_LEVEL@"
+
+#define @_build_prefix@_CMAKE_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#define @_build_prefix@_CMAKE_CXX_STANDARD "@CMAKE_CXX_STANDARD@"
+#define @_build_prefix@_CMAKE_CXX_COMPILER "@CMAKE_CXX_COMPILER@"
+#define @_build_prefix@_CMAKE_CXX_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@"
