@@ -46,7 +46,7 @@ else()
                     REMOTE conancenter
                     OPTIONS
                     ceres-solver:use_glog=True
-                    ceres-solver:use_gflags=False
+                    ceres-solver:use_gflags=True
                     ${ceres_config}
                     SETTINGS ${conan_install_settings}
                     ${conan_install_env_list}
