@@ -12,7 +12,7 @@ if(DOXYGEN_FOUND)
     add_custom_target(doc ALL
             COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
             WORKING_DIRECTORY ${BUILD_DOC_DIR}
-            COMMENT "Generating API documentation with Doxygen"
+            COMMENT "Generate API documentation with Doxygen."
             VERBATIM)
 else()
     message(FETAL_ERROR "Doxygen needs to be installed to generate the documentation.")

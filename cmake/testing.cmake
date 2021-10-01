@@ -16,16 +16,10 @@ if (USE_INSTALLED_TESTING_LIBS)
 else()
     if (CONAN_INSTALL_TESTING_LIBS)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
-            benchmark/[>=1.5]
+        ConanHelper(REQUIRES
+            benchmark/[>=1.6.0]
             gtest/cci.20210126
-            GENERATORS cmake_find_package)
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(GTest REQUIRED MODULE)
         find_package(benchmark REQUIRED MODULE)
         verbose_message("Use conan installed gtest and gbench.")
@@ -50,21 +44,10 @@ else()
         set(testing_libs ${testing_libs} GTest::gtest GTest::gmock benchmark::benchmark)
     endif()
 endif()
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${testing_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
 
-add_library(tula_testing INTERFACE)
-target_link_libraries(tula_testing INTERFACE ${testing_libs})
+include(make_tula_target)
+make_tula_target(testing ${testing_libs})
 target_compile_definitions(tula_testing INTERFACE LOGLEVEL=${LOGLEVEL})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_testing)
-endif()
-add_library(tula::testing ALIAS tula_testing)
 
 # setup the test env
 enable_testing()

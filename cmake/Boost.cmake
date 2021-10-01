@@ -5,7 +5,6 @@ include(verbose_message)
 include(make_pkg_options)
 make_pkg_options(Boost "conan")
 
-
 set(boost_libs "")
 
 if (USE_INSTALLED_BOOST)
@@ -15,17 +14,9 @@ if (USE_INSTALLED_BOOST)
 else()
     if (CONAN_INSTALL_BOOST)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
+        ConanHelper(REQUIRES
             boost/[>=1.77.0]
-            GENERATORS cmake_find_package)
-                    # OPTIONS
-                    # boost:header_only=True
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(Boost REQUIRED MODULE)
         verbose_message("Use conan installed Boost")
         set(boost_libs ${boost_libs} Boost::boost)
@@ -41,17 +32,5 @@ else()
     endif()
 endif()
 
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${boost_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
-
-add_library(tula_boost INTERFACE)
-target_link_libraries(tula_boost INTERFACE ${boost_libs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_boost)
-endif()
-add_library(tula::Boost ALIAS tula_boost)
+include(make_tula_target)
+make_tula_target(Boost ${boost_libs})

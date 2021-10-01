@@ -5,7 +5,6 @@ include(verbose_message)
 include(make_pkg_options)
 make_pkg_options(Re2 "conan")
 
-
 set(re2_libs "")
 
 if (USE_INSTALLED_RE2)
@@ -15,15 +14,9 @@ if (USE_INSTALLED_RE2)
 else()
     if (CONAN_INSTALL_RE2)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
+        ConanHelper(REQUIRES
             re2/20210901@
-            GENERATORS cmake_find_package)
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(re2 REQUIRED MODULE)
         verbose_message("Use conan installed Re2")
         set(re2_libs ${re2_libs} re2::re2)
@@ -41,17 +34,5 @@ else()
     endif()
 endif()
 
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${re2_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
-
-add_library(tula_re2 INTERFACE)
-target_link_libraries(tula_re2 INTERFACE ${re2_libs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_re2)
-endif()
-add_library(tula::Re2 ALIAS tula_re2)
+include(make_tula_target)
+make_tula_target(Re2 ${re2_libs})

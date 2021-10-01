@@ -17,7 +17,8 @@ if (USE_EIGEN3_MULTITHREADING OR USE_EIGEN3_WITH_MKL)
     include(perflibs)
     set(eigen3_libs ${eigen3_libs} tula::perflibs)
     if (NOT MKL_FOUND AND USE_EIGEN3_WITH_MKL)
-        message(FATAL_ERROR "USE_EIGEN3_WITH_MKL=ON but MKL is not found. Try set USE_INTEL_ONEAPI=ON")
+        verbose_message("USE_EIGEN3_WITH_MKL=ON but MKL is not found. Set to OFF. To enable, set USE_INTEL_ONEAPI=ON")
+        set_property(CACHE USE_EIGEN3_WITH_MKL PROPERTY VALUE OFF)
     endif()
     if (USE_EIGEN3_WITH_MKL)
         set(eigen3_defs ${eigen3_defs} EIGEN_USE_MKL_ALL)
@@ -36,15 +37,9 @@ if (USE_INSTALLED_EIGEN3)
 else()
     if (CONAN_INSTALL_EIGEN3)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
+        ConanHelper(REQUIRES
             eigen/[>=3.4]
-            GENERATORS cmake_find_package)
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(Eigen3 REQUIRED MODULE)
         verbose_message("Use conan installed Eigen3")
         set(eigen3_libs ${eigen3_libs} Eigen3::Eigen)
@@ -75,21 +70,11 @@ if (TARGET eigen)
     )
 endif()
 
+include(make_tula_target)
+make_tula_target(Eigen3 eigen3_libs)
+target_compile_definitions(tula_Eigen3 INTERFACE ${eigen3_defs})
 if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${eigen3_libs})
-        print_target_properties(${lib})
-    endforeach()
     foreach (def ${eigen3_defs})
         verbose_message("Eigen3 defined: ${def}")
     endforeach()
 endif()
-
-add_library(tula_eigen3 INTERFACE)
-target_link_libraries(tula_eigen3 INTERFACE ${eigen3_libs})
-target_compile_definitions(tula_eigen3 INTERFACE ${eigen3_defs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_eigen3)
-endif()
-add_library(tula::Eigen3 ALIAS tula_eigen3)

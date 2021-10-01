@@ -39,13 +39,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 ## Platform specifics
-if (APPLE)
-    set(CMAKE_MACOSX_RPATH TRUE)
-    # https://stackoverflow.com/a/33067191/1824372
-    SET(CMAKE_C_ARCHIVE_CREATE   "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
-    SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
-    SET(CMAKE_C_ARCHIVE_FINISH   "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
-    SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # For brew installed LLVM
     if (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
         get_filename_component(compiler_bindir ${CMAKE_CXX_COMPILER} DIRECTORY)
@@ -54,7 +49,7 @@ if (APPLE)
         set(CMAKE_EXE_LINKER_FLAGS "-L${compiler_libdir} -Wl,-rpath,${compiler_libdir}")
     endif()
 else()
-    set(CMAKE_LINK_WHAT_YOU_USE TRUE)
+    # Non standard GCC path
     if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
         add_definitions(-Wno-deprecated-declarations)
         # custom gcc paths
@@ -64,6 +59,17 @@ else()
         verbose_message("Link CXX libs from ${compiler_libdir} ${compiler_lib64dir}")
         set(CMAKE_EXE_LINKER_FLAGS "-L${compiler_libdir} -Wl,-rpath,${compiler_libdir} -Wl,-rpath,${compiler_lib64dir}")
     endif()
+endif()
+
+if (APPLE)
+    set(CMAKE_MACOSX_RPATH TRUE)
+    # https://stackoverflow.com/a/33067191/1824372
+    SET(CMAKE_C_ARCHIVE_CREATE   "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    # SET(CMAKE_C_ARCHIVE_FINISH   "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+    # SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+else()
+    set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 endif()
 
 # copy a dummy clang-tidy file to suppress warning from deps

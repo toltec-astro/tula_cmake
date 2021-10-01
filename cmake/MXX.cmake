@@ -5,7 +5,6 @@ include(verbose_message)
 include(make_pkg_options)
 make_pkg_options(MXX "fetch")
 
-
 set(mxx_libs "")
 
 if (USE_INSTALLED_MXX)
@@ -28,17 +27,5 @@ else()
     endif()
 endif()
 
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${mxx_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
-
-add_library(tula_mxx INTERFACE)
-target_link_libraries(tula_mxx INTERFACE ${mxx_libs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_mxx)
-endif()
-add_library(tula::MXX ALIAS tula_mxx)
+include(make_tula_target)
+make_tula_target(MXX ${mxx_libs})

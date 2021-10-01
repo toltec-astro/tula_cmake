@@ -5,7 +5,6 @@ include(verbose_message)
 include(make_pkg_options)
 make_pkg_options(Spectra "conan")
 
-
 set(spectra_libs "")
 
 # make available eigen
@@ -25,16 +24,10 @@ if (USE_INSTALLED_SPECTRA)
 else()
     if (CONAN_INSTALL_SPECTRA)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
+        ConanHelper(REQUIRES
             eigen/[>=3.4]  # override the dependency
             spectra/[>=1.0]
-            GENERATORS cmake_find_package)
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(spectra REQUIRED MODULE)
         verbose_message("Use conan installed Spectra")
         set(spectra_libs ${spectra_libs} Spectra::Spectra)
@@ -52,17 +45,5 @@ else()
     endif()
 endif()
 
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${spectra_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
-
-add_library(tula_spectra INTERFACE)
-target_link_libraries(tula_spectra INTERFACE ${spectra_libs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_spectra)
-endif()
-add_library(tula::Spectra ALIAS tula_spectra)
+include(make_tula_target)
+make_tula_target(Spectra ${spectra_libs})

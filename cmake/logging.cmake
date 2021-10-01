@@ -27,16 +27,10 @@ if (USE_INSTALLED_LOGGING_LIBS)
 else()
     if (CONAN_INSTALL_LOGGING_LIBS)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
+        ConanHelper(REQUIRES
             fmt/[>=8.0]
             spdlog/[>=1.9]
-            GENERATORS cmake_find_package)
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(fmt REQUIRED MODULE)
         find_package(spdlog REQUIRED MODULE)
         verbose_message("Use conan installed spdlog and fmtlib.")
@@ -68,18 +62,6 @@ else()
         set(logging_libs ${logging_libs} spdlog::spdlog fmt::fmt)
     endif()
 endif()
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${logging_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
 
-add_library(tula_logging INTERFACE)
-target_link_libraries(tula_logging INTERFACE ${logging_libs})
-target_compile_definitions(tula_logging INTERFACE LOGLEVEL=${LOGLEVEL})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_logging)
-endif()
-add_library(tula::logging ALIAS tula_logging)
+include(make_tula_target)
+make_tula_target(logging ${logging_libs})

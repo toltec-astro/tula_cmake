@@ -15,15 +15,9 @@ if (USE_INSTALLED_CLIPP)
 else()
     if (CONAN_INSTALL_CLIPP)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
+        ConanHelper(REQUIRES
             clipp/[>=1.2.3]
-            GENERATORS cmake_find_package)
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(clipp REQUIRED MODULE)
         verbose_message("Use conan installed Clipp")
         set(clipp_libs ${clipp_libs} clipp::clipp)
@@ -39,17 +33,5 @@ else()
     endif()
 endif()
 
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${clipp_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
-
-add_library(tula_clipp INTERFACE)
-target_link_libraries(tula_clipp INTERFACE ${clipp_libs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_clipp)
-endif()
-add_library(tula::Clipp ALIAS tula_clipp)
+include(make_tula_target)
+make_tula_target(Clipp ${clipp_libs})

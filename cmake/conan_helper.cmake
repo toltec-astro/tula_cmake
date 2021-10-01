@@ -36,3 +36,35 @@ function(MakeConanInstallArgs)
 endfunction()
 
 MakeConanInstallArgs()
+
+function(ConanHelper)
+    set(svargs BUILD)
+    set(mvargs REQUIRES OPTIONS)
+    cmake_parse_arguments(PARSE_ARGV 0 CNH "" "${svargs}" "${mvargs}")
+    if (NOT CNH_BUILD)
+        set(CNH_BUILD "outdated")
+    endif()
+    set(requires "")
+    foreach(require ${CNH_REQUIRES})
+        set(requires ${requires} ${require})
+    endforeach()
+    set(config_args "")
+    if (CNH_OPTIONS)
+        set(options "")
+        foreach(option ${CNH_OPTIONS})
+            set(options ${options} ${option})
+        endforeach()
+        set(config_args OPTIONS ${options})
+    endif()
+    conan_cmake_configure(REQUIRES
+        ${requires}
+        ${config_args}
+        GENERATORS cmake_find_package)
+    conan_cmake_install(PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR}
+                BUILD ${CNH_BUILD}
+                REMOTE conancenter
+                INSTALL_FOLDER ${CMAKE_BINARY_DIR}
+                SETTINGS ${conan_install_settings}
+                ${conan_install_env_list}
+                )
+endfunction()

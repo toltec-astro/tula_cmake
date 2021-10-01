@@ -16,15 +16,9 @@ if (USE_INSTALLED_YAML)
 else()
     if (CONAN_INSTALL_YAML)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
+        ConanHelper(REQUIRES
             yaml-cpp/[>=0.7]
-            GENERATORS cmake_find_package)
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
+            )
         find_package(yaml-cpp REQUIRED MODULE)
         verbose_message("Use conan installed Yaml")
         set(yaml_libs ${yaml_libs} yaml-cpp::yaml-cpp)
@@ -45,17 +39,5 @@ else()
     endif()
 endif()
 
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${yaml_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
-
-add_library(tula_yaml INTERFACE)
-target_link_libraries(tula_yaml INTERFACE ${yaml_libs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_yaml)
-endif()
-add_library(tula::Yaml ALIAS tula_yaml)
+include(make_tula_target)
+make_tula_target(Yaml ${yaml_libs})

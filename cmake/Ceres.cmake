@@ -31,26 +31,19 @@ if (USE_INSTALLED_CERES)
 else()
     if (CONAN_INSTALL_CERES)
         include(conan_helper)
-        conan_cmake_configure(REQUIRES
-            eigen/[>=3.4]  # override the dependency
-            ceres-solver/[>=2.0]
-            GENERATORS cmake_find_package)
+        ConanHelper(REQUIRES
+                eigen/[>=3.4]  # override the dependency
+                ceres-solver/[>=2.0]
+            OPTIONS
+                ceres-solver:use_glog=True
+                ceres-solver:use_gflags=True
+                )
         # set(ceres_config "")
         # if (USE_CERES_MULTITHREADING)
         #     set(ceres_config ${ceres_config} "ceres-solver:use_CXX11_threads=True")
         # else()
         #     set(ceres_config ${ceres_config} "ceres-solver:use_CXX11_threads=False")
         # endif()
-        conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD outdated
-                    REMOTE conancenter
-                    OPTIONS
-                    ceres-solver:use_glog=True
-                    ceres-solver:use_gflags=True
-                    ${ceres_config}
-                    SETTINGS ${conan_install_settings}
-                    ${conan_install_env_list}
-                    )
         find_package(Ceres REQUIRED MODULE)
         verbose_message("Use conan installed Ceres")
         set(ceres_libs ${ceres_libs} Ceres::ceres)
@@ -155,18 +148,5 @@ else()
     endif()
 endif()
 
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    foreach (lib ${ceres_libs})
-        print_target_properties(${lib})
-    endforeach()
-endif()
-
-add_library(tula_ceres INTERFACE)
-target_link_libraries(tula_ceres INTERFACE ${ceres_libs})
-target_compile_definitions(tula_ceres INTERFACE ${ceres_defs})
-if (VERBOSE_MESSAGE)
-    include(print_properties)
-    print_target_properties(tula_ceres)
-endif()
-add_library(tula::Ceres ALIAS tula_ceres)
+include(make_tula_target)
+make_tula_target(Ceres ${ceres_libs})
