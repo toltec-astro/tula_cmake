@@ -31,6 +31,17 @@ else()
                 ENABLE_COVERAGE_TESTS=OFF
                 ENABLE_LARGE_FILE_TESTS=OFF
             )
+        # Turn off some warnings
+        set_property(
+            TARGET netcdf-cxx4
+            APPEND PROPERTY
+            COMPILE_OPTIONS
+            -Wno-sign-conversion -Wno-shorten-64-to-32
+            -Wno-mismatched-new-delete
+            -Wno-tautological-overlap-compare
+            -Wno-unused-private-field
+        )
+
         verbose_message("Use fetchcontent NetCDFCXX4.")
         set(netcdfcxx4_libs ${netcdfcxx4_libs}  netCDF::netcdf-cxx4)
     endif()
