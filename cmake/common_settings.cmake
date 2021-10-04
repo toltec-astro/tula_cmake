@@ -73,4 +73,4 @@ else()
 endif()
 
 # copy a dummy clang-tidy file to suppress warning from deps
-# configure_file("${CMAKE_CURRENT_LIST_DIR}/clang-tidy/disable.ctd" "${CMAKE_BINARY_DIR}/.clang-tidy" COPYONLY)
+# configure_file("${CMAKE_CURRENT_LIST_DIR}/src/disable.ctd" "${CMAKE_BINARY_DIR}/.clang-tidy" COPYONLY)
