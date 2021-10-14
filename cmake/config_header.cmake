@@ -2,26 +2,25 @@ include_guard(GLOBAL)
 
 include(verbose_message)
 
-set(config_header_output_dir ${CMAKE_CURRENT_BINARY_DIR}/config_header)
+set(TULA_CONFIG_HEADER_DIR ${CMAKE_BINARY_DIR}/config_header CACHE INTERNAL "")
+
 add_library(tula_config_header INTERFACE)
 target_include_directories(
-    tula_config_header INTERFACE ${config_header_output_dir}
+    tula_config_header INTERFACE ${TULA_CONFIG_HEADER_DIR}
     )
 add_library(tula::config_header ALIAS tula_config_header)
 
-## Function to generate header files
-set(config_header_srcdir ${CMAKE_CURRENT_LIST_DIR}/src)
-
 function(get_config_header_output_dir output_dir name)
     if (NOT name)
-        set(output_dir ${config_header_output_dir} PARENT_SCOPE)
+        set(output_dir ${TULA_CONFIG_HEADER_DIR} PARENT_SCOPE)
     else()
-        set(output_dir ${config_header_output_dir}/${name}_config PARENT_SCOPE)
+        set(output_dir ${TULA_CONFIG_HEADER_DIR}/${name}_config PARENT_SCOPE)
     endif()
 endfunction()
 
 # Git version header
 function(generate_gitversion_header name)
+    set(config_header_srcdir ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/src)
     get_config_header_output_dir(output_dir ${name})
     set(output_path ${output_dir}/gitversion.h)
     verbose_message("Generate gitversion header ${output_path}")
@@ -59,17 +58,4 @@ function(generate_gitversion_header name)
         ${output_path}
     )
     add_dependencies(tula_config_header gitversion_header_${name})
-endfunction()
-
-# Config header
-function(generate_config_header name)
-    get_config_header_output_dir(output_dir ${name})
-    set(output_path ${output_dir}/config.h)
-    verbose_message("Generate config header ${output_path}")
-    string(TOUPPER ${name} _build_prefix)
-    configure_file(${config_header_srcdir}/config.h.in ${output_path} @ONLY)
-    add_custom_target(config_header_${name} DEPENDS
-        ${output_path}
-    )
-    add_dependencies(tula_config_header config_header_${name})
 endfunction()
