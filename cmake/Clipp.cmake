@@ -3,7 +3,7 @@ include_guard(GLOBAL)
 include(verbose_message)
 
 include(make_pkg_options)
-make_pkg_options(Clipp "conan")
+make_pkg_options(Clipp "fetch")
 
 
 set(clipp_libs "")
@@ -24,10 +24,12 @@ else()
     else()
         # fetch content
         include(fetchcontent_helper)
-        FetchContentHelper(clipp GIT https://github.com/muellan/clipp.git master
-            ADD_SUBDIR CONFIG_SUBDIR
-                BUILD_TESTING=OFF
-            )
+        FetchContentHelper(clipp GIT https://github.com/GerHobbelt/clipp.git master)
+        # Create target and add include path
+        add_library(clipp INTERFACE)
+        target_include_directories(clipp INTERFACE ${clipp_SOURCE_DIR}/include)
+        add_library(clipp::clipp ALIAS clipp)
+
         verbose_message("Use fetchcontent Clipp.")
         set(clipp_libs ${clipp_libs} clipp::clipp)
     endif()

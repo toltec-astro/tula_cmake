@@ -65,3 +65,4 @@ endif()
 
 include(make_tula_target)
 make_tula_target(logging ${logging_libs})
+target_compile_definitions(tula_logging INTERFACE LOGLEVEL=${LOGLEVEL})

@@ -7,6 +7,9 @@ make_pkg_options(MXX "fetch")
 
 set(mxx_libs "")
 
+find_package(MPI REQUIRED)
+set(mxx_libs ${mxx_libs} MPI::MPI_CXX)
+
 if (USE_INSTALLED_MXX)
     message(FATAL_ERROR "MXX does not support system installed.")
 else()
