@@ -26,7 +26,7 @@ else()
         # fetch content
         include(fetchcontent_helper)
         # FetchContentHelper(grppi GIT "https://github.com/arcosuc3m/grppi.git" master)
-        FetchContentHelper(grppi GIT "https://github.com/Jerry-Ma/grppi.git" fix_cpp20)
+        FetchContentHelper(grppi GIT "https://github.com/Jerry-Ma/grppi.git" cpp20)
         # the grppi cmake does not do much so we just use our own
         # This is from grppi cmake checking compilers
         # Set specific options depending on compiler
