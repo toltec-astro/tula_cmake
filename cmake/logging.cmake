@@ -15,7 +15,8 @@ verbose_message("Minimum log level enabled at compile-time: ${LOGLEVEL}")
 # Add the logging libs
 include(make_pkg_options)
 # 20210930 The fmtlib does not support C++20 concept so we use our fork here with fetch
-make_pkg_options(logging_libs "fetch")
+# 20211022 Found a workaround so we restore to use the official fmtlib
+make_pkg_options(logging_libs "conan")
 
 set(logging_libs "")
 
@@ -38,7 +39,7 @@ else()
     else()
         # fetch content
         include(fetchcontent_helper)
-        FetchContentHelper(fmt GIT "https://github.com/toltec-astro/fmt.git" "feature-customizable-range-formatter"
+        FetchContentHelper(fmt GIT "https://github.com/fmtlib/fmt.git" "master"
             ADD_SUBDIR CONFIG_SUBDIR
             BUILD_SHARED_LIBS=OFF
             FMT_DOC=OFF
