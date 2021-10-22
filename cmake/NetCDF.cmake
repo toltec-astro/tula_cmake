@@ -10,7 +10,7 @@ set(netcdf_libs "")
 
 if (USE_INSTALLED_NETCDF)
     verbose_message("Use system installed NetCDF.")
-    find_package(NetCDF REQUIRED CONFIG)
+    find_package(netCDF REQUIRED CONFIG)
     set(netcdf_libs ${netcdf_libs} netCDF::netcdf)
 else()
     if (CONAN_INSTALL_NETCDF)
