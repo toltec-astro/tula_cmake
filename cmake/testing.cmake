@@ -35,7 +35,7 @@ else()
                 BENCHMARK_ENABLE_GTEST_TESTS=OFF
                 BENCHMARK_ENABLE_ASSEMBLY_TESTS=OFF
             )
-        FetchContentHelper(googletest GIT https://github.com/google/googletest.git release-1.11.0
+        FetchContentHelper(googletest GIT https://github.com/google/googletest.git master
             ADD_SUBDIR CONFIG_SUBDIR
                 BUILD_GMOCK=ON
                 INSTALL_GTEST=OFF
