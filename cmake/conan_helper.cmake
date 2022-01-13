@@ -35,8 +35,6 @@ function(MakeConanInstallArgs)
 
 endfunction()
 
-MakeConanInstallArgs()
-
 function(ConanHelper)
     set(svargs BUILD)
     set(mvargs REQUIRES OPTIONS)
@@ -60,6 +58,7 @@ function(ConanHelper)
         ${requires}
         ${config_args}
         GENERATORS cmake_find_package)
+    MakeConanInstallArgs()
     conan_cmake_install(PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR}
                 BUILD ${CNH_BUILD}
                 REMOTE conancenter
