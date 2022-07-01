@@ -17,7 +17,9 @@ else()
     else()
         # fetch content
         include(fetchcontent_helper)
-        FetchContentHelper(matplotlibcpp GIT "https://github.com/Jerry-Ma/matplotlib-cpp.git" master)
+        FetchContentHelper(
+            matplotlibcpp GIT "https://github.com/Jerry-Ma/matplotlib-cpp.git" master
+            )
         add_library(matplotlibcpp INTERFACE)
         target_include_directories(matplotlibcpp SYSTEM INTERFACE ${matplotlibcpp_SOURCE_DIR})
         # TODO: Use `Development.Embed` component when requiring cmake >= 3.18
@@ -27,6 +29,7 @@ else()
           Python3::Module
           Python3::NumPy
         )
+        target_compile_definitions(matplotlibcpp INTERFACE WITHOUT_NUMPY)
         add_library(matplotlibcpp::matplotlibcpp ALIAS matplotlibcpp)
         verbose_message("Use fetchcontent Matplotlibcpp.")
         set(matplotlibcpp_libs ${matplotlibcpp_libs} matplotlibcpp::matplotlibcpp)
