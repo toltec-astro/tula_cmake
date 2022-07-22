@@ -29,7 +29,7 @@ else()
     if (CONAN_INSTALL_LOGGING_LIBS)
         include(conan_helper)
         ConanHelper(REQUIRES
-            fmt/[>=8.0]
+            fmt/[>=8.0,<9.0]
             spdlog/[>=1.9]
             )
         find_package(fmt REQUIRED MODULE)

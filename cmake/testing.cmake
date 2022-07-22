@@ -17,7 +17,7 @@ else()
     if (CONAN_INSTALL_TESTING_LIBS)
         include(conan_helper)
         ConanHelper(REQUIRES
-            benchmark/[>=1.6.0]
+            benchmark/[=1.6.1]
             gtest/cci.20210126
             )
         find_package(GTest REQUIRED MODULE)
