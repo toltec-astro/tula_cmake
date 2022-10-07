@@ -43,8 +43,8 @@ else()
         include(conan_helper)
         ConanHelper(REQUIRES
             ccfits/[>=2.6]
-            BUILD all
             )
+            # BUILD all
         find_package(ccfits REQUIRED MODULE)
         verbose_message("Use conan installed CCfits")
         set(ccfits_libs ${ccfits_libs} ccfits::ccfits)

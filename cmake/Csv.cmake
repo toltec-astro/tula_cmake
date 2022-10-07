@@ -20,7 +20,7 @@ else()
         FetchContentHelper(csv_parser GIT "https://github.com/Jerry-Ma/csv-parser.git" "master")
         # Create target and add include path
         add_library(csv_parser INTERFACE)
-        target_include_directories(csv_parser INTERFACE ${csv_parser_SOURCE_DIR})
+        target_include_directories(csv_parser INTERFACE ${csv_parser_SOURCE_DIR}/include)
         add_library(csv_parser::csv_parser ALIAS csv_parser)
 
         set(csv_libs ${csv_libs} csv_parser::csv_parser)
