@@ -46,7 +46,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         get_filename_component(compiler_bindir ${CMAKE_CXX_COMPILER} DIRECTORY)
         get_filename_component(compiler_libdir ${compiler_bindir}/../lib ABSOLUTE)
         verbose_message("Link CXX libs from ${compiler_libdir}")
-        set(CMAKE_EXE_LINKER_FLAGS "-L${compiler_libdir} -Wl,-rpath,${compiler_libdir}")
+        set(CMAKE_EXE_LINKER_FLAGS "-L${compiler_libdir}/c++ -L${compiler_libdir} -Wl,-rpath,${compiler_libdir}")
     endif()
 else()
     # Non standard GCC path
