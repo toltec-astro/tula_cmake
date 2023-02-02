@@ -207,7 +207,8 @@ if (USE_INSTALLED_FFTW)
                             ${FFTW_LONGDOUBLE_OPENMP_LIB}
                             #${FFTW_DOUBLE_MPI_LIB}
                             #${FFTW_FLOAT_MPI_LIB} 
-                            #${FFTW_LONGDOUBLE_MPI_LIB} z
+                            #${FFTW_LONGDOUBLE_MPI_LIB} 
+                            z
                             )
     
     add_library(FFTW::FFTW ALIAS fftw)
