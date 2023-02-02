@@ -9,8 +9,21 @@ set(fftw_libs "")
 
 if (USE_INSTALLED_FFTW)
     verbose_message("Use system installed FFTW.")
-    find_package(fftw 3.3.10 REQUIRED CONFIG)
-    set(fftw_libs ${fftw_libs} fftw:fftw)
+    find_library(
+        FFTW_DOUBLE_LIB
+        NAMES "fftw3" libfftw3-3
+        PATHS ${FFTW_ROOT}
+        PATH_SUFFIXES "lib" "lib64"
+        NO_DEFAULT_PATH
+        )
+
+    set(FFTW_LIBRARIES ${FFTW_LIBRARIES} ${FFTW_DOUBLE_LIB})
+    add_library(FFTW::Double INTERFACE IMPORTED)
+    set_target_properties(FFTW::Double
+        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${FFTW_INCLUDE_DIRS}"
+        INTERFACE_LINK_LIBRARIES "${FFTW_DOUBLE_LIB}"
+    )
+    set(fftw_libs ${fftw_libs} FFTW::Double INTERFACE)
 else()
     if (CONAN_INSTALL_FFTW)
         include(conan_helper)
