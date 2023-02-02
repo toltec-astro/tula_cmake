@@ -8,120 +8,79 @@ make_pkg_options(FFTW "conan")
 set(fftw_libs "")
 
 if (USE_INSTALLED_FFTW)
-    if( NOT FFTW_ROOT AND DEFINED ENV{FFTWDIR} )
-        set( FFTW_ROOT $ENV{FFTWDIR} )
-    endif()
-
-    # Check if we can use PkgConfig
-    find_package(PkgConfig)
-
-    #Determine from PKG
-    if( PKG_CONFIG_FOUND AND NOT FFTW_ROOT )
-        pkg_check_modules( PKG_FFTW QUIET "fftw3" )
-    endif()
-
-    #find includes
-    find_path(FFTW_INCLUDE_DIRS
-        NAMES "fftw3.h"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "include"
-        NO_DEFAULT_PATH
-        )
-
     find_library(
         FFTW_DOUBLE_LIB
-        NAMES "fftw3" libfftw3-3
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        NAMES "fftw3"
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_DOUBLE_THREADS_LIB
         NAMES "fftw3_threads"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_DOUBLE_OPENMP_LIB
         NAMES "fftw3_omp"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_DOUBLE_MPI_LIB
         NAMES "fftw3_mpi"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_FLOAT_LIB
-        NAMES "fftw3f" libfftw3f-3
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        NAMES "fftw3f"
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_FLOAT_THREADS_LIB
         NAMES "fftw3f_threads"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_FLOAT_OPENMP_LIB
         NAMES "fftw3f_omp"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_FLOAT_MPI_LIB
         NAMES "fftw3f_mpi"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_LONGDOUBLE_LIB
-        NAMES "fftw3l" libfftw3l-3
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        NAMES "fftw3l"
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
     find_library(
         FFTW_LONGDOUBLE_THREADS_LIB
         NAMES "fftw3l_threads"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
-    find_library(
-        FFTW_LONGDOUBLE_OPENMP_LIB
+    find_library(FFTW_LONGDOUBLE_OPENMP_LIB
         NAMES "fftw3l_omp"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
-    find_library(
-        FFTW_LONGDOUBLE_MPI_LIB
+    find_library(FFTW_LONGDOUBLE_MPI_LIB
         NAMES "fftw3l_mpi"
-        PATHS ${FFTW_ROOT}
-        PATH_SUFFIXES "lib" "lib64"
-        NO_DEFAULT_PATH
+        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
+        )
+
+    find_path(FFTW_INCLUDE_DIRS
+        NAMES "fftw3.h"
+        PATHS ${PKG_FFTW_INCLUDE_DIRS} ${INCLUDE_INSTALL_DIR}
         )
 
     #--------------------------------------- components
