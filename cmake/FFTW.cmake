@@ -26,11 +26,11 @@ if (USE_INSTALLED_FFTW)
         PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
-    find_library(
-        FFTW_DOUBLE_MPI_LIB
-        NAMES "fftw3_mpi"
-        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
-        )
+    #find_library(
+    #    FFTW_DOUBLE_MPI_LIB
+    #    NAMES "fftw3_mpi"
+    #    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
+    #    )
 
     find_library(
         FFTW_FLOAT_LIB
@@ -50,11 +50,11 @@ if (USE_INSTALLED_FFTW)
         PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
-    find_library(
-        FFTW_FLOAT_MPI_LIB
-        NAMES "fftw3f_mpi"
-        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
-        )
+    #find_library(
+    #    FFTW_FLOAT_MPI_LIB
+    #    NAMES "fftw3f_mpi"
+    #    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
+    #    )
 
     find_library(
         FFTW_LONGDOUBLE_LIB
@@ -73,10 +73,10 @@ if (USE_INSTALLED_FFTW)
         PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
         )
 
-    find_library(FFTW_LONGDOUBLE_MPI_LIB
-        NAMES "fftw3l_mpi"
-        PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
-        )
+    #find_library(FFTW_LONGDOUBLE_MPI_LIB
+    #    NAMES "fftw3l_mpi"
+    #    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
+    #    )
 
     find_path(FFTW_INCLUDE_DIRS
         NAMES "fftw3.h"
@@ -85,78 +85,113 @@ if (USE_INSTALLED_FFTW)
 
     #--------------------------------------- components
 
+    # FFTW_DOUBLE_LIB_FOUND
     if (FFTW_DOUBLE_LIB)
+        MESSAGE(STATUS "Found FFTW_DOUBLE_LIB_FOUND: ${FFTW_DOUBLE_LIB_FOUND}")
         set(FFTW_DOUBLE_LIB_FOUND TRUE)
     else()
         set(FFTW_DOUBLE_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_LIB_FOUND")
     endif()
 
+    # FFTW_FLOAT_LIB
     if (FFTW_FLOAT_LIB)
+        MESSAGE(STATUS "Found FFTW_FLOAT_LIB: ${FFTW_FLOAT_LIB}")
         set(FFTW_FLOAT_LIB_FOUND TRUE)
     else()
         set(FFTW_FLOAT_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_LIB_FOUND")
     endif()
 
+    # FFTW_LONGDOUBLE_LIB
     if (FFTW_LONGDOUBLE_LIB)
+        MESSAGE(STATUS "Found FFTW_LONGDOUBLE_LIB: ${FFTW_LONGDOUBLE_LIB}")
         set(FFTW_LONGDOUBLE_LIB_FOUND TRUE)
     else()
         set(FFTW_LONGDOUBLE_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_LIB_FOUND")
     endif()
 
+    # FFTW_DOUBLE_THREADS_LIB
     if (FFTW_DOUBLE_THREADS_LIB)
+        MESSAGE(STATUS "Found FFTW_DOUBLE_THREADS_LIB: ${FFTW_DOUBLE_THREADS_LIB}")
         set(FFTW_DOUBLE_THREADS_LIB_FOUND TRUE)
     else()
         set(FFTW_DOUBLE_THREADS_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_THREADS_LIB_FOUND")
     endif()
 
+    # FFTW_FLOAT_THREADS_LIB
     if (FFTW_FLOAT_THREADS_LIB)
+        MESSAGE(STATUS "Found FFTW_FLOAT_THREADS_LIB: ${FFTW_FLOAT_THREADS_LIB}")
         set(FFTW_FLOAT_THREADS_LIB_FOUND TRUE)
     else()
         set(FFTW_FLOAT_THREADS_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_THREADS_LIB_FOUND")
     endif()
 
+    # FFTW_LONGDOUBLE_THREADS_LIB
     if (FFTW_LONGDOUBLE_THREADS_LIB)
+        MESSAGE(STATUS "Found FFTW_LONGDOUBLE_THREADS_LIB: ${FFTW_LONGDOUBLE_THREADS_LIB}")
         set(FFTW_LONGDOUBLE_THREADS_LIB_FOUND TRUE)
     else()
         set(FFTW_LONGDOUBLE_THREADS_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_THREADS_LIB_FOUND")
     endif()
 
+    # FFTW_DOUBLE_OPENMP_LIB
     if (FFTW_DOUBLE_OPENMP_LIB)
+        MESSAGE(STATUS "Found FFTW_DOUBLE_OPENMP_LIB: ${FFTW_DOUBLE_OPENMP_LIB}")
         set(FFTW_DOUBLE_OPENMP_LIB_FOUND TRUE)
     else()
         set(FFTW_DOUBLE_OPENMP_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_OPENMP_LIB_FOUND")
     endif()
 
+    # FFTW_FLOAT_OPENMP_LIB
     if (FFTW_FLOAT_OPENMP_LIB)
+        MESSAGE(STATUS "Found FFTW_FLOAT_OPENMP_LIB: ${FFTW_FLOAT_OPENMP_LIB}")
         set(FFTW_FLOAT_OPENMP_LIB_FOUND TRUE)
     else()
         set(FFTW_FLOAT_OPENMP_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_OPENMP_LIB")
     endif()
 
+    # FFTW_LONGDOUBLE_OPENMP_LIB
     if (FFTW_LONGDOUBLE_OPENMP_LIB)
+        MESSAGE(STATUS "Found FFTW_LONGDOUBLE_OPENMP_LIB: ${FFTW_LONGDOUBLE_OPENMP_LIB}")
         set(FFTW_LONGDOUBLE_OPENMP_LIB_FOUND TRUE)
     else()
         set(FFTW_LONGDOUBLE_OPENMP_LIB_FOUND FALSE)
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_OPENMP_LIB")
     endif()
 
-    if (FFTW_DOUBLE_MPI_LIB)
-        set(FFTW_DOUBLE_MPI_LIB_FOUND TRUE)
-    else()
-        set(FFTW_DOUBLE_MPI_LIB_FOUND FALSE)
-    endif()
+    # FFTW_DOUBLE_MPI_LIB
+    #if (FFTW_DOUBLE_MPI_LIB)
+    #    MESSAGE(STATUS "Found FFTW_DOUBLE_MPI_LIB: ${FFTW_DOUBLE_MPI_LIB}")
+    #    set(FFTW_DOUBLE_MPI_LIB_FOUND TRUE)
+    #else()
+    #    set(FFTW_DOUBLE_MPI_LIB_FOUND FALSE)
+    #    MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_MPI_LIB")
+    #endif()
 
-    if (FFTW_FLOAT_MPI_LIB)
-        set(FFTW_FLOAT_MPI_LIB_FOUND TRUE)
-    else()
-        set(FFTW_FLOAT_MPI_LIB_FOUND FALSE)
-    endif()
+    # FFTW_FLOAT_MPI_LIB
+    #if (FFTW_FLOAT_MPI_LIB)
+    #    MESSAGE(STATUS "Found FFTW_FLOAT_MPI_LIB: ${FFTW_FLOAT_MPI_LIB}")
+    #    set(FFTW_FLOAT_MPI_LIB_FOUND TRUE)
+    #else()
+    #    set(FFTW_FLOAT_MPI_LIB_FOUND FALSE)
+    #    MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_MPI_LIB")
+    #endif()
 
-    if (FFTW_LONGDOUBLE_MPI_LIB)
-        set(FFTW_LONGDOUBLE_MPI_LIB_FOUND TRUE)
-    else()
-        set(FFTW_LONGDOUBLE_MPI_LIB_FOUND FALSE)
-    endif()
-
+    # FFTW_LONGDOUBLE_MPI_LIB
+    #if (FFTW_LONGDOUBLE_MPI_LIB)
+    #    MESSAGE(STATUS "Found FFTW_LONGDOUBLE_MPI_LIB: ${FFTW_LONGDOUBLE_MPI_LIB}")
+    #    set(FFTW_LONGDOUBLE_MPI_LIB_FOUND TRUE)
+    #else()
+    #    set(FFTW_LONGDOUBLE_MPI_LIB_FOUND FALSE)
+    #    MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_MPI_LIB")
+    #endif()
 
     add_library(fftw INTERFACE)
     target_include_directories(fftw INTERFACE ${FFTW_INCLUDE_DIRS})
@@ -170,9 +205,10 @@ if (USE_INSTALLED_FFTW)
                             ${FFTW_DOUBLE_OPENMP_LIB}
                             ${FFTW_FLOAT_OPENMP_LIB}
                             ${FFTW_LONGDOUBLE_OPENMP_LIB}
-                            ${FFTW_DOUBLE_MPI_LIB}
-                            ${FFTW_FLOAT_MPI_LIB} 
-                            ${FFTW_LONGDOUBLE_MPI_LIB} z)
+                            #${FFTW_DOUBLE_MPI_LIB}
+                            #${FFTW_FLOAT_MPI_LIB} 
+                            #${FFTW_LONGDOUBLE_MPI_LIB} z
+                            )
     
     add_library(FFTW::FFTW ALIAS fftw)
     set(fftw_libs ${fftw_libs} FFTW::FFTW)
@@ -185,9 +221,13 @@ else()
             )
         find_package(fftw REQUIRED MODULE)
         verbose_message("Use conan installed FFTW")
-        set(fftw_libs ${eigen3_libs} fftw::fftw)
+        set(fftw_libs ${fftw_libs} fftw::fftw)
     endif()
+else()
+    # fetch content
+    message(FATAL_ERROR "fftw does not support fetch content.")
 endif()
+
 
 include(make_tula_target)
 make_tula_target(FFTW ${fftw_libs})
