@@ -204,11 +204,7 @@ if (USE_INSTALLED_FFTW)
                             ${FFTW_LONGDOUBLE_THREADS_LIB}
                             ${FFTW_DOUBLE_OPENMP_LIB}
                             ${FFTW_FLOAT_OPENMP_LIB}
-                            ${FFTW_LONGDOUBLE_OPENMP_LIB}
-                            #${FFTW_DOUBLE_MPI_LIB}
-                            #${FFTW_FLOAT_MPI_LIB} 
-                            #${FFTW_LONGDOUBLE_MPI_LIB} 
-                            z
+                            ${FFTW_LONGDOUBLE_OPENMP_LIB} z
                             )
     
     add_library(FFTW::FFTW ALIAS fftw)
@@ -223,10 +219,10 @@ else()
         find_package(fftw REQUIRED MODULE)
         verbose_message("Use conan installed FFTW")
         set(fftw_libs ${fftw_libs} fftw::fftw)
+    else()
+        # fetch content
+        message(FATAL_ERROR "fftw does not support fetch content.")
     endif()
-else()
-    # fetch content
-    message(FATAL_ERROR "fftw does not support fetch content.")
 endif()
 
 
