@@ -216,7 +216,7 @@ else()
         ConanHelper(REQUIRES
             fftw/[>=3.3.9]
             OPTION
-            ftw:openmp=True
+            fftw:openmp=True
             fftw:threads=True
             )
         find_package(FFTW3 REQUIRED MODULE)
