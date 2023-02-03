@@ -216,9 +216,9 @@ else()
         ConanHelper(REQUIRES
             fftw/[>=3.3.9]
             )
-        find_package(FFTW REQUIRED MODULE)
+        find_package(FFTW3 REQUIRED MODULE)
         verbose_message("Use conan installed FFTW")
-        set(fftw_libs ${fftw_libs} FFTW::FFTW)
+        set(fftw_libs ${fftw_libs} FFTW3::FFTW3)
     else()
         # fetch content
         message(FATAL_ERROR "fftw does not support fetch content.")
