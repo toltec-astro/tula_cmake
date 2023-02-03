@@ -218,7 +218,7 @@ else()
             )
         find_package(FFTW3 REQUIRED MODULE)
         verbose_message("Use conan installed FFTW")
-        set(fftw_libs ${fftw_libs} fftw3::fftw3)
+        set(fftw_libs ${fftw_libs} fftw::fftw)
     else()
         # fetch content
         message(FATAL_ERROR "fftw does not support fetch content.")
