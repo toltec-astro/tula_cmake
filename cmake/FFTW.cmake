@@ -215,7 +215,7 @@ else()
         include(conan_helper)
         ConanHelper(REQUIRES
             fftw/[>=3.3.9]
-            OPTION
+        OPTIONS
             fftw:openmp=True
             fftw:threads=True
             )
