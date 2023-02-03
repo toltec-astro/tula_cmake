@@ -87,11 +87,11 @@ if (USE_INSTALLED_FFTW)
 
     # FFTW_DOUBLE_LIB_FOUND
     if (FFTW_DOUBLE_LIB)
-        MESSAGE(STATUS "Found FFTW_DOUBLE_LIB_FOUND: ${FFTW_DOUBLE_LIB_FOUND}")
+        MESSAGE(STATUS "Found FFTW_DOUBLE_LIB: ${FFTW_DOUBLE_LIB}")
         set(FFTW_DOUBLE_LIB_FOUND TRUE)
     else()
         set(FFTW_DOUBLE_LIB_FOUND FALSE)
-        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_LIB_FOUND")
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_LIB")
     endif()
 
     # FFTW_FLOAT_LIB
@@ -100,7 +100,7 @@ if (USE_INSTALLED_FFTW)
         set(FFTW_FLOAT_LIB_FOUND TRUE)
     else()
         set(FFTW_FLOAT_LIB_FOUND FALSE)
-        MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_LIB_FOUND")
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_LIB")
     endif()
 
     # FFTW_LONGDOUBLE_LIB
@@ -109,7 +109,7 @@ if (USE_INSTALLED_FFTW)
         set(FFTW_LONGDOUBLE_LIB_FOUND TRUE)
     else()
         set(FFTW_LONGDOUBLE_LIB_FOUND FALSE)
-        MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_LIB_FOUND")
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_LIB")
     endif()
 
     # FFTW_DOUBLE_THREADS_LIB
@@ -118,7 +118,7 @@ if (USE_INSTALLED_FFTW)
         set(FFTW_DOUBLE_THREADS_LIB_FOUND TRUE)
     else()
         set(FFTW_DOUBLE_THREADS_LIB_FOUND FALSE)
-        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_THREADS_LIB_FOUND")
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_THREADS_LIB")
     endif()
 
     # FFTW_FLOAT_THREADS_LIB
@@ -127,7 +127,7 @@ if (USE_INSTALLED_FFTW)
         set(FFTW_FLOAT_THREADS_LIB_FOUND TRUE)
     else()
         set(FFTW_FLOAT_THREADS_LIB_FOUND FALSE)
-        MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_THREADS_LIB_FOUND")
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_FLOAT_THREADS_LIB")
     endif()
 
     # FFTW_LONGDOUBLE_THREADS_LIB
@@ -136,7 +136,7 @@ if (USE_INSTALLED_FFTW)
         set(FFTW_LONGDOUBLE_THREADS_LIB_FOUND TRUE)
     else()
         set(FFTW_LONGDOUBLE_THREADS_LIB_FOUND FALSE)
-        MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_THREADS_LIB_FOUND")
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_LONGDOUBLE_THREADS_LIB")
     endif()
 
     # FFTW_DOUBLE_OPENMP_LIB
@@ -145,7 +145,7 @@ if (USE_INSTALLED_FFTW)
         set(FFTW_DOUBLE_OPENMP_LIB_FOUND TRUE)
     else()
         set(FFTW_DOUBLE_OPENMP_LIB_FOUND FALSE)
-        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_OPENMP_LIB_FOUND")
+        MESSAGE(FATAL_ERROR "Cannot find FFTW_DOUBLE_OPENMP_LIB")
     endif()
 
     # FFTW_FLOAT_OPENMP_LIB
@@ -218,7 +218,7 @@ else()
             )
         find_package(FFTW3 REQUIRED MODULE)
         verbose_message("Use conan installed FFTW")
-        set(fftw_libs ${fftw_libs} FFTW3::FFTW3)
+        set(fftw_libs ${fftw_libs} fftw3::fftw3)
     else()
         # fetch content
         message(FATAL_ERROR "fftw does not support fetch content.")
