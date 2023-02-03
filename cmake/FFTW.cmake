@@ -215,6 +215,9 @@ else()
         include(conan_helper)
         ConanHelper(REQUIRES
             fftw/[>=3.3.9]
+            OPTION
+            ftw:openmp=True
+            fftw:threads=True
             )
         find_package(FFTW3 REQUIRED MODULE)
         verbose_message("Use conan installed FFTW")
