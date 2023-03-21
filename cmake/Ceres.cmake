@@ -33,7 +33,7 @@ else()
         include(conan_helper)
         ConanHelper(REQUIRES
                 eigen/[>=3.4]  # override the dependency
-                ceres-solver/[>=2.0,<2.1]
+                ceres-solver/[>=2.1]
             OPTIONS
                 ceres-solver:use_glog=True
                 ceres-solver:use_gflags=True
