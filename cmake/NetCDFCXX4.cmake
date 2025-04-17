@@ -23,7 +23,7 @@ else()
     else()
         # fetch content
         include(fetchcontent_helper)
-        FetchContentHelper(netcdfcxx4 GIT https://github.com/Unidata/netcdf-cxx4.git "master"
+        FetchContentHelper(netcdfcxx4 GIT https://github.com/Unidata/netcdf-cxx4.git "main"
             ADD_SUBDIR CONFIG_SUBDIR
                 ENABLE_DOXYGEN=OFF
                 BUILD_SHARED_LIBS=OFF
