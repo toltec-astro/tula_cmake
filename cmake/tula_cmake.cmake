@@ -136,11 +136,12 @@ function(tula_deps_create_targets)
     
     if(_conan_packages)
         # Build conan install command with package options
+        # Use tula/*: scope to explicitly target tula's conanfile options
         set(_conan_options "")
         foreach(_pkg IN LISTS _conan_packages)
-            # Convert package name to lowercase for conan option
-            string(TOLOWER "${_pkg}" _pkg_lower)
-            list(APPEND _conan_options "-o" "${_pkg_lower}=True")
+            # Package names in conanfile.py match CMake package names (e.g., Eigen3, Yaml)
+            # Use tula/*:PackageName=True to scope options to tula
+            list(APPEND _conan_options "-o" "tula/*:${_pkg}=True")
         endforeach()
         
         # Run conan install
