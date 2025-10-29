@@ -20,7 +20,7 @@ endfunction()
 
 # Git version header
 function(generate_gitversion_header name)
-    set(config_header_srcdir ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/src)
+    set(config_header_srcdir ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../src)
     get_config_header_output_dir(output_dir ${name})
     set(output_path ${output_dir}/gitversion.h)
     verbose_message("Generate gitversion header ${output_path}")
@@ -62,7 +62,7 @@ endfunction()
 
 # Config header
 function(generate_config_header name)
-    set(config_header_srcdir ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/src)
+    set(config_header_srcdir ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../src)
     get_config_header_output_dir(output_dir ${name})
     set(output_path ${output_dir}/config.h)
     verbose_message("Generate config header ${output_path}")
