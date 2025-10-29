@@ -37,10 +37,12 @@ function(TULA_Spectra_TRY_CPM)
         NAME Spectra
         GITHUB_REPOSITORY yixuan/spectra
         GIT_TAG v1.0.1
+        DOWNLOAD_ONLY YES
     )
     
     if(Spectra_ADDED)
         # Spectra doesn't create targets, so we create one manually
+        # Using DOWNLOAD_ONLY to avoid install() export issues with CPM-fetched Eigen
         add_library(Spectra::Spectra INTERFACE IMPORTED GLOBAL)
         target_include_directories(Spectra::Spectra INTERFACE "${Spectra_SOURCE_DIR}/include")
         message(STATUS "    Fetched Spectra via CPM and created Spectra::Spectra target")
