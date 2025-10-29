@@ -1,10 +1,6 @@
-# Spectra.cmake - C++ library for large scale eigenvalue problems
-# Single-include workflow with callback-based target creation
-#
-# Creates target: tula::Spectra
+# Spectra.cmake - C++ library for large scale eigenvalue problems (header-only)
 
-include_guard(GLOBAL)
-include(verbose_message)
+include(_deps_callbacks)
 
 # Skip if target already exists
 if(TARGET tula_Spectra)
@@ -18,89 +14,73 @@ if(NOT TARGET tula::Eigen3)
 endif()
 
 #[=======================================================================[
-@brief Create Spectra::Spectra target from Conan-provided paths
-Called by tula_deps_create_targets() when MODE=CONAN
+@brief Try to find Spectra via Conan (uses CMakeDeps-generated config)
 ]=======================================================================]
-function(_tula_spectra_create_conan_target)
-    if(TARGET Spectra::Spectra)
-        return()  # Already created
-    endif()
-    
-    set(SPECTRA_INCLUDE_DIR "")
-    foreach(_path IN LISTS CMAKE_INCLUDE_PATH)
-        if(_path MATCHES "spectra" OR _path MATCHES "Spectra")
-            set(SPECTRA_INCLUDE_DIR "${_path}")
-            break()
-        endif()
-    endforeach()
-    
-    if(NOT SPECTRA_INCLUDE_DIR)
-        message(STATUS "  ✗ Spectra not found in CMAKE_INCLUDE_PATH, will try next mode")
+function(TULA_Spectra_TRY_CONAN)
+    tula_try_conan_header_only(Spectra Spectra::Spectra)
+    set(TULA_Spectra_CONAN_SUCCESS ${TULA_Spectra_CONAN_SUCCESS} PARENT_SCOPE)
+endfunction()
+
+#[=======================================================================[
+@brief Try to fetch Spectra via CPM
+Note: Spectra's CMakeLists.txt doesn't create targets, so we create one manually
+]=======================================================================]
+function(TULA_Spectra_TRY_CPM)
+    _tula_check_target_exists(Spectra Spectra::Spectra CPM)
+    if(_TULA_TARGET_EXISTS)
         return()
     endif()
     
-    # Spectra is header-only
-    add_library(Spectra::Spectra INTERFACE IMPORTED GLOBAL)
-    target_include_directories(Spectra::Spectra INTERFACE "${SPECTRA_INCLUDE_DIR}")
-    message(STATUS "  ✓ Created Spectra::Spectra target from Conan: ${SPECTRA_INCLUDE_DIR}")
+    include(_ensure_cpm)
+    
+    CPMAddPackage(
+        NAME Spectra
+        GITHUB_REPOSITORY yixuan/spectra
+        GIT_TAG v1.0.1
+    )
+    
+    if(Spectra_ADDED)
+        # Spectra doesn't create targets, so we create one manually
+        add_library(Spectra::Spectra INTERFACE IMPORTED GLOBAL)
+        target_include_directories(Spectra::Spectra INTERFACE "${Spectra_SOURCE_DIR}/include")
+        message(STATUS "    Fetched Spectra via CPM and created Spectra::Spectra target")
+        set(TULA_Spectra_CPM_SUCCESS TRUE PARENT_SCOPE)
+    else()
+        message(STATUS "    CPM fetch failed for Spectra")
+        set(TULA_Spectra_CPM_SUCCESS FALSE PARENT_SCOPE)
+    endif()
 endfunction()
 
-# Spectra - Header-only C++ library for large scale eigenvalue problems
-# Built on top of Eigen, provides algorithms for sparse/dense matrices
-tula_deps_register(Spectra
-    CONAN_NAME Spectra
-    CONAN_TARGET_CALLBACK _tula_spectra_create_conan_target
-    CONAN_TARGET_NAME Spectra::Spectra
-    CPM_GITHUB_REPOSITORY yixuan/spectra
-    CPM_GIT_TAG v1.0.1
-    CPM_OPTIONS
-        "BUILD_TESTS OFF"
-        "BUILD_EXAMPLES OFF"
-    SYSTEM_NAME Spectra
-    FIND_PACKAGE_ARGS CONFIG
-)
+#[=======================================================================[
+@brief Try to find Spectra via system find_package
+]=======================================================================]
+function(TULA_Spectra_TRY_SYSTEM)
+    tula_try_system(Spectra Spectra::Spectra)
+    set(TULA_Spectra_SYSTEM_SUCCESS ${TULA_Spectra_SYSTEM_SUCCESS} PARENT_SCOPE)
+endfunction()
 
-# Wrapper function to create tula::Spectra after dependency is resolved
-function(_tula_spectra_create_wrapper)
+#[=======================================================================[
+@brief Create tula::Spectra wrapper target
+Spectra depends on Eigen3, so we link both
+]=======================================================================]
+function(TULA_Spectra_CREATE_WRAPPER)
     if(TARGET tula_Spectra)
         return()  # Already created
     endif()
     
-    # Check for available targets
-    set(_spectra_libs "")
-
-    if(TARGET Spectra::Spectra)
-        list(APPEND _spectra_libs Spectra::Spectra)
-        verbose_message("Spectra configured with Spectra::Spectra target")
-    elseif(TARGET spectra)
-        list(APPEND _spectra_libs spectra)
-        verbose_message("Spectra configured with spectra target")
-    else()
-        # Spectra is header-only, might not create targets in all modes
-        # Create an interface target manually if needed
-        verbose_message("Spectra targets not found, attempting manual configuration")
-        
-        if(DEFINED Spectra_INCLUDE_DIR)
-            add_library(spectra_interface INTERFACE)
-            target_include_directories(spectra_interface INTERFACE ${Spectra_INCLUDE_DIR})
-            list(APPEND _spectra_libs spectra_interface)
-            verbose_message("Spectra configured with manual interface target")
-        else()
-            message(FATAL_ERROR "Spectra not found after dependency resolution")
-        endif()
+    if(NOT TARGET Spectra::Spectra)
+        message(FATAL_ERROR "Cannot create wrapper: Spectra::Spectra target does not exist")
     endif()
-
+    
     # Always link Eigen3 as Spectra depends on it
-    list(APPEND _spectra_libs tula::Eigen3)
-
-    # Create tula wrapper target
     include(make_tula_target)
-    make_tula_target(Spectra ${_spectra_libs})
-
-    verbose_message("Spectra configured: tula::Spectra")
+    make_tula_target(Spectra Spectra::Spectra tula::Eigen3)
+    
+    if(VERBOSE_MESSAGE)
+        include(verbose_message)
+        verbose_message("Spectra configured: tula::Spectra")
+    endif()
 endfunction()
 
-# If Spectra already exists, create wrapper now
-if(TARGET Spectra::Spectra OR TARGET spectra)
-    _tula_spectra_create_wrapper()
-endif()
+# Register Spectra for tri-modal resolution
+tula_deps_register(Spectra)

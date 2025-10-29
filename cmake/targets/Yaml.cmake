@@ -1,8 +1,6 @@
-# Yaml.cmake - YAML configuration file parsing support
-# Single-include workflow with callback-based target creation
+# Yaml.cmake - YAML configuration file parsing support (yaml-cpp library)
 
-include_guard(GLOBAL)
-include(verbose_message)
+include(_deps_callbacks)
 
 # Skip if target already exists
 if(TARGET tula_Yaml)
@@ -11,66 +9,61 @@ if(TARGET tula_Yaml)
 endif()
 
 #[=======================================================================[
-@brief Create yaml-cpp::yaml-cpp target from Conan-provided paths
-Called by tula_deps_create_targets() when MODE=CONAN
+@brief Try to find yaml-cpp via Conan (uses CMakeDeps-generated config)
 ]=======================================================================]
-function(_tula_yaml_create_conan_target)
-    if(TARGET yaml-cpp::yaml-cpp)
-        return()  # Already created
-    endif()
-    
-    # Conan provides include path via CMAKE_INCLUDE_PATH
-    set(YAML_INCLUDE_DIR "")
-    foreach(_path IN LISTS CMAKE_INCLUDE_PATH)
-        if(_path MATCHES "yaml-cpp")
-            set(YAML_INCLUDE_DIR "${_path}")
-            break()
-        endif()
-    endforeach()
-    
-    if(NOT YAML_INCLUDE_DIR)
-        message(STATUS "  ✗ yaml-cpp not found in CMAKE_INCLUDE_PATH, will try next mode")
-        return()
-    endif()
-    
-    # Create INTERFACE target
-    add_library(yaml-cpp::yaml-cpp INTERFACE IMPORTED GLOBAL)
-    target_include_directories(yaml-cpp::yaml-cpp INTERFACE "${YAML_INCLUDE_DIR}")
-    message(STATUS "  ✓ Created yaml-cpp::yaml-cpp target from Conan: ${YAML_INCLUDE_DIR}")
+function(TULA_Yaml_TRY_CONAN)
+    tula_try_conan_header_only(Yaml yaml-cpp::yaml-cpp yaml-cpp)
+    set(TULA_Yaml_CONAN_SUCCESS ${TULA_Yaml_CONAN_SUCCESS} PARENT_SCOPE)
 endfunction()
 
-# Find or fetch yaml-cpp
-# Note: Using master branch instead of 0.8.0 tag because the tag has CMake version issues.
-# The master branch includes CMake 3.5 requirement fix (commit c9371de from Apr 29, 2025)
-# and other improvements since 0.8.0 release (Aug 10, 2023)
-tula_deps_register(yaml-cpp
-    CONAN_NAME yaml-cpp
-    CONAN_TARGET_CALLBACK _tula_yaml_create_conan_target
-    CONAN_TARGET_NAME yaml-cpp::yaml-cpp
-    CPM_GITHUB_REPOSITORY jbeder/yaml-cpp
-    CPM_GIT_TAG master  # Using master branch - includes fixes since 0.8.0
-    CPM_OPTIONS 
-        "YAML_CPP_BUILD_CONTRIB OFF" 
-        "YAML_CPP_BUILD_TOOLS OFF"
-        "YAML_BUILD_SHARED_LIBS OFF"
-    SYSTEM_NAME yaml-cpp
-    FIND_PACKAGE_ARGS CONFIG
-)
+#[=======================================================================[
+@brief Try to fetch yaml-cpp via CPM
+]=======================================================================]
+function(TULA_Yaml_TRY_CPM)
+    tula_try_cpm(Yaml yaml-cpp::yaml-cpp
+        NAME yaml-cpp
+        GITHUB_REPOSITORY jbeder/yaml-cpp
+        GIT_TAG master
+        OPTIONS
+            "YAML_CPP_BUILD_CONTRIB OFF"
+            "YAML_CPP_BUILD_TOOLS OFF"
+            "YAML_CPP_BUILD_TESTS OFF"
+            "YAML_CPP_INSTALL OFF"
+            "YAML_BUILD_SHARED_LIBS OFF"
+            "YAML_MSVC_SHARED_RT OFF"
+    )
+    set(TULA_Yaml_CPM_SUCCESS ${TULA_Yaml_CPM_SUCCESS} PARENT_SCOPE)
+endfunction()
 
-# Wrapper function to create tula::Yaml after dependency is resolved
-function(_tula_yaml_create_wrapper)
+#[=======================================================================[
+@brief Try to find yaml-cpp via system find_package
+]=======================================================================]
+function(TULA_Yaml_TRY_SYSTEM)
+    tula_try_system(Yaml yaml-cpp::yaml-cpp yaml-cpp)
+    set(TULA_Yaml_SYSTEM_SUCCESS ${TULA_Yaml_SYSTEM_SUCCESS} PARENT_SCOPE)
+endfunction()
+
+#[=======================================================================[
+@brief Create tula::Yaml wrapper target
+]=======================================================================]
+function(TULA_Yaml_CREATE_WRAPPER)
     if(TARGET tula_Yaml)
         return()  # Already created
     endif()
     
-    # Create tula interface library
+    if(NOT TARGET yaml-cpp::yaml-cpp)
+        message(FATAL_ERROR "Cannot create wrapper: yaml-cpp::yaml-cpp target does not exist")
+    endif()
+    
+    # Create wrapper target
     include(make_tula_target)
     make_tula_target(Yaml yaml-cpp::yaml-cpp)
     
-    verbose_message("Yaml configured: tula::Yaml")
+    if(VERBOSE_MESSAGE)
+        include(verbose_message)
+        verbose_message("Yaml configured: tula::Yaml")
+    endif()
 endfunction()
 
-# If yaml-cpp already exists, create wrapper now
-if(TARGET yaml-cpp::yaml-cpp OR TARGET yaml-cpp)
-    _tula_yaml_create_wrapper()
-endif()
+# Register Yaml for tri-modal resolution
+tula_deps_register(Yaml)

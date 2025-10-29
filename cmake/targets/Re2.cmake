@@ -1,10 +1,6 @@
 # Re2.cmake - Google RE2 regular expression library
-# Single-include workflow with callback-based target creation
-#
-# Creates target: tula::Re2
 
-include_guard(GLOBAL)
-include(verbose_message)
+include(_deps_callbacks)
 
 # Skip if target already exists
 if(TARGET tula_Re2)
@@ -13,73 +9,56 @@ if(TARGET tula_Re2)
 endif()
 
 #[=======================================================================[
-@brief Create re2::re2 target from Conan-provided paths
-Called by tula_deps_create_targets() when MODE=CONAN
+@brief Try to find re2 via Conan (uses CMakeDeps-generated config)
 ]=======================================================================]
-function(_tula_re2_create_conan_target)
-    if(TARGET re2::re2)
-        return()  # Already created
-    endif()
-    
-    set(RE2_INCLUDE_DIR "")
-    foreach(_path IN LISTS CMAKE_INCLUDE_PATH)
-        if(_path MATCHES "re2")
-            set(RE2_INCLUDE_DIR "${_path}")
-            break()
-        endif()
-    endforeach()
-    
-    if(NOT RE2_INCLUDE_DIR)
-        message(STATUS "  ✗ re2 not found in CMAKE_INCLUDE_PATH, will try next mode")
-        return()
-    endif()
-    
-    add_library(re2::re2 INTERFACE IMPORTED GLOBAL)
-    target_include_directories(re2::re2 INTERFACE "${RE2_INCLUDE_DIR}")
-    message(STATUS "  ✓ Created re2::re2 target from Conan: ${RE2_INCLUDE_DIR}")
+function(TULA_Re2_TRY_CONAN)
+    tula_try_conan_header_only(Re2 re2::re2)
+    set(TULA_Re2_CONAN_SUCCESS ${TULA_Re2_CONAN_SUCCESS} PARENT_SCOPE)
 endfunction()
 
-# RE2 - Fast, safe alternative to backtracking regex engines
-# Preferred over std::regex for performance-critical applications
-tula_deps_register(re2
-    CONAN_NAME re2
-    CONAN_TARGET_CALLBACK _tula_re2_create_conan_target
-    CONAN_TARGET_NAME re2::re2
-    CPM_GITHUB_REPOSITORY google/re2
-    CPM_GIT_TAG 2024-07-02
-    CPM_OPTIONS
-        "RE2_BUILD_TESTING OFF"
-        "BUILD_SHARED_LIBS OFF"
-    SYSTEM_NAME re2
-    FIND_PACKAGE_ARGS CONFIG
-)
+#[=======================================================================[
+@brief Try to fetch re2 via CPM
+]=======================================================================]
+function(TULA_Re2_TRY_CPM)
+    tula_try_cpm(Re2 re2::re2
+        NAME re2
+        GITHUB_REPOSITORY google/re2
+        GIT_TAG 2024-07-02
+        OPTIONS
+            "RE2_BUILD_TESTING OFF"
+            "BUILD_SHARED_LIBS OFF"
+    )
+    set(TULA_Re2_CPM_SUCCESS ${TULA_Re2_CPM_SUCCESS} PARENT_SCOPE)
+endfunction()
 
-# Wrapper function to create tula::Re2 after dependency is resolved
-function(_tula_re2_create_wrapper)
+#[=======================================================================[
+@brief Try to find re2 via system find_package
+]=======================================================================]
+function(TULA_Re2_TRY_SYSTEM)
+    tula_try_system(Re2 re2::re2)
+    set(TULA_Re2_SYSTEM_SUCCESS ${TULA_Re2_SYSTEM_SUCCESS} PARENT_SCOPE)
+endfunction()
+
+#[=======================================================================[
+@brief Create tula::Re2 wrapper target
+]=======================================================================]
+function(TULA_Re2_CREATE_WRAPPER)
     if(TARGET tula_Re2)
         return()  # Already created
     endif()
     
-    set(_re2_libs "")
-
-    if(TARGET re2::re2)
-        list(APPEND _re2_libs re2::re2)
-        verbose_message("RE2 configured with re2::re2 target")
-    elseif(TARGET re2)
-        list(APPEND _re2_libs re2)
-        verbose_message("RE2 configured with re2 target")
-    else()
-        message(FATAL_ERROR "RE2 not found after dependency resolution")
+    if(NOT TARGET re2::re2)
+        message(FATAL_ERROR "Cannot create wrapper: re2::re2 target does not exist")
     endif()
-
-    # Create tula wrapper target
+    
     include(make_tula_target)
-    make_tula_target(Re2 ${_re2_libs})
-
-    verbose_message("RE2 configured: tula::Re2")
+    make_tula_target(Re2 re2::re2)
+    
+    if(VERBOSE_MESSAGE)
+        include(verbose_message)
+        verbose_message("RE2 configured: tula::Re2")
+    endif()
 endfunction()
 
-# If re2 already exists, create wrapper now
-if(TARGET re2::re2 OR TARGET re2)
-    _tula_re2_create_wrapper()
-endif()
+# Register re2 for tri-modal resolution
+tula_deps_register(Re2)
