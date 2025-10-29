@@ -1,117 +1,62 @@
-# tula CMake Initialization
-# 
-# Single unified include for tula CMake infrastructure
-# Include this at the beginning of your CMakeLists.txt (before or after project())
+# tula_cmake - Tri-modal dependency management
 #
-# Purpose:
-#   - Set up CMAKE_MODULE_PATH for tula utilities
-#   - Check CMake version requirement  
-#   - Configure unified cache directory ($HOME/.tula_cache)
-#   - Define tri-modal package management functions (CONAN/CPM/SYSTEM)
-#   - Apply sensible build defaults (RPATH, output directories, etc.)
-#   - Configure compiler and platform-specific settings
+# Extends tula_sensible with dependency management features.
+# Provides CONAN/CPM/SYSTEM resolution for external packages.
+#
+# REQUIREMENT: Must be included AFTER project() call
 #
 # Usage:
-#   set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tula_cmake/cmake" ${CMAKE_MODULE_PATH})
-#   include(tula_cmake)
 #   project(MyProject LANGUAGES CXX)
-#
-# CMake 4.1+ required
-# Author: tula team
+#   include(tula_cmake)
+#   include(Eigen3)
+#   tula_deps_create_targets()
 
 include_guard(GLOBAL)
 
+# Include sensible defaults first
+include(tula_sensible)
+
 # ============================================================================
-# PART 1: Module Path and Version Check
+# Dependency Management Setup
 # ============================================================================
 
+# Add targets to module path
 set(CMAKE_MODULE_PATH 
-    "${CMAKE_CURRENT_LIST_DIR}" 
-    "${CMAKE_CURRENT_LIST_DIR}/utils"
     "${CMAKE_CURRENT_LIST_DIR}/targets"
     ${CMAKE_MODULE_PATH}
 )
 
-include(check_cmake_version)
-check_cmake_version("4.1" MODULE_NAME "tula_cmake")
-
-include(verbose_message)
-
-# ============================================================================
-# PART 2: Unified Cache Directory Configuration  
-# ============================================================================
-
+# Configure cache for CPM
 set(TULA_CACHE_ROOT "$ENV{HOME}/.tula_cache" CACHE PATH "Root directory for all tula cache files")
-
-# Create cache directories
 file(MAKE_DIRECTORY "${TULA_CACHE_ROOT}")
 file(MAKE_DIRECTORY "${TULA_CACHE_ROOT}/cpm")
 
-# CPM source cache (downloaded git repositories)
 if(NOT DEFINED CPM_SOURCE_CACHE)
     set(CPM_SOURCE_CACHE "${TULA_CACHE_ROOT}/cpm" CACHE PATH "CPM source cache directory")
 endif()
 
 message(STATUS "[cache] CPM source cache: ${CPM_SOURCE_CACHE}")
 message(STATUS "[cache] tula cache root: ${TULA_CACHE_ROOT}")
-# Note: Conan uses system default cache (~/.conan2) - configure with: conan config home
+# Note: Conan uses system default cache (~/.conan2)
 
 # ============================================================================
-# PART 3: Package Management Functions
+# Package Management - Tri-modal resolution: CONAN → CPM → SYSTEM
 # ============================================================================
-# Tri-modal package finding with automatic fallback: CONAN → CPM → SYSTEM
-# Override per-package with: -DTULA_<PACKAGE>_MODE=<CONAN|CPM|SYSTEM>
+# Override per-package: -DTULA_{PACKAGE}_MODE=CONAN|CPM|SYSTEM
 #
-# Usage (after project() call):
-#   1. include(PackageName)           # Registers dependency
-#   2. tula_conan_install()           # Runs Conan for registered packages
-#   3. tula_deps_create_targets()     # Creates targets via callbacks/CPM/find_package
+# Workflow:
+#   1. include(PackageName)         → Calls tula_deps_register()
+#   2. tula_deps_create_targets()   → Runs conan install, tries modes, creates targets
 
 #[=======================================================================[.rst:
 tula_deps_register
 ------------------
+Register a package for tri-modal resolution.
 
-Register a dependency for later resolution (Phase 1 of three-phase workflow).
+Called automatically by target files (e.g., Eigen3.cmake).
+Adds package to registry and tracks if Conan is needed.
 
-Simply adds the package name to a global registry. The actual package configuration
-is handled by functions defined in the package's .cmake file following the naming
-convention: TULA_{PACKAGE_NAME}_*
-
-.. code-block:: cmake
-
-  tula_deps_register(<PackageName>)
-
-**Expected Functions in {PackageName}.cmake:**
-  - TULA_{PACKAGE_NAME}_TRY_CONAN()  - Optional: Try to find via Conan
-  - TULA_{PACKAGE_NAME}_TRY_CPM()    - Optional: Try to fetch via CPM
-  - TULA_{PACKAGE_NAME}_TRY_SYSTEM() - Optional: Try to find via system
-  - TULA_{PACKAGE_NAME}_CREATE_WRAPPER() - Optional: Create tula:: wrapper target
-
-**Mode Selection Priority:**
-  1. Per-package override: -DTULA_<PackageName>_MODE=<CONAN|CPM|SYSTEM>
-  2. Automatic fallback: CONAN → CPM → SYSTEM (tries each available function)
-
-**Workflow:**
-  1. Call tula_deps_register() for each dependency (Phase 1)
-  2. Call tula_conan_install() to run Conan (Phase 2)
-  3. Call tula_deps_create_targets() to create all targets (Phase 3)
-  
-**Example:**
-  # In Eigen3.cmake:
-  function(TULA_Eigen3_TRY_CONAN)
-      # Search CMAKE_INCLUDE_PATH for Eigen and create target
-  endfunction()
-  
-  function(TULA_Eigen3_TRY_CPM)
-      CPMAddPackage(...)
-  endfunction()
-  
-  function(TULA_Eigen3_TRY_SYSTEM)
-      find_package(Eigen3 CONFIG)
-  endfunction()
-  
-  tula_deps_register(Eigen3)
-
+Mode override: -DTULA_{PACKAGE}_MODE=CONAN|CPM|SYSTEM
 #]=======================================================================]
 function(tula_deps_register PACKAGE_NAME)
     # Check for per-package mode override
@@ -147,48 +92,21 @@ function(tula_deps_register PACKAGE_NAME)
 endfunction()
 
 #[=======================================================================[.rst:
-tula_conan_install
-------------------
-
-Run Conan install for all registered CONAN packages (Phase 2).
-Must be called after tula_deps_register() and before tula_deps_create_targets().
-
-This function is provided by ConanIntegration.cmake when Conan support is enabled.
-If ConanIntegration is not available, this is a no-op.
-
-#]=======================================================================]
-# The actual implementation is in ConanIntegration.cmake
-# We just document it here for completeness
-
-#[=======================================================================[.rst:
 tula_deps_create_targets
 -------------------------
+Create targets for all registered packages.
 
-Create targets for all registered dependencies (Phase 3).
-Must be called after tula_conan_install().
+1. Runs conan install for packages needing CONAN mode
+2. For each package, tries modes: CONAN → CPM → SYSTEM
+3. Calls TULA_{PACKAGE}_CREATE_WRAPPER() if available
 
-For each registered package, tries modes in priority order:
-  1. CONAN - Invokes package callback to create target from Conan paths
-  2. CPM - Downloads and builds with CPMAddPackage
-  3. SYSTEM - Uses find_package to locate system installation
+Each target file must define:
+  - TULA_{PACKAGE}_TRY_CONAN()  - optional
+  - TULA_{PACKAGE}_TRY_CPM()    - optional
+  - TULA_{PACKAGE}_TRY_SYSTEM() - optional
+  - TULA_{PACKAGE}_CREATE_WRAPPER() - optional
 
-#[=======================================================================[.rst:
-tula_deps_create_targets
--------------------------
-
-Create targets for all registered dependencies (Phase 3).
-Must be called after tula_conan_install().
-
-For each registered package, invokes package-specific functions based on naming convention:
-  1. CONAN - Calls TULA_{PACKAGE}_TRY_CONAN() if it exists
-  2. CPM - Calls TULA_{PACKAGE}_TRY_CPM() if it exists
-  3. SYSTEM - Calls TULA_{PACKAGE}_TRY_SYSTEM() if it exists
-
-Each TRY_* function should:
-  - Attempt to find/fetch the package in that mode
-  - Create the necessary CMake targets
-  - Return success (target created) or failure (try next mode)
-
+Each TRY_* function sets TULA_{PACKAGE}_{MODE}_SUCCESS=TRUE/FALSE
 #]=======================================================================]
 function(tula_deps_create_targets)
     # Get list of all registered packages
@@ -335,82 +253,3 @@ function(tula_deps_create_targets)
         message(STATUS "")
     endforeach()
 endfunction()
-
-# ============================================================================
-# PART 4: Sensible Build Defaults
-# ============================================================================
-# This section is only applied after project() is called
-
-# Detect if project() has been called by checking if PROJECT_NAME is set
-if(PROJECT_NAME)
-    # No build-in-src guard
-    file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
-    if(EXISTS "${LOC_PATH}")
-        message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
-    endif()
-    
-    # Detect build type if not specified
-    include(detect_build_type)
-    
-    # Some sensible settings
-    set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS TRUE)
-    set(CMAKE_FIND_REQUIRED OFF)  # Manage per-package via tula_deps_register()
-    
-    # Paths and directories
-    SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-    SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-    SET(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)  # Use relative paths in build RPATH
-    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-    include(GNUInstallDirs)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    
-    # Language settings
-    enable_language(CXX)
-    enable_language(C)
-    
-    # Individual targets can override with target_compile_features(target PUBLIC cxx_std_23)
-    set(CMAKE_CXX_STANDARD 23 CACHE STRING "C++ standard to use")
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-    
-    # Platform specifics
-    if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        # macOS-specific settings
-        set(CMAKE_MACOSX_RPATH TRUE)
-        
-        # For Homebrew-installed LLVM
-        if (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-            get_filename_component(compiler_bindir ${CMAKE_CXX_COMPILER} DIRECTORY)
-            get_filename_component(compiler_libdir ${compiler_bindir}/../lib ABSOLUTE)
-            verbose_message("Link CXX libs from ${compiler_libdir}")
-            set(CMAKE_EXE_LINKER_FLAGS "-L${compiler_libdir}/c++ -L${compiler_libdir} -Wl,-rpath,${compiler_libdir}")
-        endif()
-    else()
-        # Linux and other Unix-like systems
-        set(CMAKE_LINK_WHAT_YOU_USE TRUE)
-        
-        # Non-standard GCC path
-        if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-            get_filename_component(compiler_bindir ${CMAKE_CXX_COMPILER} DIRECTORY)
-            get_filename_component(compiler_libdir ${compiler_bindir}/../lib ABSOLUTE)
-            get_filename_component(compiler_lib64dir ${compiler_bindir}/../lib64 ABSOLUTE)
-            verbose_message("Link CXX libs from ${compiler_libdir} ${compiler_lib64dir}")
-            set(CMAKE_EXE_LINKER_FLAGS "-L${compiler_libdir} -Wl,-rpath,${compiler_libdir} -Wl,-rpath,${compiler_lib64dir}")
-        endif()
-    endif()
-    
-    # Informational messages
-    verbose_message("tula build configuration loaded:")
-    verbose_message("  CMake version: ${CMAKE_VERSION}")
-    verbose_message("  Build type: ${CMAKE_BUILD_TYPE}")
-    verbose_message("  C++ standard: ${CMAKE_CXX_STANDARD}")
-    verbose_message("  Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
-else()
-    # project() not called yet - sensible defaults will be applied when this file is included again
-    # or the user should call them manually after project()
-    verbose_message("tula_cmake: project() not yet called, deferring sensible defaults")
-endif()
