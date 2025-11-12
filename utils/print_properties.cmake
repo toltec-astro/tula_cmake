@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 
 ## A helper function to introspect a cmake object.
-include(verbose_message)
+include(${CMAKE_CURRENT_LIST_DIR}/verbose_message.cmake)
 
 # Get all propreties that cmake supports
 set(cmake_exec "${CMAKE_COMMAND}")

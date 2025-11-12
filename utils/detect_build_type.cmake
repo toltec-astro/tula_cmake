@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-include(verbose_message)
+include(${CMAKE_CURRENT_LIST_DIR}/verbose_message.cmake)
 
 set(default_build_type "RelWithDebInfo")
 

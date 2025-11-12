@@ -75,7 +75,7 @@ function(tula_try_cpm PACKAGE UPSTREAM_TARGET)
         return()
     endif()
     
-    include(_ensure_cpm)
+    include(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/_ensure_cpm.cmake)
     
     # Forward remaining arguments to CPMAddPackage
     CPMAddPackage(${ARGN})
@@ -143,6 +143,6 @@ function(tula_create_wrapper PACKAGE UPSTREAM_TARGET)
         message(FATAL_ERROR "Cannot create wrapper: ${UPSTREAM_TARGET} target does not exist")
     endif()
     
-    include(make_tula_target)
+    include(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/make_tula_target.cmake)
     make_tula_target(${PACKAGE} ${UPSTREAM_TARGET} ${ARGN})
 endfunction()

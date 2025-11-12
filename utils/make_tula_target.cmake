@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 
-include(verbose_message)
-include(print_properties)
+include(${CMAKE_CURRENT_LIST_DIR}/verbose_message.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/print_properties.cmake)
 
 function(make_tula_target name)
     if (VERBOSE_MESSAGE)

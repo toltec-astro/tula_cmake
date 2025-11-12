@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-include(verbose_message)
+include(${CMAKE_CURRENT_LIST_DIR}/verbose_message.cmake)
 
 set(TULA_CONFIG_HEADER_DIR ${CMAKE_BINARY_DIR}/config_header CACHE INTERNAL "")
 
