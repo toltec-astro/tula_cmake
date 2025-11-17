@@ -5,6 +5,9 @@ PACKAGE_INFO = {
     "modes": ["AUTO", "CONAN", "CPM", "SYSTEM", "DISABLED"],
     "conan_requires": ["spectra/1.0.1"],
     "cmake_file": "Spectra.cmake",
+    # Dependencies
+    "depends_on": ["Eigen3"],  # Required dependency
+    "optional_deps": ["perflibs"],  # Inherited from Eigen3
     # CMake variables (MODE will be added automatically by toolchain)
     "cmake_vars": {
         "CPM_GITHUB_REPO": "yixuan/spectra",

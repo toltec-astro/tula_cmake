@@ -1,0 +1,35 @@
+{# logging package test #}
+#include <spdlog/spdlog.h>
+#include <fmt/format.h>
+#include <cassert>
+
+void test_{{ PACKAGE_LOWER }}() {
+    std::cout << "=== Testing spdlog/fmt ===" << std::endl;
+    
+    // Test spdlog basic functionality
+    spdlog::info("spdlog initialized successfully");
+    spdlog::warn("Test warning message");
+    spdlog::error("Test error message");
+    std::cout << "✓ spdlog logging works" << std::endl;
+    
+    // Test fmt formatting
+    std::string formatted = fmt::format("fmt version: {}", FMT_VERSION);
+    std::cout << formatted << std::endl;
+    assert(!formatted.empty() && "Formatted string should not be empty");
+    assert(formatted.find("fmt version:") != std::string::npos && 
+           "Should contain 'fmt version:'");
+    std::cout << "✓ fmt formatting works" << std::endl;
+    
+    // Test fmt with various types
+    int i = 42;
+    double d = 3.14159;
+    std::string s = "test";
+    std::string result = fmt::format("int={}, double={:.2f}, string={}", i, d, s);
+    assert(result.find("42") != std::string::npos && "Should format integer");
+    assert(result.find("3.14") != std::string::npos && "Should format double");
+    assert(result.find("test") != std::string::npos && "Should format string");
+    std::cout << "✓ fmt handles multiple types correctly" << std::endl;
+    
+    std::cout << std::endl;
+    std::cout << "✅ All logging tests passed!" << std::endl;
+}

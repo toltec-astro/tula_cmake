@@ -5,6 +5,9 @@ PACKAGE_INFO = {
     "modes": ["AUTO", "CONAN", "CPM", "SYSTEM", "DISABLED"],
     "conan_requires": ["ceres-solver/2.1.0"],  # Eigen is loaded as dependency in CMake
     "cmake_file": "Ceres.cmake",
+    # Required and optional dependencies
+    "depends_on": ["Eigen3"],  # Required
+    "optional_deps": ["perflibs"],  # For multithreading support
     "cmake_vars": {
         "CPM_GITHUB_REPO": "ceres-solver/ceres-solver",
         "CPM_GIT_TAG": "2.0.0",

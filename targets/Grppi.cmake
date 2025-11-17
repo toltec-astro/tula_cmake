@@ -18,9 +18,8 @@ function(tula_setup_Grppi MODE)
     
     # Ensure perflibs is available (for OpenMP/threading)
     if(NOT TARGET tula::perflibs)
-        # Load perflibs first (Grppi needs OpenMP/Threads)
-    message(VERBOSE "Grppi requires perflibs, loading it first...")
-    include(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../utils/perflibs.cmake)
+        verbose_message("Grppi requires perflibs, loading it first...")
+        tula_deps_add(_perflibs_dep perflibs)
     endif()
     
     # Ensure Enum is available

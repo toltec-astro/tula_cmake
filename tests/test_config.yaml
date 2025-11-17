@@ -1,0 +1,271 @@
+# TulaCMake Test Configuration
+# Tests are first-class entities decoupled from packages
+
+# Global settings
+global:
+  timeout_seconds: 300
+  build_configs: [Debug, Release]
+  parallel_jobs: 4
+  continue_on_failure: true
+
+# Test definitions - each test is independent
+tests:
+  # Single package tests
+  eigen3_basic:
+    name: "Eigen3 Basic"
+    description: "Basic Eigen3 functionality"
+    packages:
+      Eigen3: CONAN
+    cmake_vars: {}
+    
+  eigen3_no_threading:
+    name: "Eigen3 No Threading"
+    description: "Eigen3 without multithreading"
+    packages:
+      Eigen3: CONAN
+    cmake_vars:
+      USE_EIGEN3_MULTITHREADING: "OFF"
+      
+  eigen3_with_mkl:
+    name: "Eigen3 with MKL"
+    description: "Eigen3 with Intel MKL integration"
+    packages:
+      Eigen3: CONAN
+    cmake_vars:
+      USE_EIGEN3_WITH_MKL: "ON"
+    note: "Requires MKL to be available"
+    
+  eigen3_cpm:
+    name: "Eigen3 CPM"
+    description: "Eigen3 via CPM package manager"
+    packages:
+      Eigen3: CPM
+    cmake_vars: {}
+    
+  # Multi-package integration tests
+  eigen3_spectra:
+    name: "Eigen3 + Spectra"
+    description: "Spectra eigenvalue solver with Eigen3 backend"
+    packages:
+      perflibs: SYSTEM
+      Eigen3: CONAN
+      Spectra: CONAN
+    cmake_vars: {}
+    
+  eigen3_spectra_no_threading:
+    name: "Eigen3 + Spectra No Threading"
+    description: "Spectra with Eigen3 (no threading)"
+    packages:
+      perflibs: SYSTEM
+      Eigen3: CONAN
+      Spectra: CONAN
+    cmake_vars:
+      USE_EIGEN3_MULTITHREADING: "OFF"
+      
+  eigen3_ceres:
+    name: "Eigen3 + Ceres"
+    description: "Ceres optimization with Eigen3 backend"
+    packages:
+      perflibs: SYSTEM
+      Eigen3: CONAN
+      Ceres: CONAN
+    cmake_vars: {}
+    enabled: true
+    
+  # Logging tests
+  logging_basic:
+    name: "Logging"
+    description: "spdlog + fmt logging"
+    packages:
+      logging: CONAN
+    cmake_vars: {}
+    
+  # YAML tests
+  yaml_conan:
+    name: "YAML Conan"
+    description: "yaml-cpp via Conan"
+    packages:
+      Yaml: CONAN
+    cmake_vars: {}
+    
+  yaml_cpm:
+    name: "YAML CPM"
+    description: "yaml-cpp via CPM"
+    packages:
+      Yaml: CPM
+    cmake_vars: {}
+    
+  # Testing framework
+  testing_gtest:
+    name: "Testing"
+    description: "GTest + benchmark"
+    packages:
+      testing: CONAN
+    cmake_vars: {}
+    
+  # CLI parsing
+  clipp_basic:
+    name: "Clipp"
+    description: "CLI parsing with Clipp"
+    packages:
+      Clipp: CPM
+    cmake_vars: {}
+    
+  # CSV parsing
+  csv_basic:
+    name: "CSV"
+    description: "CSV parsing"
+    packages:
+      Csv: CPM
+    cmake_vars: {}
+    
+  # Enum utilities
+  enum_basic:
+    name: "Enum"
+    description: "meta_enum + bitmask"
+    packages:
+      Enum: CPM
+    cmake_vars: {}
+    
+  # NetCDF tests
+  netcdf_system:
+    name: "NetCDF System"
+    description: "NetCDF from system libraries"
+    packages:
+      NetCDF: SYSTEM
+    cmake_vars: {}
+    timeout_seconds: 600
+    
+  netcdf_cxx4:
+    name: "NetCDF CXX4"
+    description: "NetCDF C++ bindings with NetCDF"
+    packages:
+      NetCDF: SYSTEM
+      NetCDFCXX4: SYSTEM
+    cmake_vars: {}
+    timeout_seconds: 600
+    
+  # Parallel processing
+  grppi_basic:
+    name: "GrPPI"
+    description: "Generic parallel patterns"
+    packages:
+      perflibs: SYSTEM
+      Grppi: CPM
+    cmake_vars: {}
+    enabled: true
+    
+  # Standalone perflibs test
+  perflibs_basic:
+    name: "Perflibs Basic"
+    description: "OpenMP and threading support"
+    packages:
+      perflibs: SYSTEM
+    cmake_vars: {}
+    enabled: true
+    
+  # Mixed mode tests - testing different package modes together
+  mixed_conan_cpm:
+    name: "Mixed CONAN+CPM"
+    description: "Eigen3 (CONAN) + Clipp (CPM)"
+    packages:
+      Eigen3: CONAN
+      Clipp: CPM
+    cmake_vars: {}
+
+# Test groups for batch execution
+test_groups:
+  quick:
+    description: "Quick smoke test"
+    tests:
+      - eigen3_basic
+      - yaml_conan
+      - logging_basic
+      - clipp_basic
+      
+  eigen3_all:
+    description: "All Eigen3 configurations"
+    tests:
+      - eigen3_basic
+      - eigen3_no_threading
+      - eigen3_with_mkl
+      - eigen3_cpm
+      
+  integration:
+    description: "Multi-package integration tests"
+    tests:
+      - eigen3_spectra
+      - eigen3_spectra_no_threading
+      - netcdf_cxx4
+      - mixed_conan_cpm
+      
+  full:
+    description: "All enabled tests"
+    tests: "all"  # Special value to run all enabled tests
+
+# Package metadata (for reference and validation)
+package_info:
+  Eigen3:
+    conan_name: "eigen"
+    cmake_target: "Eigen3::Eigen"
+    supported_modes: [CONAN, CPM, SYSTEM]
+    
+  Spectra:
+    conan_name: "spectra"
+    cmake_target: "Spectra::Spectra"
+    supported_modes: [CONAN, CPM]
+    depends_on: [Eigen3]
+    
+  Yaml:
+    conan_name: "yaml-cpp"
+    cmake_target: "yaml-cpp::yaml-cpp"
+    supported_modes: [CONAN, CPM]
+    
+  logging:
+    conan_name: "tula-logging"
+    note: "Metapackage: spdlog + fmt"
+    supported_modes: [CONAN, CPM]
+    
+  testing:
+    conan_name: "tula-testing"
+    note: "Metapackage: GTest + benchmark"
+    supported_modes: [CONAN]
+    
+  Clipp:
+    conan_name: "clipp"
+    supported_modes: [CPM]
+    
+  Csv:
+    conan_name: "csv"
+    supported_modes: [CPM]
+    
+  Enum:
+    conan_name: "tula-enum"
+    note: "Metapackage: meta_enum + bitmask"
+    supported_modes: [CPM]
+    
+  NetCDF:
+    conan_name: "netcdf"
+    cmake_target: "netCDF::netcdf"
+    supported_modes: [CONAN, SYSTEM]
+    
+  NetCDFCXX4:
+    conan_name: "netcdf-cxx4"
+    cmake_target: "netCDF::netcdf-cxx4"
+    supported_modes: [CONAN, SYSTEM]
+    depends_on: [NetCDF]
+    
+  Ceres:
+    conan_name: "ceres-solver"
+    cmake_target: "Ceres::ceres"
+    supported_modes: [CONAN]
+    depends_on: [Eigen3]
+    
+  Grppi:
+    conan_name: "grppi"
+    supported_modes: [CPM]
+    
+  perflibs:
+    conan_name: null
+    note: "Metapackage: OpenMP + Threads (system-provided)"
+    supported_modes: [SYSTEM]

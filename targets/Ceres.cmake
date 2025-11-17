@@ -27,7 +27,7 @@ function(tula_setup_Ceres MODE)
     if(USE_CERES_MULTITHREADING)
         if(NOT TARGET tula::perflibs)
             verbose_message("Loading perflibs for Ceres multithreading...")
-            include(${CMAKE_CURRENT_LIST_DIR}/../utils/perflibs.cmake)
+            tula_deps_add(_perflibs_dep perflibs)
         endif()
     endif()
     

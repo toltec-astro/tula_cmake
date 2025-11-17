@@ -1,0 +1,35 @@
+{# Clipp package test #}
+#include <clipp.h>
+#include <cassert>
+
+void test_clipp() {
+    std::cout << "=== Testing Clipp ===" << std::endl;
+    
+    // Simple CLI parsing test
+    bool help = false;
+    std::string input;
+    int value = 0;
+    
+    auto cli = (
+        clipp::option("-h", "--help").set(help) % "show help",
+        clipp::option("-i", "--input") & clipp::value("file", input) % "input file",
+        clipp::option("-v", "--value") & clipp::value("num", value) % "numeric value"
+    );
+    
+    // Test parsing
+    const char* argv[] = {"test", "-i", "test.txt", "-v", "42"};
+    int argc = 5;
+    
+    auto result = clipp::parse(argc, argv, cli);
+    
+    assert(result && "CLI parsing should succeed");
+    assert(input == "test.txt" && "Input file should be 'test.txt'");
+    assert(value == 42 && "Value should be 42");
+    
+    std::cout << "  ✓ CLI parsing OK" << std::endl;
+    std::cout << "  Input file: " << input << std::endl;
+    std::cout << "  Value: " << value << std::endl;
+    
+    std::cout << std::endl;
+    std::cout << "✅ All Clipp tests passed!" << std::endl;
+}

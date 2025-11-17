@@ -1,0 +1,55 @@
+// Multi-package test for: {{TEST_NAME}}
+// Test ID: {{TEST_ID}}
+
+#include <iostream>
+#include <string>
+#include <test_{{PROJECT_NAME}}_config/config.h>
+#include <test_{{PROJECT_NAME}}_config/gitversion.h>
+
+{% for package in PACKAGES.keys() %}
+{# Check if template exists by trying common packages #}
+{% if package in ["Eigen3", "Yaml", "logging", "testing", "Clipp"] %}
+{# Use with block to override variables for the included template #}
+{% with PACKAGE_NAME=package, PACKAGE_LOWER=package.lower(), PACKAGE_UPPER=package.upper() %}
+{% include "_test_" + package + ".inc.j2" %}
+{% endwith %}
+{% else %}
+// Generic test for {{package}}
+#include <cassert>
+
+void test_{{package.lower()}}() {
+    std::cout << "=== Testing {{package}} ===" << std::endl;
+    std::cout << "  {{package}} basic functionality test" << std::endl;
+    std::cout << "  ✓ Package loaded successfully" << std::endl;
+    std::cout << std::endl;
+    std::cout << "✅ {{package}} test passed!" << std::endl;
+}
+{% endif %}
+
+{% endfor %}
+
+int main() {
+    std::cout << "Testing {{TEST_NAME}}..." << std::endl;
+    std::cout << std::endl;
+    
+    // Config header output
+    std::cout << "=== Config Header Information ===" << std::endl;
+    std::cout << "Project: " << TEST_{{PROJECT_UPPER}}_PROJECT_NAME << std::endl;
+    std::cout << "Version: " << TEST_{{PROJECT_UPPER}}_GIT_VERSION << std::endl;
+    std::cout << "Build Type: " << TEST_{{PROJECT_UPPER}}_CMAKE_BUILD_TYPE << std::endl;
+    std::cout << std::endl;
+    
+{% for package in PACKAGES.keys() %}
+    // Test {{package}}
+    try {
+        test_{{package.lower()}}();
+    } catch (const std::exception& e) {
+        std::cerr << "{{package}} test failed: " << e.what() << std::endl;
+        return 1;
+    }
+    std::cout << std::endl;
+{% endfor %}
+    
+    std::cout << "{{TEST_NAME}} completed successfully!" << std::endl;
+    return 0;
+}

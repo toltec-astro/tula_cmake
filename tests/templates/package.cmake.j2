@@ -1,0 +1,57 @@
+cmake_minimum_required(VERSION 4.1)
+
+project(
+    test_{{PROJECT_NAME}}
+    VERSION 0.1.0
+    DESCRIPTION "{{TEST_NAME}}"
+    LANGUAGES CXX
+)
+
+# Get tula_cmake directory (6 levels up from project/CMakeLists.txt)
+get_filename_component(TULA_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../.." ABSOLUTE)
+
+# Add tula_cmake directories to module path
+list(APPEND CMAKE_MODULE_PATH 
+    "${TULA_CMAKE_DIR}"
+    "${TULA_CMAKE_DIR}/utils"
+    "${TULA_CMAKE_DIR}/targets"
+)
+
+# Include necessary utilities
+include(tula_deps)
+include(generate_config_header)
+
+# Set CMake variables from test configuration
+{% for var_name, var_value in CMAKE_VARS.items() %}
+set({{var_name}} {{var_value}} CACHE STRING "From test config" FORCE)
+{% endfor %}
+
+# Add all packages specified in test
+{% for package, mode in PACKAGES.items() %}
+tula_deps_add(test_deps {{package}})
+{% endfor %}
+
+# Create test executable
+add_executable(test_{{PROJECT_NAME}} test_main.cpp)
+target_link_libraries(test_{{PROJECT_NAME}} PRIVATE 
+{% for package, mode in PACKAGES.items() %}
+    tula::{{package}}
+{% endfor %}
+)
+target_compile_features(test_{{PROJECT_NAME}} PRIVATE cxx_std_20)
+
+# Generate config headers to verify they work
+generate_gitversion_header(${PROJECT_NAME})
+generate_config_header(${PROJECT_NAME})
+target_link_libraries(test_{{PROJECT_NAME}} PRIVATE tula::config_header)
+
+# Print diagnostic information
+message(STATUS "=== Test Configuration ===")
+message(STATUS "Test: {{TEST_NAME}}")
+message(STATUS "ID: {{TEST_ID}}")
+message(STATUS "Packages:")
+{% for package, mode in PACKAGES.items() %}
+message(STATUS "  - {{package}} ({{mode}})")
+{% endfor %}
+message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "========================")

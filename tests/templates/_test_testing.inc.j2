@@ -1,0 +1,35 @@
+{# testing package (GTest + benchmark) test #}
+#include <gtest/gtest.h>
+#include <benchmark/benchmark.h>
+
+// Simple GTest test case
+TEST(BasicTest, Arithmetic) {
+    EXPECT_EQ(2 + 2, 4);
+    EXPECT_GT(5, 3);
+}
+
+// Simple benchmark
+static void BM_StringCreation(benchmark::State& state) {
+    for (auto _ : state) {
+        std::string empty_string;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}
+BENCHMARK(BM_StringCreation);
+
+void test_testing() {
+    std::cout << "=== Testing GTest + Benchmark ===" << std::endl;
+    
+    // Run GTest
+    testing::InitGoogleTest();
+    int gtest_result = RUN_ALL_TESTS();
+    
+    assert(gtest_result == 0 && "GTest tests should pass");
+    std::cout << "  ✓ GTest integration OK" << std::endl;
+    
+    // Note: Benchmark is registered but not run in test
+    std::cout << "  ✓ Benchmark integration OK" << std::endl;
+    
+    std::cout << std::endl;
+    std::cout << "✅ All testing framework tests passed!" << std::endl;
+}

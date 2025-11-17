@@ -5,6 +5,8 @@ PACKAGE_INFO = {
     "modes": ["AUTO", "CONAN", "CPM", "SYSTEM", "DISABLED"],
     "conan_requires": ["eigen/3.4.0"],
     "cmake_file": "Eigen3.cmake",
+    # Optional dependencies
+    "optional_deps": ["perflibs"],  # For multithreading and MKL support
     # CMake variables (MODE will be added automatically by toolchain)
     "cmake_vars": {
         "CPM_URL": "https://gitlab.com/libeigen/eigen/-/archive/3.4.1/eigen-3.4.1.tar.gz",

@@ -1,0 +1,16 @@
+from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, cmake_layout
+import sys
+from pathlib import Path
+
+# Add tula_cmake to Python path
+# Path structure: tests/results/test_run_*/logs/package_mode/project/conanfile.py
+# Go up 6 levels: project -> package_mode -> logs -> test_run_* -> results -> tests -> tula_cmake
+tula_cmake_dir = Path(__file__).parent.parent.parent.parent.parent.parent.parent
+sys.path.insert(0, str(tula_cmake_dir))
+
+from tula_conan import TulaConan
+
+class Test{{ PACKAGE_NAME }}Recipe(TulaConan):
+    """Test recipe for {{ PACKAGE_NAME }} package - mode set via conan install options."""
+    pass
