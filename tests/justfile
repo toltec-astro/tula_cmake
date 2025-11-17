@@ -1,0 +1,29 @@
+# TulaCMake Test Suite
+
+# List all available tests
+list:
+    uv run test_matrix.py --list-tests
+
+# Run quick smoke tests
+quick:
+    uv run test_matrix.py --group quick
+
+# Run all tests
+all:
+    uv run test_matrix.py
+
+# Clean all test results
+clean:
+    rm -rf results/test_run_*
+
+# Run with custom arguments
+run *VARGS:
+    uv run test_matrix.py {{VARGS}}
+
+# Run test in Debug with verbose output
+debug TEST:
+    uv run test_matrix.py --test {{TEST}} --config Debug --verbose
+
+# Run test in Release with verbose output
+release TEST:
+    uv run test_matrix.py --test {{TEST}} --config Release --verbose
