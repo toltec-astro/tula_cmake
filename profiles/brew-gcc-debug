@@ -1,0 +1,4 @@
+# Homebrew GCC Debug
+include(_base/base)
+include(_base/brew-gcc)
+include(_base/debug)

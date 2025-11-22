@@ -1,0 +1,4 @@
+# Debug build type
+
+[settings]
+build_type=Debug

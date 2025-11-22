@@ -33,6 +33,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 - **conan** - Dependency manager
 - **cmake** - Build system
 
+**Compiler Selection**: Tests use `../profiles/default` which automatically selects:
+- **macOS**: Homebrew LLVM (brew-llvm-debug)
+- **Linux**: System GCC (linux-gcc-debug)
+
+To use a different compiler, set the profile in your environment or modify the test configuration.
+
 ## Test Configuration
 
 Edit `test_config.yaml`:

@@ -1,5 +1,9 @@
 # TulaCMake Test Suite
 
+# List available justfile recipes
+default:
+    @just --list
+
 # List all available tests
 list:
     uv run test_matrix.py --list-tests

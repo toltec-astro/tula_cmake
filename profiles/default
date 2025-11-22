@@ -1,0 +1,13 @@
+# Default profile - Platform-specific compiler selection
+include(_base/base)
+include(_base/debug)
+
+# Platform-specific compiler
+{% if platform.system() == "Darwin" %}
+include(_base/brew-llvm)
+{% elif platform.system() == "Linux" %}
+include(_base/linux-gcc)
+{% else %}
+# Unsupported platform
+{{ error("Unsupported platform: " + platform.system()) }}
+{% endif %}

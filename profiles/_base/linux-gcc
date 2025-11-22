@@ -1,0 +1,17 @@
+# System GCC on Linux
+
+{% set cc = "gcc" %}
+{% set cxx = "g++" %}
+{% set compiler, version, _ = detect_api.detect_gcc_compiler(cxx) %}
+
+[settings]
+os=Linux
+arch={{ detect_api.detect_arch() }}
+compiler={{ compiler }}
+compiler.version={{ detect_api.default_compiler_version(compiler, version) }}
+compiler.libcxx={{ detect_api.detect_libcxx(compiler, version, cxx) }}
+compiler.cppstd=23
+
+[buildenv]
+CC={{ cc }}
+CXX={{ cxx }}

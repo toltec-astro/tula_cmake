@@ -1,0 +1,4 @@
+# Linux GCC Debug
+include(_base/base)
+include(_base/linux-gcc)
+include(_base/debug)

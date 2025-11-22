@@ -11,6 +11,7 @@ Uses uv for dependency management (PEP 723).
 """
 
 import argparse
+import os
 import subprocess
 import sys
 import yaml
@@ -180,8 +181,10 @@ class TestRunner:
             print("  [2/5] Running conan install...")
             
             # Build conan install command with package mode options
+            profile_path = self.tula_cmake_dir / "profiles" / "default"
             conan_cmd = [
-                "conan", "install", ".", 
+                "conan", "install", ".",
+                f"--profile:all={profile_path}",
                 "-s", f"build_type={build_config}",
             ]
             
@@ -270,13 +273,18 @@ class TestRunner:
     def _run_command(self, cmd: List[str], cwd: Path, log_file: Path,
                     timeout: int) -> bool:
         """Run a command and log output."""
+        # Force color output from build tools (CMake respects CLICOLOR_FORCE)
+        env = dict(os.environ)
+        env['CLICOLOR_FORCE'] = '1'
+        
         try:
-            if self.verbose:
-                # Tee output to both file and stdout
-                with open(log_file, 'w') as f:
+            with open(log_file, 'w') as f:
+                if self.verbose:
+                    # Tee output to both file and stdout
                     process = subprocess.Popen(
                         cmd,
                         cwd=cwd,
+                        env=env,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT,
                         text=True,
@@ -289,18 +297,18 @@ class TestRunner:
                     
                     process.wait(timeout=timeout)
                     return process.returncode == 0
-            else:
-                # Write only to file
-                with open(log_file, 'w') as f:
+                else:
+                    # Write only to file
                     result = subprocess.run(
                         cmd,
                         cwd=cwd,
+                        env=env,
                         stdout=f,
                         stderr=subprocess.STDOUT,
                         timeout=timeout,
                         check=False
                     )
-                return result.returncode == 0
+                    return result.returncode == 0
         except subprocess.TimeoutExpired:
             raise
         except Exception as e:
