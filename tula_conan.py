@@ -257,10 +257,10 @@ include("{tula_deps_file}")
     
     def _add_package_blocks(self, tc: CMakeToolchain):
         """
-        Create CMake blocks for ALL packages in the registry.
+        Create CMake blocks for enabled packages in the registry.
         
         CRITICAL DESIGN: 
-        - Generate blocks for ALL packages, not just enabled ones
+        - Generate blocks ONLY for enabled packages (not DISABLED)
         - Each block includes the package .cmake file and sets variables
         - Blocks only DEFINE functions, they DON'T CALL them
         - Functions are called lazily by user via tula_deps_add()
@@ -274,10 +274,15 @@ include("{tula_deps_file}")
             # Use getattr to access option value (Conan converts dict to Options object)
             mode = str(getattr(self.options, name, "DISABLED"))
             
+            # Skip disabled packages - no need to generate blocks for them
+            if mode == "DISABLED":
+                self.output.info(f"Skipping block for {name} (mode=DISABLED)")
+                continue
+            
             # Generate package-specific CMake variables
             cmake_vars = self._generate_package_vars(name, mode, pkg)
             
-            # Create the CMake block template (includes ALL packages)
+            # Create the CMake block template (only for enabled packages)
             block_template = self._create_package_block(name, mode, cmake_vars, pkg)
             
             # Create a Block subclass with this template
