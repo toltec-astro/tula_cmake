@@ -70,6 +70,26 @@ macro(_tula_post_project_checks)
     # Detect and validate build type using utility
     include(detect_build_type)
     
+    # Configure CPM cache directory (site-wide)
+        if(NOT DEFINED TULA_CACHE_ROOT)
+            if(DEFINED ENV{TULA_CACHE_ROOT})
+                set(TULA_CACHE_ROOT "$ENV{TULA_CACHE_ROOT}" CACHE PATH "Tula cache root directory")
+            else()
+                set(TULA_CACHE_ROOT "$ENV{HOME}/.tula_cache" CACHE PATH "Tula cache root directory")
+            endif()
+        endif()
+        
+        if(NOT DEFINED CPM_SOURCE_CACHE)
+            if(DEFINED ENV{CPM_SOURCE_CACHE})
+                set(CPM_SOURCE_CACHE "$ENV{CPM_SOURCE_CACHE}" CACHE PATH "CPM source cache directory")
+            else()
+                set(CPM_SOURCE_CACHE "${TULA_CACHE_ROOT}/cpm" CACHE PATH "CPM source cache directory")
+            endif()
+        endif()
+        
+        # Create cache directory if it doesn't exist
+        file(MAKE_DIRECTORY "${CPM_SOURCE_CACHE}")
+    
     # Sensible defaults that don't conflict with Conan
         # (Conan already sets: CMAKE_CXX_STANDARD, CMAKE_CXX_EXTENSIONS, CMAKE_CXX_STANDARD_REQUIRED)
         
@@ -156,21 +176,52 @@ macro(_tula_post_project_checks)
         message(STATUS "(tula)   C++ standard: ${CMAKE_CXX_STANDARD}")
         message(STATUS "(tula)   Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
         message(STATUS "(tula)   System: ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR}")
+        message(STATUS "(tula)   Cache root: ${TULA_CACHE_ROOT}")
+        message(STATUS "(tula)   CPM cache: ${CPM_SOURCE_CACHE}")
     endif()
 endmacro()
 
-# Hook into project() command via variable_watch on PROJECT_NAME
-# This ensures our checks run after project() is called
-variable_watch(PROJECT_NAME _tula_project_name_watcher)
+#[=======================================================================[.rst:
+tula_bootstrap
+--------------
 
-function(_tula_project_name_watcher variable access value current_list_file stack)
-    if(access STREQUAL "MODIFIED_ACCESS" AND value)
-        # Only run checks for top-level project, not sub-projects
-        if(CMAKE_PROJECT_NAME STREQUAL value OR NOT DEFINED CMAKE_PROJECT_NAME)
-            # PROJECT_NAME was just set by project() command
-            _tula_post_project_checks()
-        endif()
-        # Unwatch to avoid multiple calls
-        variable_watch(PROJECT_NAME)
+Initialize the Tula CMake build system after the project() command.
+
+This function must be called in the top-level CMakeLists.txt immediately
+after the project() command to properly configure the Tula build environment.
+
+Synopsis
+^^^^^^^^
+
+.. code-block:: cmake
+
+  tula_bootstrap()
+
+Example
+^^^^^^^
+
+.. code-block:: cmake
+
+  cmake_minimum_required(VERSION 3.25)
+  project(MyProject VERSION 1.0 LANGUAGES CXX)
+  
+  # Initialize Tula build system
+  tula_bootstrap()
+  
+  # Now proceed with your project configuration
+  add_executable(myapp main.cpp)
+
+#]=======================================================================]
+function(tula_bootstrap)
+    # Ensure this is only called once
+    if(DEFINED TULA_BOOTSTRAPPED)
+        message(WARNING "(tula) tula_bootstrap() called multiple times, ignoring")
+        return()
     endif()
+    
+    # Mark as bootstrapped
+    set(TULA_BOOTSTRAPPED TRUE CACHE INTERNAL "Tula bootstrap has been called")
+    
+    # Run post-project checks
+    _tula_post_project_checks()
 endfunction()

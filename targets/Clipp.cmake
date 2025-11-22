@@ -59,6 +59,9 @@ function(TULA_Clipp_TRY_CPM)
         NAME clipp
         GITHUB_REPOSITORY "${CLIPP_CPM_GITHUB_REPO}"
         GIT_TAG "${CLIPP_CPM_GIT_TAG}"
+        OPTIONS
+            "CLIPP_BUILD_EXAMPLES OFF"
+            "CLIPP_BUILD_TESTS OFF"
     )
     
     # CPM doesn't create the target automatically for header-only

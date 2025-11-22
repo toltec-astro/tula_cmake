@@ -7,6 +7,11 @@
 include_guard(GLOBAL)
 
 if(NOT COMMAND CPMAddPackage)
+    # Save CMAKE_MINIMUM_REQUIRED_VERSION before including CPM.cmake
+    # CPM.cmake v0.40.0 calls cmake_minimum_required(VERSION 3.14), which would lower
+    # the project's requirement. We restore it after including CPM.
+    set(_saved_cmake_minimum_required_version "${CMAKE_MINIMUM_REQUIRED_VERSION}")
+    
     set(CPM_DOWNLOAD_VERSION 0.40.0)
     set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
     
@@ -20,4 +25,10 @@ if(NOT COMMAND CPMAddPackage)
     endif()
     
     include(${CPM_DOWNLOAD_LOCATION})
+    
+    # Restore the cmake_minimum_required version that CPM lowered
+    if(_saved_cmake_minimum_required_version)
+        cmake_minimum_required(VERSION ${_saved_cmake_minimum_required_version})
+    endif()
+    unset(_saved_cmake_minimum_required_version)
 endif()
