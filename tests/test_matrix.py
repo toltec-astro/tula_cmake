@@ -1,5 +1,5 @@
 # /// script
-# dependencies = ["pyyaml", "jinja2"]
+# dependencies = ["pyyaml", "jinja2", "rich"]
 # ///
 """TulaCMake Test Matrix Runner
 
@@ -20,6 +20,7 @@ from datetime import datetime
 from typing import List, Tuple, Dict, Optional
 import json
 from jinja2 import Environment, FileSystemLoader
+from rich.console import Console
 
 
 class TestRunner:
@@ -27,6 +28,7 @@ class TestRunner:
     
     def __init__(self, config_file: Path, verbose: bool = False):
         self.verbose = verbose
+        self.console = Console()  # Rich console for colored output
         with open(config_file) as f:
             self.config = yaml.safe_load(f)
         
@@ -162,11 +164,9 @@ class TestRunner:
         test_info = self.get_test_info(test_id)
         packages = self.get_test_packages(test_id)
         
-        print(f"\n{'='*60}")
-        print(f"Test: {test_info.get('name', test_id)}")
-        print(f"ID: {test_id}")
-        print(f"Packages: {', '.join(f'{k} ({v})' for k, v in packages.items())}")
-        print(f"{'='*60}")
+        self.console.print(f"[bold]Test:[/bold] {test_info.get('name', test_id)}")
+        self.console.print(f"[bold]ID:[/bold] {test_id}")
+        self.console.print(f"[bold]Packages:[/bold] {', '.join(f'{k} ({v})' for k, v in packages.items())}")
         
         start_time = datetime.now()
         log_dir = self.logs_dir / test_id
@@ -174,11 +174,11 @@ class TestRunner:
         
         try:
             # Generate test project
-            print("  [1/5] Generating test project...")
+            self.console.print("  [1/5] Generating test project...")
             project_dir = self.generate_test_project(test_id, build_config)
             
             # Conan install
-            print("  [2/5] Running conan install...")
+            self.console.print("  [2/5] Running conan install...")
             
             # Build conan install command with package mode options
             profile_path = self.tula_cmake_dir / "profiles" / "default"
@@ -204,7 +204,7 @@ class TestRunner:
                 return "FAIL", "Conan install failed", self._duration(start_time)
             
             # CMake configure
-            print("  [3/5] Running cmake configure...")
+            self.console.print("  [3/5] Running cmake configure...")
             build_dir = project_dir / "cmake-build"
             build_dir.mkdir(exist_ok=True)
             
@@ -229,7 +229,7 @@ class TestRunner:
                 return "FAIL", "CMake configure failed", self._duration(start_time)
             
             # CMake build
-            print("  [4/5] Running cmake build...")
+            self.console.print("  [4/5] Running cmake build...")
             result = self._run_command(
                 ["cmake", "--build", ".", "-j", 
                  str(self.config["global"]["parallel_jobs"])],
@@ -241,7 +241,7 @@ class TestRunner:
                 return "FAIL", "Build failed", self._duration(start_time)
             
             # Run executable
-            print("  [5/5] Running test executable...")
+            self.console.print("  [5/5] Running test executable...")
             exe_name = f"test_{test_id.replace('-', '_')}"
             exe_path = build_dir / exe_name
             if not exe_path.exists():
@@ -260,14 +260,15 @@ class TestRunner:
             else:
                 return "FAIL", f"Executable not found: {exe_path}", self._duration(start_time)
             
-            print(f"  ✅ PASS ({self._duration(start_time):.1f}s)")
-            return "PASS", "", self._duration(start_time)
+            duration = self._duration(start_time)
+            self.console.print(f"  [green]✓ PASS[/green] [cyan]({duration:.1f}s)[/cyan]")
+            return "PASS", "", duration
             
         except subprocess.TimeoutExpired:
-            print("  ⏱️  TIMEOUT")
+            self.console.print("  [yellow]⏱ TIMEOUT[/yellow]")
             return "TIMEOUT", "Test exceeded timeout", self._duration(start_time)
         except Exception as e:
-            print(f"  ❌ ERROR: {e}")
+            self.console.print(f"  [red]✗ ERROR:[/red] {e}")
             return "FAIL", str(e), self._duration(start_time)
     
     def _run_command(self, cmd: List[str], cwd: Path, log_file: Path,
@@ -334,22 +335,20 @@ class TestRunner:
         
         total_tests = len(test_list) * len(config_list)
         
-        print(f"\n{'='*60}")
-        print("TulaCMake Test Matrix")
-        print(f"{'='*60}")
-        print(f"Tests: {len(test_list)}")
-        print(f"Build configs: {', '.join(config_list)}")
-        print(f"Total tests: {total_tests}")
+        self.console.rule("[bold blue]TulaCMake Test Matrix[/bold blue]")
+        self.console.print(f"[bold]Tests:[/bold] {len(test_list)}")
+        self.console.print(f"[bold]Build configs:[/bold] {', '.join(config_list)}")
+        self.console.print(f"[bold]Total tests:[/bold] {total_tests}")
         if self.verbose:
-            print("Mode: VERBOSE (showing all command output)")
-        print(f"Results: {self.run_dir}")
-        print(f"{'='*60}\n")
+            self.console.print("[yellow]Mode:[/yellow] VERBOSE (showing all command output)")
+        self.console.print(f"[bold]Results:[/bold] {self.run_dir}")
+        self.console.rule()
         
         test_num = 0
         for test_id in test_list:
             for build_config in config_list:
                 test_num += 1
-                print(f"\n[{test_num}/{total_tests}] ", end="")
+                self.console.print(f"\n[cyan][{test_num}/{total_tests}][/cyan]")
                 
                 status, error, duration = self.run_test(test_id, build_config)
                 
@@ -365,7 +364,7 @@ class TestRunner:
                 })
                 
                 if not self.config["global"]["continue_on_failure"] and status == "FAIL":
-                    print("\n❌ Stopping on failure")
+                    self.console.print("\n[red]✗ Stopping on failure[/red]")
                     self._write_results()
                     return False
         
@@ -407,32 +406,61 @@ class TestRunner:
         failed = sum(1 for r in self.results if r["status"] == "FAIL")
         timeout = sum(1 for r in self.results if r["status"] == "TIMEOUT")
         
-        file.write(f"\n{'='*60}\n")
-        file.write("Test Summary\n")
-        file.write(f"{'='*60}\n")
-        file.write(f"Total tests: {total}\n")
-        file.write(f"✅ Passed:   {passed} ({100*passed/total:.1f}%)\n")
-        file.write(f"❌ Failed:   {failed} ({100*failed/total:.1f}%)\n")
-        file.write(f"⏱️  Timeout:  {timeout} ({100*timeout/total:.1f}%)\n")
-        file.write(f"{'='*60}\n")
-        
-        if failed > 0:
-            file.write("\nFailed tests:\n")
-            for r in self.results:
-                if r["status"] == "FAIL":
-                    file.write(f"  - {r['test_name']} ({r['config']}): {r['error']}\n")
-        
-        if timeout > 0:
-            file.write("\nTimeout tests:\n")
-            for r in self.results:
-                if r["status"] == "TIMEOUT":
-                    file.write(f"  - {r['test_name']} ({r['config']})\n")
-        
-        file.write(f"\nDetailed logs: {self.logs_dir}\n")
-        file.write(f"Full results: {self.run_dir}\n")
+        # Use Rich console for colored output to stdout, plain text for files
+        if file == sys.stdout:
+            self.console.rule("[bold blue]Test Summary[/bold blue]")
+            self.console.print(f"[bold]Total tests:[/bold] {total}")
+            pass_pct = 100*passed/total
+            fail_pct = 100*failed/total
+            timeout_pct = 100*timeout/total
+            self.console.print(f"[green]✓ Passed:[/green]   {passed} [cyan]({pass_pct:.1f}%)[/cyan]")
+            self.console.print(f"[red]✗ Failed:[/red]   {failed} [cyan]({fail_pct:.1f}%)[/cyan]")
+            self.console.print(f"[yellow]⏱ Timeout:[/yellow]  {timeout} [cyan]({timeout_pct:.1f}%)[/cyan]")
+            self.console.rule()
+            
+            if failed > 0:
+                self.console.print("\n[bold red]Failed tests:[/bold red]")
+                for r in self.results:
+                    if r["status"] == "FAIL":
+                        self.console.print(f"  - {r['test_name']} ({r['config']}): {r['error']}")
+            
+            if timeout > 0:
+                self.console.print("\n[bold yellow]Timeout tests:[/bold yellow]")
+                for r in self.results:
+                    if r["status"] == "TIMEOUT":
+                        self.console.print(f"  - {r['test_name']} ({r['config']})")
+            
+            self.console.print(f"\n[dim]Detailed logs: {self.logs_dir}[/dim]")
+            self.console.print(f"[dim]Full results: {self.run_dir}[/dim]")
+        else:
+            # Plain text for files
+            file.write(f"\n{'='*60}\n")
+            file.write("Test Summary\n")
+            file.write(f"{'='*60}\n")
+            file.write(f"Total tests: {total}\n")
+            file.write(f"Passed:   {passed} ({100*passed/total:.1f}%)\n")
+            file.write(f"Failed:   {failed} ({100*failed/total:.1f}%)\n")
+            file.write(f"Timeout:  {timeout} ({100*timeout/total:.1f}%)\n")
+            file.write(f"{'='*60}\n")
+            
+            if failed > 0:
+                file.write("\nFailed tests:\n")
+                for r in self.results:
+                    if r["status"] == "FAIL":
+                        file.write(f"  - {r['test_name']} ({r['config']}): {r['error']}\n")
+            
+            if timeout > 0:
+                file.write("\nTimeout tests:\n")
+                for r in self.results:
+                    if r["status"] == "TIMEOUT":
+                        file.write(f"  - {r['test_name']} ({r['config']})\n")
+            
+            file.write(f"\nDetailed logs: {self.logs_dir}\n")
+            file.write(f"Full results: {self.run_dir}\n")
 
 
 def main():
+    console = Console()  # Create console for main function
     parser = argparse.ArgumentParser(
         description="Run TulaCMake test matrix (test-centric design)"
     )
@@ -477,7 +505,7 @@ def main():
     config_file = test_dir / args.config_file
     
     if not config_file.exists():
-        print(f"Error: Config file not found: {config_file}")
+        console.print(f"[red]Error:[/red] Config file not found: {config_file}")
         return 1
     
     # Create test runner
@@ -485,18 +513,18 @@ def main():
     
     # List tests or groups if requested
     if args.list_tests:
-        print("Available tests:")
+        console.print("[bold]Available tests:[/bold]")
         for test_id in runner.get_enabled_tests():
             test_info = runner.get_test_info(test_id)
             packages = runner.get_test_packages(test_id)
             pkg_str = ', '.join(f"{k} ({v})" for k, v in packages.items())
-            print(f"  {test_id:25} - {test_info.get('name', '')} [{pkg_str}]")
+            console.print(f"  {test_id:25} - {test_info.get('name', '')} [{pkg_str}]")
         return 0
     
     if args.list_groups:
-        print("Available test groups:")
+        console.print("[bold]Available test groups:[/bold]")
         for group_name, group_info in runner.config.get("test_groups", {}).items():
-            print(f"  {group_name:15} - {group_info.get('description', '')}")
+            console.print(f"  {group_name:15} - {group_info.get('description', '')}")
         return 0
     
     # Build test list
