@@ -179,6 +179,10 @@ class TestRunner:
             self.console.print("  [1/5] Generating test project...")
             project_dir = self.generate_test_project(test_id, build_config)
             
+            # Create build directory (keeps Conan files separate from source)
+            build_dir = project_dir / "cmake-build"
+            build_dir.mkdir(exist_ok=True)
+            
             # Conan install
             self.console.print("  [2/5] Running conan install...")
             
@@ -187,8 +191,9 @@ class TestRunner:
             profile_name = f"default-{build_config.lower()}"
             profile_path = self.tula_cmake_dir / "profiles" / profile_name
             conan_cmd = [
-                "conan", "install", ".",
+                "conan", "install", str(project_dir),
                 f"--profile:all={profile_path}",
+                "--output-folder=.",  # Put generated files in current dir (build_dir)
             ]
             
             # Add package mode options
@@ -199,7 +204,7 @@ class TestRunner:
             
             result = self._run_command(
                 conan_cmd,
-                cwd=project_dir,
+                cwd=build_dir,  # Run from build directory
                 log_file=log_dir / "conan.log",
                 timeout=self.get_test_timeout(test_id)
             )
@@ -208,16 +213,12 @@ class TestRunner:
             
             # CMake configure
             self.console.print("  [3/5] Running cmake configure...")
-            build_dir = project_dir / "cmake-build"
-            build_dir.mkdir(exist_ok=True)
             
             # Use Conan-generated preset which contains CMAKE_BUILD_TYPE from profile
-            # Override binary directory to use subdirectory (avoid in-source build)
             preset_name = f"conan-clang-{build_config.lower()}"
             cmake_cmd = [
-                "cmake", "..",
+                "cmake", str(project_dir),
                 "--preset", preset_name,
-                f"-B{build_dir}"  # Override binaryDir from preset
             ]
             
             # Add test-specific CMake variables

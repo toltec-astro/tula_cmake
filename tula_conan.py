@@ -203,10 +203,6 @@ class TulaConan(ConanFile):
             self.output.info("Creating CMakeToolchain...")
             tc = CMakeToolchain(self)
             
-            # Disable Conan's CMake presets - we have our own
-            self.output.info("Disabling CMake presets...")
-            tc.user_presets_path = False
-            
             # Add utility includes (must be first)
             self.output.info("Adding utilities block...")
             self._add_utils_block(tc)
