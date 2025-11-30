@@ -1,0 +1,18 @@
+{
+  "modes": [
+    "CONAN",
+    "CPM",
+    "SYSTEM"
+  ],
+  "conan_requires": [
+    "spectra/1.0.1"
+  ],
+  "cmake_vars": {
+    "CPM_GITHUB_REPO": "yixuan/spectra",
+    "CPM_GIT_TAG": "v1.0.1",
+    "CPM_OPTIONS": [
+      "BUILD_TESTS OFF",
+      "BUILD_EXAMPLES OFF"
+    ]
+  }
+}

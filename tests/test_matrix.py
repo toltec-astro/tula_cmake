@@ -100,7 +100,8 @@ class TestRunner:
         
         # Use test_id as project name (sanitize for filesystem)
         project_name = test_id.replace("-", "_")
-        test_project_dir = self.logs_dir / test_id / "project"
+        # Include build_config in project directory to avoid conflicts between Debug/Release
+        test_project_dir = self.logs_dir / f"{test_id}_{build_config.lower()}" / "project"
         test_project_dir.mkdir(parents=True, exist_ok=True)
         
         # Determine primary package (first one) for test template selection
@@ -169,8 +170,9 @@ class TestRunner:
         self.console.print(f"[bold]Packages:[/bold] {', '.join(f'{k} ({v})' for k, v in packages.items())}")
         
         start_time = datetime.now()
-        log_dir = self.logs_dir / test_id
-        log_dir.mkdir(exist_ok=True)
+        # Include build_config in log directory path to avoid conflicts
+        log_dir = self.logs_dir / f"{test_id}_{build_config.lower()}"
+        log_dir.mkdir(parents=True, exist_ok=True)
         
         try:
             # Generate test project
@@ -181,11 +183,12 @@ class TestRunner:
             self.console.print("  [2/5] Running conan install...")
             
             # Build conan install command with package mode options
-            profile_path = self.tula_cmake_dir / "profiles" / "default"
+            # Use default-debug or default-release profile based on build config
+            profile_name = f"default-{build_config.lower()}"
+            profile_path = self.tula_cmake_dir / "profiles" / profile_name
             conan_cmd = [
                 "conan", "install", ".",
                 f"--profile:all={profile_path}",
-                "-s", f"build_type={build_config}",
             ]
             
             # Add package mode options
@@ -208,11 +211,13 @@ class TestRunner:
             build_dir = project_dir / "cmake-build"
             build_dir.mkdir(exist_ok=True)
             
-            # Build CMake command with toolchain and test-specific vars
+            # Use Conan-generated preset which contains CMAKE_BUILD_TYPE from profile
+            # Override binary directory to use subdirectory (avoid in-source build)
+            preset_name = f"conan-clang-{build_config.lower()}"
             cmake_cmd = [
-                "cmake", "..", 
-                f"-DCMAKE_BUILD_TYPE={build_config}",
-                f"-DCMAKE_TOOLCHAIN_FILE={project_dir}/conan_toolchain.cmake"
+                "cmake", "..",
+                "--preset", preset_name,
+                f"-B{build_dir}"  # Override binaryDir from preset
             ]
             
             # Add test-specific CMake variables

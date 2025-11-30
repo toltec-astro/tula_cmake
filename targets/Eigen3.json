@@ -1,0 +1,20 @@
+{
+  "modes": [
+    "CONAN",
+    "CPM",
+    "SYSTEM"
+  ],
+  "conan_requires": [
+    "eigen/3.4.0"
+  ],
+  "cmake_vars": {
+    "CPM_URL": "https://gitlab.com/libeigen/eigen/-/archive/3.4.1/eigen-3.4.1.tar.gz",
+    "CPM_OPTIONS": [
+      "BUILD_TESTING OFF",
+      "EIGEN_BUILD_DOC OFF",
+      "EIGEN_BUILD_PKGCONFIG OFF",
+      "EIGEN_BUILD_BTL OFF",
+      "EIGEN_LEAVE_TEST_IN_ALL_TARGET OFF"
+    ]
+  }
+}

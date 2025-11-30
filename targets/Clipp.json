@@ -1,0 +1,14 @@
+{
+  "modes": [
+    "CONAN",
+    "CPM",
+    "SYSTEM"
+  ],
+  "conan_requires": [
+    "clipp/1.2.3"
+  ],
+  "cmake_vars": {
+    "CPM_GITHUB_REPO": "GerHobbelt/clipp",
+    "CPM_GIT_TAG": "master"
+  }
+}

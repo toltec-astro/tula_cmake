@@ -1,0 +1,10 @@
+{
+  "modes": [
+    "CPM"
+  ],
+  "conan_requires": [],
+  "cmake_vars": {
+    "CPM_GITHUB_REPO": "Jerry-Ma/csv-parser",
+    "CPM_GIT_TAG": "master"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "modes": [
+    "CPM"
+  ],
+  "conan_requires": [],
+  "cmake_vars": {
+    "CPM_GITHUB_REPO": "Jerry-Ma/grppi",
+    "CPM_GIT_TAG": "cpp20"
+  }
+}

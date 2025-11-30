@@ -1,0 +1,10 @@
+{
+  "modes": [
+    "CONAN",
+    "SYSTEM"
+  ],
+  "conan_requires": [
+    "netcdf-c/4.9.0"
+  ],
+  "cmake_vars": {}
+}

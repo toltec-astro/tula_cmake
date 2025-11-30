@@ -1,0 +1,3 @@
+# Default Debug profile
+include(_base/default-common)
+include(_base/debug)

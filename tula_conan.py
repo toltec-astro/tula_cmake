@@ -2,7 +2,7 @@
 tula_conan.py - Base class for Conan-centric dependency management
 
 This module provides TulaConan, a base ConanFile class that:
-1. Discovers package definitions from targets/*.py files
+1. Discovers package definitions from targets/*.json files
 2. Generates Conan options dynamically
 3. Adds requirements based on mode selection (AUTO/CONAN call requires())
 4. Generates CMakeToolchain with per-package configuration blocks
@@ -11,86 +11,99 @@ Key Design:
 - Stateless: Each package function receives mode as parameter
 - Lazy: Toolchain only defines functions, doesn't call them
 - Profile-driven: All configuration via Conan profiles
+- JSON-based: Package definitions in targets/*.json files
 """
 
-import importlib.util
-import sys
+from __future__ import annotations
+
+import json
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
 
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMakeDeps
 from conan.tools.cmake.toolchain.blocks import Block
 
 # Global package registry (populated at module load)
-_PACKAGE_REGISTRY: Dict[str, Dict[str, Any]] = {}
+_PACKAGE_REGISTRY: dict[str, dict[str, Any]] = {}
 
 
 def _load_package_registry():
     """
-    Discover and load all package definitions from targets/*.py files.
+    Discover and load all package definitions from targets/*.json files.
     
-    Each package file must define:
-    - PACKAGE_INFO: dict with name, modes, conan_requires, cmake_file
-    - Optional: cmake_vars dict or callable for package-specific CMake variables
+    Each JSON file defines a package with:
+    - name: Automatically derived from filename (e.g., logging.json -> "logging")
+    - modes: List of supported modes (subset of CONAN, CPM, SYSTEM)
+              AUTO and DISABLED are added automatically
+    - conan_requires: List of Conan package requirements
+    - cmake_file: Automatically derived as filename.cmake (e.g., logging.cmake)
+    - cmake_vars: Optional dict of CMake variables for this package
+    
+    Raises:
+        FileNotFoundError: If targets directory or expected cmake file not found
+        ValueError: If JSON structure is invalid or modes are invalid
+        json.JSONDecodeError: If JSON parsing fails
     """
+    # Valid modes that can be specified in JSON (AUTO and DISABLED are auto-added)
+    VALID_MODES = {"CONAN", "CPM", "SYSTEM"}
+    
     # Find targets directory relative to this file
     tula_cmake_dir = Path(__file__).parent
     targets_dir = tula_cmake_dir / "targets"
     
     if not targets_dir.exists():
-        print(f"Warning: targets directory not found: {targets_dir}")
-        return
+        raise FileNotFoundError(f"Targets directory not found: {targets_dir}")
     
-    # Scan for .py files (excluding __init__.py and this file)
-    for py_file in targets_dir.glob("*.py"):
-        if py_file.name in ("__init__.py", "tula_conan.py"):
-            continue
+    # Scan for .json files
+    for json_file in targets_dir.glob("*.json"):
+        package_name = json_file.stem
         
-        package_name = py_file.stem
+        # Load JSON (let json.JSONDecodeError propagate)
+        with open(json_file, 'r') as f:
+            package_info = json.load(f)
         
-        try:
-            # Import the module
-            spec = importlib.util.spec_from_file_location(package_name, py_file)
-            if spec is None or spec.loader is None:
-                print(f"Warning: Cannot load spec for {py_file}")
-                continue
-            
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
-            # Validate required attributes
-            if not hasattr(module, "PACKAGE_INFO"):
-                print(f"Warning: {py_file} missing PACKAGE_INFO, skipping")
-                continue
-            
-            package_info = module.PACKAGE_INFO
-            
-            # Validate PACKAGE_INFO structure
-            required_keys = ["name", "modes", "conan_requires", "cmake_file"]
-            missing_keys = [k for k in required_keys if k not in package_info]
-            if missing_keys:
-                print(f"Warning: {py_file} PACKAGE_INFO missing keys: {missing_keys}, skipping")
-                continue
-            
-            # Verify cmake file exists
-            cmake_file = targets_dir / package_info["cmake_file"]
-            if not cmake_file.exists():
-                print(f"Warning: {py_file} references non-existent cmake file: {cmake_file}, skipping")
-                continue
-            
-            # Register package
-            _PACKAGE_REGISTRY[package_info["name"]] = {
-                "info": package_info,
-                "cmake_file": cmake_file,
-                "py_file": py_file,
-            }
-            
-            print(f"Registered package: {package_info['name']}")
+        # Validate required keys
+        required_keys = ["modes", "conan_requires"]
+        missing_keys = [k for k in required_keys if k not in package_info]
+        if missing_keys:
+            raise ValueError(f"{json_file} missing required keys: {missing_keys}")
         
-        except Exception as e:
-            print(f"Error loading {py_file}: {e}")
-            continue
+        # Auto-derive name from filename
+        package_info["name"] = package_name
+        
+        # Auto-derive cmake_file from filename
+        cmake_file_name = f"{package_name}.cmake"
+        cmake_file = targets_dir / cmake_file_name
+        if not cmake_file.exists():
+            raise FileNotFoundError(f"{json_file} expected cmake file not found: {cmake_file}")
+        package_info["cmake_file"] = str(cmake_file)
+        
+        # Validate modes
+        modes = package_info["modes"]
+        if not isinstance(modes, list):
+            raise ValueError(f"{json_file} 'modes' must be a list, got {type(modes).__name__}")
+        
+        # Check that all modes are valid
+        invalid_modes = [m for m in modes if m not in VALID_MODES]
+        if invalid_modes:
+            raise ValueError(f"{json_file} contains invalid modes: {invalid_modes}, valid modes are {VALID_MODES}")
+        
+        # Add AUTO and DISABLED to modes (always available)
+        package_info["modes"] = ["AUTO", "DISABLED"] + modes
+        
+        # Ensure cmake_vars exists (can be empty dict)
+        if "cmake_vars" not in package_info:
+            package_info["cmake_vars"] = {}
+        
+        # Register package
+        _PACKAGE_REGISTRY[package_name] = {
+            "info": package_info,
+            "cmake_file": str(cmake_file),
+            "json_file": str(json_file),
+        }
+        
+        print(f"Registered package: {package_name} (modes: {package_info['modes']})")
 
 
 # Load registry at module import time
@@ -130,17 +143,17 @@ class TulaConan(ConanFile):
         
         # Infer name and version if not set
         if not hasattr(self, 'name') or self.name is None:
-            self.set_name()
+            self._set_name_default()
         
         if not hasattr(self, 'version') or self.version is None:
-            self.set_version()
+            self._set_version_default()
     
-    def set_name(self):
+    def _set_name_default(self):
         """Infer package name from directory name."""
         self.name = Path(self.recipe_folder).name
         print(f"Inferred package name: {self.name}")
     
-    def set_version(self):
+    def _set_version_default(self):
         """Read version from VERSION file or use default."""
         version_file = Path(self.recipe_folder) / "VERSION"
         if version_file.exists():
@@ -189,13 +202,6 @@ class TulaConan(ConanFile):
             # Generate CMakeToolchain with package blocks
             self.output.info("Creating CMakeToolchain...")
             tc = CMakeToolchain(self)
-            
-            # Standard configuration
-            self.output.info("Setting cache variables...")
-            tc.cache_variables["CMAKE_BUILD_TYPE"] = str(self.settings.build_type)
-            tc.cache_variables["CMAKE_CXX_STANDARD"] = str(self.settings.compiler.cppstd)
-            tc.cache_variables["CMAKE_CXX_EXTENSIONS"] = "OFF"
-            tc.cache_variables["CMAKE_CXX_STANDARD_REQUIRED"] = "ON"
             
             # Disable Conan's CMake presets - we have our own
             self.output.info("Disabling CMake presets...")
@@ -299,32 +305,20 @@ include("{tula_deps_file}")
             
             self.output.info(f"Added block for {name} (mode={mode})")
     
-    def _generate_package_vars(self, name: str, mode: str, pkg: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_package_vars(self, name: str, mode: str, pkg: dict[str, Any]) -> dict[str, Any]:
         """
         Generate CMake variables for a package.
-        Gets package-specific variables and adds MODE.
+        Gets package-specific cmake_vars from JSON and adds MODE.
         """
-        try:
-            # Get package-specific cmake_vars (can be dict or callable)
-            cmake_vars_def = pkg["info"].get("cmake_vars", {})
-            
-            if callable(cmake_vars_def):
-                # Support callable for complex cases
-                result = cmake_vars_def(self, mode)
-                cmake_vars = dict(result) if isinstance(result, dict) else {}
-            else:
-                # Simple dict copy
-                cmake_vars = dict(cmake_vars_def) if isinstance(cmake_vars_def, dict) else {}
-            
-            # Always add MODE
-            cmake_vars["MODE"] = mode
-            return cmake_vars
-        except Exception as e:
-            self.output.warning(f"Error generating cmake vars for {name}: {e}")
-            return {"MODE": mode}
+        # Get package-specific cmake_vars (always a dict from JSON)
+        cmake_vars = dict(pkg["info"].get("cmake_vars", {}))
+        
+        # Always add MODE
+        cmake_vars["MODE"] = mode
+        return cmake_vars
     
-    def _create_package_block(self, name: str, mode: str, vars_dict: Dict[str, Any], 
-                              pkg: Dict[str, Any]) -> str:
+    def _create_package_block(self, name: str, mode: str, vars_dict: dict[str, Any], 
+                              pkg: dict[str, Any]) -> str:
         """
         Create CMake block content for a package.
         
@@ -365,7 +359,7 @@ include("{tula_deps_file}")
         return "\n".join(lines)
 
 
-def get_package_registry() -> Dict[str, Dict[str, Any]]:
+def get_package_registry() -> dict[str, dict[str, Any]]:
     """
     Get the global package registry.
     Useful for debugging or introspection.
@@ -373,7 +367,7 @@ def get_package_registry() -> Dict[str, Dict[str, Any]]:
     return _PACKAGE_REGISTRY
 
 
-def list_available_packages() -> List[str]:
+def list_available_packages() -> list[str]:
     """List all registered package names."""
     return list(_PACKAGE_REGISTRY.keys())
 
