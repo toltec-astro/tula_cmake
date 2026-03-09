@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tula-cmake"
+version = "3.0.0"
+description = "tula v3 Conan + CMake build system utilities"
+requires-python = ">=3.10"
+dependencies = ["pyyaml"]
+
+[project.scripts]
+tula-cmake = "tula_cmake._cli:main"
+
+[tool.setuptools]
+# tula_cmake is the package directory (contains __init__.py)
+package-dir = {"tula_cmake" = "."}
+packages = ["tula_cmake"]
+
+[tool.setuptools.package-data]
+tula_cmake = [
+    "profiles/**",
+    "targets/*.cmake",
+    "targets/*.yaml",
+    "utils/*.cmake",
+    "*.cmake",
+]
