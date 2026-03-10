@@ -4,6 +4,77 @@ CMake infrastructure for tula v3 — Conan-centric, tri-modal dependency managem
 
 ---
 
+## Downstream Projects (Quick Start)
+
+Each downstream project (`tula_example`, `kidscpp`, `tlaloc`, etc.) follows this layout:
+
+```
+my_project/
+├── pyproject.toml        # uv project: conan + tula-cmake as deps
+├── conanfile.py          # class MyRecipe(TulaConan): pass
+├── CMakeLists.txt        # cmake_minimum_required + project + target_link_libraries(... tula::tula)
+├── profiles/
+│   ├── _bootstrap        # Jinja2: ensure build/tula_cmake/ before include() resolves
+│   ├── clang20-debug     # include(_bootstrap) + include(../build/tula_cmake/profiles/...) + [options]
+│   └── gcc14-debug
+└── src/
+    └── main.cpp
+```
+
+**Build flow (single command):**
+```bash
+uv run conan install . --profile=profiles/clang20-debug --build=missing
+cmake --preset conan-clang20-debug
+cmake --build build/clang20-debug
+```
+
+### `_bootstrap` Profile
+
+The `_bootstrap` profile is a Conan 2 profile containing only Jinja2 logic — no
+`[settings]`. It is included first by all real profiles:
+
+```ini
+include(_bootstrap)
+include(../build/tula_cmake/profiles/linux-clang20-debug)
+
+[options]
+*:Eigen3=conan
+*:logging=conan
+...
+```
+
+The `_bootstrap` Jinja2 runs **before** `include()` is resolved (Conan 2 processes
+Jinja2 in all included profiles before parsing). This guarantees `build/tula_cmake/`
+exists when the second `include()` line is evaluated.
+
+**`_bootstrap` resolution order:**
+
+1. `build/tula_cmake/` already exists → no-op (idempotent)
+2. `tula-cmake` CLI in the venv (from `uv run conan install .`) → `tula-cmake setup --project-root <root>`
+   - `ensure_tula_cmake()` checks: monorepo sibling `../tula/tula_cmake/`, then `TULA_CMAKE_DIR`, then git sparse-clone
+3. Fallback: `uvx --from git+https://github.com/toltec-astro/tula_cmake.git@v3.x tula-cmake setup`
+
+The `_bootstrap` for examples inside `tula/examples/` additionally checks `../../tula_cmake`
+(i.e. `tula/tula_cmake/`) as the first candidate, creating a direct symlink.
+
+### `pyproject.toml` Sources
+
+```toml
+[tool.uv.sources]
+# Monorepo (sibling tula/):
+tula-cmake = { path = "../tula/tula_cmake" }
+# Standalone (git):
+# tula-cmake = { git = "https://github.com/toltec-astro/tula_cmake.git", branch = "v3.x" }
+```
+
+`uv run conan install .` creates a venv with `conan` and `tula-cmake` installed,
+then runs conan in that venv. The `_bootstrap` discovers `tula-cmake` via `os.sys.executable`
+(the venv Python running conan) — no global Python setup required.
+
+---
+
+---
+
 ## Architecture
 
 `tula_cmake` is consumed **exclusively through Conan**. The `TulaConan` base class (in `tula_conan.py`) is subclassed by each project's `conanfile.py`. It:

@@ -114,4 +114,4 @@ Lower-priority packages from the v2 reference that are not yet in v3:
 | Re2 | Google RE2; not in current kidscpp build |
 | GramSavgol / Savgol | Savitzky-Golay filter; header-only candidates |
 | Matplotlibcpp | Requires Python; specialist use |
-| MXX | MPI C++ wrapper; requires MPI stack |
+| MXX | MPI C++ wrapper; requires MPI stack — referenced by `examples/mpi` (to be implemented) |
