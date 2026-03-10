@@ -1,0 +1,37 @@
+{# NetCDF C++ bindings test #}
+#include <netcdf>
+#include <cassert>
+#include <vector>
+#include <cmath>
+
+void test_netcdfcxx4() {
+    std::cout << "=== Testing NetCDFCXX4 ===" << std::endl;
+
+    // Create an in-memory NetCDF file using C++ API
+    {
+        netCDF::NcFile file("test_cxx4_output.nc", netCDF::NcFile::replace);
+
+        // Add a dimension and variable
+        auto dim = file.addDim("x", 4);
+        auto var = file.addVar("data", netCDF::ncDouble, dim);
+
+        std::vector<double> data = {1.0, 2.0, 3.0, 4.0};
+        var.putVar(data.data());
+    }
+
+    // Read back
+    {
+        netCDF::NcFile file("test_cxx4_output.nc", netCDF::NcFile::read);
+        auto var = file.getVar("data");
+        assert(!var.isNull() && "Variable 'data' should exist");
+
+        std::vector<double> readback(4);
+        var.getVar(readback.data());
+        assert(std::abs(readback[0] - 1.0) < 1e-12 && "data[0] should be 1.0");
+        assert(std::abs(readback[3] - 4.0) < 1e-12 && "data[3] should be 4.0");
+    }
+
+    std::remove("test_cxx4_output.nc");
+    std::cout << "  ✓ NetCDF C++ create/write/read OK" << std::endl;
+    std::cout << "✅ NetCDFCXX4 test passed!" << std::endl;
+}

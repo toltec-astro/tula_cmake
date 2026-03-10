@@ -16,10 +16,11 @@ void test_clipp() {
         clipp::option("-v", "--value") & clipp::value("num", value) % "numeric value"
     );
     
-    // Test parsing
-    const char* argv[] = {"test", "-i", "test.txt", "-v", "42"};
+    // Test parsing (clipp::parse expects char** not const char**)
+    char a0[] = "test", a1[] = "-i", a2[] = "test.txt", a3[] = "-v", a4[] = "42";
+    char* argv[] = {a0, a1, a2, a3, a4};
     int argc = 5;
-    
+
     auto result = clipp::parse(argc, argv, cli);
     
     assert(result && "CLI parsing should succeed");

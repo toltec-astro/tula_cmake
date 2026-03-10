@@ -1,0 +1,55 @@
+{# NetCDF C library test #}
+#include <netcdf.h>
+#include <cassert>
+#include <cstring>
+
+void test_netcdf() {
+    std::cout << "=== Testing NetCDF ===" << std::endl;
+
+    // Check library version
+    std::cout << "  NetCDF version: " << nc_inq_libvers() << std::endl;
+
+    // Create an in-memory NetCDF file
+    int ncid;
+    int ret = nc_create("test_output.nc", NC_CLOBBER, &ncid);
+    assert(ret == NC_NOERR && "nc_create should succeed");
+
+    // Define a dimension
+    int dimid;
+    ret = nc_def_dim(ncid, "x", 4, &dimid);
+    assert(ret == NC_NOERR && "nc_def_dim should succeed");
+
+    // Define a variable
+    int varid;
+    ret = nc_def_var(ncid, "data", NC_DOUBLE, 1, &dimid, &varid);
+    assert(ret == NC_NOERR && "nc_def_var should succeed");
+
+    ret = nc_enddef(ncid);
+    assert(ret == NC_NOERR && "nc_enddef should succeed");
+
+    // Write data
+    double data[] = {1.0, 2.0, 3.0, 4.0};
+    ret = nc_put_var_double(ncid, varid, data);
+    assert(ret == NC_NOERR && "nc_put_var_double should succeed");
+
+    ret = nc_close(ncid);
+    assert(ret == NC_NOERR && "nc_close should succeed");
+
+    // Read back
+    ret = nc_open("test_output.nc", NC_NOWRITE, &ncid);
+    assert(ret == NC_NOERR && "nc_open should succeed");
+
+    ret = nc_inq_varid(ncid, "data", &varid);
+    assert(ret == NC_NOERR && "nc_inq_varid should succeed");
+
+    double readback[4];
+    ret = nc_get_var_double(ncid, varid, readback);
+    assert(ret == NC_NOERR && "nc_get_var_double should succeed");
+    assert(readback[0] == 1.0 && readback[3] == 4.0 && "Data should round-trip correctly");
+
+    nc_close(ncid);
+    std::remove("test_output.nc");
+
+    std::cout << "  ✓ NetCDF create/write/read OK" << std::endl;
+    std::cout << "✅ NetCDF test passed!" << std::endl;
+}

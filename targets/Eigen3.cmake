@@ -1,97 +1,68 @@
 # Eigen3.cmake - Eigen linear algebra library
-# Adapted for v3 Conan-centric architecture with stateless functions
+#
+# Defines: tula_Eigen3_add_conan(), tula_Eigen3_add_cpm(), tula_Eigen3_add_system()
+# Called by: tula_deps_add(deps Eigen3) from tula_deps.cmake
 
 include_guard(GLOBAL)
 
-# Include utilities
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/make_tula_target.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/verbose_message.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/_deps_callbacks.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/_ensure_cpm.cmake)
 
 #[=======================================================================[
-@brief Main setup function for Eigen3 (stateless, mode as parameter)
-
-This is the entry point called by tula_deps_add().
-Mode is passed as parameter (not global variable).
-
-@param MODE Resolution mode (AUTO, CONAN, CPM, SYSTEM)
+@brief Load Eigen3 from Conan (header-only, uses CMAKE_INCLUDE_PATH)
 ]=======================================================================]
-function(tula_setup_Eigen3 MODE)
-    verbose_message("Setting up tula::Eigen3 (mode=${MODE})")
-    
-    # Idempotency check
-    if(TARGET tula::Eigen3)
-        verbose_message("tula::Eigen3 already exists, skipping")
+function(tula_Eigen3_add_conan)
+    tula_try_conan_header_only(Eigen3 Eigen3::Eigen)
+    if(NOT TULA_Eigen3_CONAN_SUCCESS)
+        return()
+    endif()
+    _tula_Eigen3_create_wrapper()
+endfunction()
+
+#[=======================================================================[
+@brief Fetch Eigen3 via CPM
+]=======================================================================]
+function(tula_Eigen3_add_cpm)
+    if(NOT DEFINED TULA_EIGEN3_CPM_URL)
         return()
     endif()
     
-    # Mode-driven resolution (reuses existing helper functions)
-    if(MODE MATCHES "CONAN|AUTO")
-        TULA_Eigen3_TRY_CONAN()
-    elseif(MODE STREQUAL "CPM")
-        TULA_Eigen3_TRY_CPM()
-    elseif(MODE STREQUAL "SYSTEM")
-        TULA_Eigen3_TRY_SYSTEM()
-    else()
-        message(FATAL_ERROR "Unknown Eigen3 mode: ${MODE}")
-    endif()
-    
-    # Create wrapper target with optional MKL/threading support
-    TULA_Eigen3_CREATE_WRAPPER()
-    
-    verbose_message("tula::Eigen3 ready")
-endfunction()
-
-#[=======================================================================[
-@brief Try to find Eigen3 via Conan (searches CMAKE_INCLUDE_PATH)
-]=======================================================================]
-function(TULA_Eigen3_TRY_CONAN)
-    # Use existing helper from _deps_callbacks.cmake
-    tula_try_conan_header_only(Eigen3 Eigen3::Eigen)
-    set(TULA_Eigen3_CONAN_SUCCESS ${TULA_Eigen3_CONAN_SUCCESS} PARENT_SCOPE)
-endfunction()
-
-#[=======================================================================[
-@brief Try to fetch Eigen3 via CPM
-]=======================================================================]
-function(TULA_Eigen3_TRY_CPM)
-    # Use variables set by toolchain (from Eigen3.py get_cmake_vars)
-    if(NOT DEFINED EIGEN3_CPM_URL)
-        message(FATAL_ERROR "EIGEN3_CPM_URL not set. Check toolchain configuration.")
-    endif()
-    
-    # Use existing helper from _deps_callbacks.cmake
     tula_try_cpm(Eigen3 Eigen3::Eigen
         NAME Eigen3
-        URL "${EIGEN3_CPM_URL}"
-        OPTIONS ${EIGEN3_CPM_OPTIONS}
+        URL "${TULA_EIGEN3_CPM_URL}"
+        OPTIONS ${TULA_EIGEN3_CPM_OPTIONS}
     )
-    set(TULA_Eigen3_CPM_SUCCESS ${TULA_Eigen3_CPM_SUCCESS} PARENT_SCOPE)
+    if(NOT TULA_Eigen3_CPM_SUCCESS)
+        return()
+    endif()
+    _tula_Eigen3_create_wrapper()
 endfunction()
 
 #[=======================================================================[
-@brief Try to find Eigen3 via system find_package
+@brief Find Eigen3 via system find_package
 ]=======================================================================]
-function(TULA_Eigen3_TRY_SYSTEM)
-    # Use existing helper from _deps_callbacks.cmake
+function(tula_Eigen3_add_system)
     tula_try_system(Eigen3 Eigen3::Eigen)
-    set(TULA_Eigen3_SYSTEM_SUCCESS ${TULA_Eigen3_SYSTEM_SUCCESS} PARENT_SCOPE)
+    if(NOT TULA_Eigen3_SYSTEM_SUCCESS)
+        return()
+    endif()
+    _tula_Eigen3_create_wrapper()
 endfunction()
 
 #[=======================================================================[
 @brief Create tula::Eigen3 wrapper target with optional MKL/threading support
 ]=======================================================================]
-function(TULA_Eigen3_CREATE_WRAPPER)
+function(_tula_Eigen3_create_wrapper)
     if(TARGET tula_Eigen3)
-        return()  # Already created
+        return()
     endif()
     
     if(NOT TARGET Eigen3::Eigen)
         message(FATAL_ERROR "Cannot create wrapper: Eigen3::Eigen target does not exist")
     endif()
     
-    # Optional MKL and multithreading support
     option(USE_EIGEN3_WITH_MKL "Use Intel MKL library if installed" ON)
     option(USE_EIGEN3_MULTITHREADING "Enable multithreading inside Eigen3" ON)
     
@@ -123,10 +94,8 @@ function(TULA_Eigen3_CREATE_WRAPPER)
         endif()
     endif()
     
-    # Create wrapper target using utility
     make_tula_target(Eigen3 ${eigen3_libs})
     
-    # Add compile definitions if any
     if(eigen3_defs)
         target_compile_definitions(tula_Eigen3 INTERFACE ${eigen3_defs})
         foreach(def ${eigen3_defs})
@@ -136,4 +105,3 @@ function(TULA_Eigen3_CREATE_WRAPPER)
     
     verbose_message("Created tula::Eigen3 wrapper")
 endfunction()
-

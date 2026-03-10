@@ -249,11 +249,15 @@ class TestRunner:
             # Run executable
             self.console.print("  [5/5] Running test executable...")
             exe_name = f"test_{test_id.replace('-', '_')}"
-            exe_path = build_dir / exe_name
+            # tula_sensible.cmake sets RUNTIME_OUTPUT_DIRECTORY to bin/
+            exe_path = build_dir / "bin" / exe_name
             if not exe_path.exists():
-                # Try with .exe extension on Windows
-                exe_path = build_dir / f"{exe_name}.exe"
-            
+                exe_path = build_dir / exe_name  # fallback: no bin/ subdir
+            if not exe_path.exists():
+                exe_path = build_dir / "bin" / f"{exe_name}.exe"  # Windows in bin/
+            if not exe_path.exists():
+                exe_path = build_dir / f"{exe_name}.exe"  # Windows flat
+
             if exe_path.exists():
                 result = self._run_command(
                     [str(exe_path)],

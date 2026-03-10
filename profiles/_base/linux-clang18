@@ -1,0 +1,17 @@
+# System Clang 18 on Linux (Ubuntu 24.04 default, good C++23 support)
+
+{% set cc = "clang-18" %}
+{% set cxx = "clang++-18" %}
+{% set compiler, version, _ = detect_api.detect_clang_compiler(cxx) %}
+
+[settings]
+os=Linux
+arch={{ detect_api.detect_arch() }}
+compiler={{ compiler }}
+compiler.version={{ detect_api.default_compiler_version(compiler, version) }}
+compiler.libcxx={{ detect_api.detect_libcxx(compiler, version, cxx) }}
+compiler.cppstd=23
+
+[buildenv]
+CC={{ cc }}
+CXX={{ cxx }}

@@ -1,116 +1,194 @@
 # tula_cmake
 
-Modular CMake infrastructure for TolTEC C++ projects.
+CMake infrastructure for tula v3 — Conan-centric, tri-modal dependency management.
 
-## Features
+---
 
-- **Tri-modal dependency resolution** (CONAN → CPM → SYSTEM) with automatic fallback
-- **Sensible C++23 defaults** (RPATH, output directories, compiler settings)
-- **Minimal boilerplate** for dependency management
-- **Unified cache** at `~/.tula_cache`
+## Architecture
 
-## Quick Start
+`tula_cmake` is consumed **exclusively through Conan**. The `TulaConan` base class (in `tula_conan.py`) is subclassed by each project's `conanfile.py`. It:
 
-```cmake
-cmake_minimum_required(VERSION 4.1)
-project(MyProject LANGUAGES CXX)
+1. Reads `targets/packages.yaml` — the single source of truth for all package definitions
+2. Adds Conan requirements for packages in AUTO or CONAN mode
+3. Generates `conan_toolchain.cmake` containing:
+   - `tula_setup` block — includes `tula_sensible.cmake` and `tula_deps.cmake`
+   - `tula_<Pkg>` blocks — one per enabled package; sets mode/vars and calls `tula_deps_add()`
+   - `tula_target` block — creates `tula::headers` and `tula::tula` INTERFACE targets
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tula_cmake/cmake" ${CMAKE_MODULE_PATH})
-include(tula_cmake)
+### Toolchain Phase Constraints
 
-# Register dependencies
-include(Eigen3)
-include(NetCDF)
+CMake toolchain files run before `project()` enables languages. This means:
+- `add_library(SHARED IMPORTED)` is forbidden — use `UNKNOWN IMPORTED`
+- `CheckLibraryExists` is forbidden — use `find_library` + `find_path` directly
+- `CMAKE_SYSTEM_PREFIX_PATH` is empty — must manually extend `CMAKE_PREFIX_PATH`
+  with arch-specific dirs like `/usr/lib/aarch64-linux-gnu/cmake/<pkg>`
 
-# Create all targets
-tula_deps_create_targets()
+The `tula_<Pkg>.cmake` files and `tula_try_system()` in `utils/_deps_callbacks.cmake`
+handle these constraints with `if(NOT CMAKE_CXX_COMPILER_LOADED)` guards.
 
-# Use in your targets
-target_link_libraries(MyTarget PRIVATE tula::Eigen3 tula::NetCDF)
-```
+### `tula::tula` Target Provision
 
-## Usage
-
-### Standalone Sensible Defaults Only
-
-If you only want build configuration without dependency management:
+The `tula_target` block (last in toolchain) creates:
 
 ```cmake
-project(MyProject LANGUAGES CXX)
-include(tula_sensible)  # Just build defaults, no dependency management
+# tula::headers — header-only tula library
+add_library(tula_headers INTERFACE)
+target_include_directories(tula_headers INTERFACE "<tula_root>/include")
+add_library(tula::headers ALIAS tula_headers)
+
+# tula::tula — headers + all enabled deps
+add_library(tula_all INTERFACE)
+target_link_libraries(tula_all INTERFACE tula::headers ${TULA_DEPS})
+add_library(tula::tula ALIAS tula_all)
 ```
 
-### Full Dependency Management
+`TULA_DEPS` is a CMake list accumulating each package's wrapper target (`tula::<Pkg>`)
+as packages are processed. The `tula_target` block always runs last, so it sees
+the fully-populated `TULA_DEPS`.
 
-For projects needing tri-modal dependency resolution:
+---
 
-```cmake
-project(MyProject LANGUAGES CXX)
-include(tula_cmake)     # Build defaults + dependency management
+## Package System
+
+### `targets/packages.yaml`
+
+Single YAML file defining all 13 packages. Each entry has:
+- `modes` — supported resolution modes (`conan`, `cpm`, `system`)
+- `conan_requires` — Conan package refs (empty `[]` for CPM/system-only)
+- `cmake_vars` — CMake vars passed to the package cmake file
+
+### `targets/<Pkg>.cmake`
+
+Each package has a corresponding cmake file with these functions:
+
+| Function | Purpose |
+|----------|---------|
+| `tula_<Pkg>_add_conan()` | Find via Conan-generated CMakeDeps |
+| `tula_<Pkg>_add_cpm()` | Fetch from source via CPM |
+| `tula_<Pkg>_add_system()` | Find via system `find_package()` |
+| `tula_<Pkg>_create_wrapper()` | Create `tula::<Pkg>` INTERFACE target |
+
+The `tula_deps_add(TULA_DEPS <Pkg>)` call (from the toolchain block) runs mode
+selection and appends the resulting `tula::<Pkg>` to `TULA_DEPS`.
+
+### Mode Selection Logic
+
+```
+TULA_<PKG>_MODE = AUTO (default)
+  → try CONAN (if conan_requires non-empty and Conan available)
+  → try CPM   (if mode in package's supported list)
+  → try SYSTEM
+  → FATAL_ERROR if none succeed
+
+TULA_<PKG>_MODE = CONAN/CPM/SYSTEM
+  → try only that mode; FATAL_ERROR on failure (no fallback)
+
+TULA_<PKG>_MODE = DISABLED
+  → skip; package not added to TULA_DEPS
 ```
 
-**IMPORTANT:** Both files must be included **AFTER** `project()` call.
+---
 
-## Dependency Resolution
+## File Structure
 
-Dependencies are resolved automatically with fallback:
+```
+tula_cmake/
+├── tula_conan.py          # TulaConan base class (Conan Python)
+├── tula_sensible.cmake    # Standalone build defaults (RPATH, C++23, etc.)
+├── tula_deps.cmake        # tula_deps_add() API
+├── targets/
+│   ├── packages.yaml      # All package definitions (SSOT)
+│   ├── Ceres.cmake
+│   ├── Clipp.cmake
+│   ├── Csv.cmake
+│   ├── Eigen3.cmake
+│   ├── Enum.cmake
+│   ├── Grppi.cmake
+│   ├── logging.cmake
+│   ├── NetCDF.cmake
+│   ├── NetCDFCXX4.cmake
+│   ├── perflibs.cmake
+│   ├── Spectra.cmake
+│   ├── testing.cmake
+│   └── Yaml.cmake
+├── utils/
+│   ├── _deps_callbacks.cmake  # tula_try_system/conan/cpm helpers
+│   └── ...
+├── cmake/
+│   ├── FindNetCDFCXX4.cmake   # Custom Find module (UNKNOWN IMPORTED)
+│   └── ...
+├── profiles/
+│   ├── _base/                 # Composable profile fragments
+│   │   ├── base
+│   │   ├── debug
+│   │   ├── release
+│   │   ├── linux-clang18
+│   │   ├── linux-clang20
+│   │   ├── linux-gcc
+│   │   ├── linux-gcc14
+│   │   ├── brew-llvm
+│   │   └── brew-gcc
+│   ├── linux-clang20-debug    # Primary Linux profile
+│   ├── linux-clang20-release
+│   ├── linux-clang18-debug/release
+│   ├── linux-gcc14-debug/release
+│   ├── linux-gcc-debug/release
+│   ├── brew-llvm-debug/release
+│   ├── brew-gcc-debug/release
+│   └── default-debug/release  # Platform autodetect
+└── tests/
+    ├── test_matrix.py         # Test runner
+    ├── test_config.yaml       # Test definitions
+    └── results/               # Test outputs
+```
 
-1. **CONAN** - Conan package manager (runs `conan install` automatically)
-2. **CPM** - Downloads to `~/.tula_cache/cpm`
-3. **SYSTEM** - Uses system-installed packages
+---
 
-Override per-package:
+## Profiles
+
+Profiles compose modular `_base/` fragments. Example:
+
+```ini
+# linux-clang20-debug
+include(_base/base)
+include(_base/linux-clang20)
+include(_base/debug)
+```
+
+The `_base/linux-clang20` fragment:
+```ini
+{% set cc = "clang-20" %}
+{% set cxx = "clang++-20" %}
+{% set compiler, version, _ = detect_api.detect_clang_compiler(cxx) %}
+[settings]
+os=Linux
+arch={{ detect_api.detect_arch() }}
+compiler={{ compiler }}
+compiler.version={{ detect_api.default_compiler_version(compiler, version) }}
+compiler.libcxx=libstdc++11
+compiler.cppstd=23
+[buildenv]
+CC={{ cc }}
+CXX={{ cxx }}
+```
+
+---
+
+## Tests
+
+The test framework (`tests/test_matrix.py`) builds a small project for each test in
+`tests/test_config.yaml`, running conan install → cmake configure → build → execute.
+
 ```bash
-cmake -B build -DTULA_Eigen3_MODE=CPM     # Force CPM for Eigen3
-cmake -B build -DTULA_Eigen3_MODE=SYSTEM  # Force system packages
+# Run quick smoke tests
+cd tula_cmake/tests
+uv run test_matrix.py --group quick --verbose
+
+# Run all tests
+uv run test_matrix.py --group full
+
+# Test a specific package + mode
+uv run test_matrix.py --package Eigen3 --mode cpm
 ```
 
-## Available Dependencies
-
-**Ready to use (v3 architecture):**
-- ✅ Eigen3 - Linear algebra library
-
-**Legacy (v2 - pending migration):**
-- ⏳ bitmask, CCfits, Ceres, FFTW, fmt, logging
-- ⏳ MXX, NetCDF, NetCDFCXX4, perflibs, Re2
-- ⏳ Spectra, testing, Yaml
-
-See `targets/README.md` for details on target file structure.
-
-## Configuration
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TULA_{PACKAGE}_MODE` | Force mode for package | Auto-fallback |
-| `TULA_CACHE_ROOT` | Cache directory | `~/.tula_cache` |
-| `CPM_SOURCE_CACHE` | CPM downloads | `${TULA_CACHE_ROOT}/cpm` |
-| `CONAN_COMMAND` | Conan executable | Auto-detected |
-
-## Examples
-
-**Default (auto-fallback):**
-```bash
-cmake -B build
-```
-
-**Force specific mode:**
-```bash
-cmake -B build -DTULA_Eigen3_MODE=CPM
-```
-
-**Custom cache location:**
-```bash
-cmake -B build -DTULA_CACHE_ROOT=/custom/cache
-```
-
-## Requirements
-
-- CMake 4.1+
-- C++23 compiler
-- Conan 2.x (optional, for CONAN mode)
-- Git (for CPM mode)
-
-## License
-
-BSD-3
-
+See `tests/README.md` for details.

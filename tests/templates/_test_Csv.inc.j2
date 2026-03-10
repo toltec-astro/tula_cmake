@@ -1,0 +1,26 @@
+{# CSV parser test #}
+#include <csv.hpp>
+#include <sstream>
+#include <cassert>
+
+void test_csv() {
+    std::cout << "=== Testing Csv ===" << std::endl;
+
+    // Parse a CSV from a string stream
+    std::string csv_data = "name,age,score\nAlice,30,95.5\nBob,25,87.3\n";
+    std::istringstream ss(csv_data);
+
+    csv::CSVReader reader(ss);
+    int row_count = 0;
+    for (auto& row : reader) {
+        if (row_count == 0) {
+            assert(row["name"].get<std::string>() == "Alice" && "First row name should be Alice");
+            assert(row["age"].get<int>() == 30 && "First row age should be 30");
+        }
+        row_count++;
+    }
+    assert(row_count == 2 && "Should parse 2 data rows");
+
+    std::cout << "  ✓ Parsed " << row_count << " rows" << std::endl;
+    std::cout << "✅ Csv test passed!" << std::endl;
+}

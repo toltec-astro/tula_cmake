@@ -1,7 +1,0 @@
-{
-  "modes": [
-    "SYSTEM"
-  ],
-  "conan_requires": [],
-  "cmake_vars": {}
-}

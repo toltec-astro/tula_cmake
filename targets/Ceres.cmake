@@ -1,80 +1,41 @@
 # Ceres.cmake - Ceres Solver (non-linear least squares optimization)
+#
+# Defines: tula_Ceres_add_conan(), tula_Ceres_add_cpm(), tula_Ceres_add_system()
+# Called by: tula_deps_add(deps Ceres) from tula_deps.cmake
+# Note: Ceres requires Eigen3 and optionally perflibs for multithreading
+
 include_guard(GLOBAL)
 
+include(${CMAKE_CURRENT_LIST_DIR}/../utils/make_tula_target.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/verbose_message.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/_deps_callbacks.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../utils/_ensure_cpm.cmake)
 
 #[=======================================================================[
-@brief Setup Ceres package with tri-modal resolution
-@param MODE Resolution mode (AUTO, CONAN, CPM, SYSTEM)
+@brief Load Ceres from Conan
 ]=======================================================================]
-function(tula_setup_Ceres MODE)
-    verbose_message("Setting up tula::Ceres (mode=${MODE})")
-    
-    if(TARGET tula::Ceres)
-        verbose_message("tula::Ceres already exists")
+function(tula_Ceres_add_conan)
+    tula_try_conan_header_only(Ceres Ceres::ceres Ceres)
+    if(NOT TULA_Ceres_CONAN_SUCCESS)
         return()
     endif()
-    
-    # Ensure Eigen3 dependency is available
-    if(NOT TARGET tula::Eigen3)
-        verbose_message("Ceres requires Eigen3, loading it first...")
-        tula_deps_add(_eigen_dep Eigen3)
-    endif()
-    
-    # Optionally load perflibs for multithreading support
-    option(USE_CERES_MULTITHREADING "Enable multithreading inside Ceres" ON)
-    if(USE_CERES_MULTITHREADING)
-        if(NOT TARGET tula::perflibs)
-            verbose_message("Loading perflibs for Ceres multithreading...")
-            tula_deps_add(_perflibs_dep perflibs)
-        endif()
-    endif()
-    
-    if(MODE STREQUAL "AUTO")
-        TULA_Ceres_TRY_CONAN()
-        if(NOT TULA_Ceres_CONAN_SUCCESS)
-            TULA_Ceres_TRY_CPM()
-        endif()
-        if(NOT TULA_Ceres_CPM_SUCCESS)
-            TULA_Ceres_TRY_SYSTEM()
-        endif()
-    elseif(MODE STREQUAL "CONAN")
-        TULA_Ceres_TRY_CONAN()
-    elseif(MODE STREQUAL "CPM")
-        TULA_Ceres_TRY_CPM()
-    elseif(MODE STREQUAL "SYSTEM")
-        TULA_Ceres_TRY_SYSTEM()
-    else()
-        message(FATAL_ERROR "Invalid MODE for Ceres: ${MODE}")
-    endif()
-    
-    # Create wrapper
-    TULA_Ceres_CREATE_WRAPPER()
-    verbose_message("tula::Ceres ready")
+    _tula_Ceres_create_wrapper()
 endfunction()
 
 #[=======================================================================[
-@brief Try to find Ceres via Conan
+@brief Fetch Ceres via CPM (requires glog)
 ]=======================================================================]
-function(TULA_Ceres_TRY_CONAN)
-    tula_try_conan_header_only(Ceres Ceres::ceres Ceres)
-    set(TULA_Ceres_CONAN_SUCCESS ${TULA_Ceres_CONAN_SUCCESS} PARENT_SCOPE)
-endfunction()
-
-#[=======================================================================[
-@brief Try to fetch Ceres via CPM (requires glog)
-]=======================================================================]
-function(TULA_Ceres_TRY_CPM)
-    if(NOT DEFINED CERES_CPM_GITHUB_REPO)
-        message(FATAL_ERROR "CERES_CPM_GITHUB_REPO not set. Check toolchain configuration.")
+function(tula_Ceres_add_cpm)
+    if(NOT DEFINED TULA_CERES_CPM_GITHUB_REPO)
+        return()
     endif()
     
     # First fetch glog (required dependency)
     verbose_message("Fetching glog (Ceres dependency)...")
-    _TULA_Ceres_FETCH_GLOG()
+    _tula_Ceres_fetch_glog()
     
     # Configure threading model
+    option(USE_CERES_MULTITHREADING "Enable multithreading inside Ceres" ON)
     set(_threading_model "NO_THREADS")
     if(USE_CERES_MULTITHREADING)
         set(_threading_model "CXX_THREADS")
@@ -86,12 +47,10 @@ function(TULA_Ceres_TRY_CPM)
         set(Eigen3_DIR "${_eigen_include}/..")
     endif()
     
-    include(${CMAKE_CURRENT_LIST_DIR}/../utils/_ensure_cpm.cmake)
-    
     CPMAddPackage(
         NAME ceres
-        GITHUB_REPOSITORY "${CERES_CPM_GITHUB_REPO}"
-        GIT_TAG "${CERES_CPM_GIT_TAG}"
+        GITHUB_REPOSITORY "${TULA_CERES_CPM_GITHUB_REPO}"
+        GIT_TAG "${TULA_CERES_CPM_GIT_TAG}"
         OPTIONS
             "GLOG_PREFER_EXPORTED_GLOG_CMAKE_CONFIGURATION ON"
             "MINIGLOG OFF"
@@ -110,35 +69,34 @@ function(TULA_Ceres_TRY_CPM)
     )
     
     if(ceres_ADDED OR TARGET Ceres::ceres)
-        message(STATUS "    Fetched Ceres via CPM")
+        verbose_message("Fetched Ceres via CPM")
         
         # Ensure glog is linked to ceres
         if(TARGET ceres AND TARGET glog::glog)
             set_property(TARGET ceres APPEND PROPERTY INTERFACE_LINK_LIBRARIES glog::glog)
             set_property(TARGET ceres APPEND PROPERTY LINK_LIBRARIES glog::glog)
         endif()
-        
-        set(TULA_Ceres_CPM_SUCCESS TRUE PARENT_SCOPE)
     else()
-        message(STATUS "    CPM fetch failed for Ceres")
-        set(TULA_Ceres_CPM_SUCCESS FALSE PARENT_SCOPE)
+        return()
     endif()
+    _tula_Ceres_create_wrapper()
 endfunction()
 
 #[=======================================================================[
 @brief Internal: Fetch glog for Ceres
 ]=======================================================================]
-function(_TULA_Ceres_FETCH_GLOG)
+function(_tula_Ceres_fetch_glog)
     if(TARGET glog::glog)
         verbose_message("glog already available")
         return()
     endif()
     
-    if(NOT DEFINED CERES_GLOG_CPM_GITHUB_REPO)
-        message(FATAL_ERROR "CERES_GLOG_CPM_GITHUB_REPO not set")
+    if(NOT DEFINED TULA_CERES_GLOG_CPM_GITHUB_REPO)
+        return()
     endif()
     
     # Configure threading for glog
+    option(USE_CERES_MULTITHREADING "Enable multithreading inside Ceres" ON)
     set(_glog_threading "OFF")
     set(_glog_tls "OFF")
     if(USE_CERES_MULTITHREADING)
@@ -146,12 +104,10 @@ function(_TULA_Ceres_FETCH_GLOG)
         set(_glog_tls "ON")
     endif()
     
-    include(${CMAKE_CURRENT_LIST_DIR}/../utils/_ensure_cpm.cmake)
-    
     CPMAddPackage(
         NAME glog
-        GITHUB_REPOSITORY "${CERES_GLOG_CPM_GITHUB_REPO}"
-        GIT_TAG "${CERES_GLOG_CPM_GIT_TAG}"
+        GITHUB_REPOSITORY "${TULA_CERES_GLOG_CPM_GITHUB_REPO}"
+        GIT_TAG "${TULA_CERES_GLOG_CPM_GIT_TAG}"
         OPTIONS
             "BUILD_SHARED_LIBS OFF"
             "WITH_GFLAGS OFF"
@@ -167,29 +123,96 @@ function(_TULA_Ceres_FETCH_GLOG)
     if(glog_ADDED OR TARGET glog::glog)
         verbose_message("Fetched glog via CPM")
     else()
-        message(FATAL_ERROR "Failed to fetch glog (required for Ceres)")
+        return()
     endif()
 endfunction()
 
 #[=======================================================================[
-@brief Try to find Ceres via system find_package
+@brief Find Ceres via system find_package
 ]=======================================================================]
-function(TULA_Ceres_TRY_SYSTEM)
+function(tula_Ceres_add_system)
+    # During toolchain phase (before project()/language enabled), the system
+    # Ceres CMake config calls CheckLibraryExists which requires C/CXX language.
+    # Fall back to find_library + find_path to create the target directly.
+    if(NOT CMAKE_CXX_COMPILER_LOADED)
+        _tula_Ceres_add_system_manual()
+        return()
+    endif()
     tula_try_system(Ceres Ceres::ceres Ceres)
-    set(TULA_Ceres_SYSTEM_SUCCESS ${TULA_Ceres_SYSTEM_SUCCESS} PARENT_SCOPE)
+    if(NOT TULA_Ceres_SYSTEM_SUCCESS)
+        return()
+    endif()
+    # Ubuntu's CeresConfig.cmake does not declare glog as a public dependency.
+    # Find glog and link it explicitly so executables don't get undefined references.
+    find_package(glog QUIET CONFIG)
+    if(NOT TARGET glog::glog)
+        find_library(_glog_lib NAMES glog PATHS /usr/lib /usr/lib/aarch64-linux-gnu /usr/lib/x86_64-linux-gnu /usr/local/lib)
+        if(_glog_lib)
+            add_library(glog::glog UNKNOWN IMPORTED)
+            set_target_properties(glog::glog PROPERTIES IMPORTED_LOCATION "${_glog_lib}")
+        endif()
+    endif()
+    if(TARGET glog::glog AND TARGET Ceres::ceres)
+        set_property(TARGET Ceres::ceres APPEND PROPERTY INTERFACE_LINK_LIBRARIES glog::glog)
+    endif()
+    _tula_Ceres_create_wrapper()
+endfunction()
+
+function(_tula_Ceres_add_system_manual)
+    if(TARGET Ceres::ceres)
+        _tula_Ceres_create_wrapper()
+        return()
+    endif()
+    find_library(CERES_LIBRARY NAMES ceres
+        PATHS /usr/lib /usr/lib/aarch64-linux-gnu /usr/local/lib)
+    find_path(CERES_INCLUDE_DIR NAMES ceres/ceres.h
+        PATHS /usr/include /usr/local/include)
+    if(CERES_LIBRARY AND CERES_INCLUDE_DIR)
+        add_library(Ceres::ceres UNKNOWN IMPORTED)
+        # Also find glog (Ceres depends on it but Ubuntu CeresConfig may not declare it)
+        find_library(GLOG_LIBRARY NAMES glog
+            PATHS /usr/lib /usr/lib/aarch64-linux-gnu /usr/lib/x86_64-linux-gnu /usr/local/lib)
+        set(_ceres_iface_libs "")
+        if(GLOG_LIBRARY)
+            list(APPEND _ceres_iface_libs "${GLOG_LIBRARY}")
+        endif()
+        set_target_properties(Ceres::ceres PROPERTIES
+            IMPORTED_LOCATION "${CERES_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${CERES_INCLUDE_DIR}"
+            INTERFACE_LINK_LIBRARIES "${_ceres_iface_libs}"
+        )
+        message(STATUS "    Found Ceres (manual): ${CERES_LIBRARY}")
+        set(TULA_Ceres_SYSTEM_SUCCESS TRUE PARENT_SCOPE)
+        _tula_Ceres_create_wrapper()
+    else()
+        message(STATUS "    Ceres not found (manual search)")
+    endif()
 endfunction()
 
 #[=======================================================================[
 @brief Create tula::Ceres wrapper target
 ]=======================================================================]
-function(TULA_Ceres_CREATE_WRAPPER)
-    set(_deps Ceres::ceres)
+function(_tula_Ceres_create_wrapper)
+    if(TARGET tula_Ceres)
+        return()
+    endif()
     
-    # Add perflibs if multithreading enabled
+    if(NOT TARGET Ceres::ceres)
+        message(FATAL_ERROR "Cannot create wrapper: Ceres::ceres target does not exist")
+    endif()
+    
+    set(_deps Ceres::ceres)
+    if(TARGET tula::Eigen3)
+        list(APPEND _deps tula::Eigen3)
+    endif()
+    
+    # Add perflibs if multithreading enabled and available
+    option(USE_CERES_MULTITHREADING "Enable multithreading inside Ceres" ON)
     if(USE_CERES_MULTITHREADING AND TARGET tula::perflibs)
         list(APPEND _deps tula::perflibs)
     endif()
     
-    tula_create_wrapper(Ceres ${_deps})
+    make_tula_target(Ceres ${_deps})
+    
     verbose_message("Created tula::Ceres wrapper")
 endfunction()

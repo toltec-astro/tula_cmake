@@ -1,0 +1,39 @@
+{# GrPPI parallel patterns test #}
+// Include <vector> FIRST to ensure std::vector's full definition (with default allocator)
+// is in scope before any header (e.g. <format> via GrPPI) forward-declares it with 2 params.
+// This avoids the libstdc++ C++23 "<format> forward-declares std::vector" bug.
+#include <vector>
+#include <numeric>
+#include <cassert>
+// Include only the sequential backend to avoid C++23 issues in parallel backends
+#if __has_include(<grppi/seq/sequential_execution.h>)
+#  include <grppi/seq/sequential_execution.h>
+#  include <grppi/map.h>
+#  include <grppi/reduce.h>
+#else
+#  include <grppi/grppi.h>
+#endif
+
+void test_grppi() {
+    std::cout << "=== Testing GrPPI ===" << std::endl;
+
+    // Use sequential execution for determinism in tests
+    grppi::sequential_execution seq;
+
+    // map: double each element
+    std::vector<int> input = {1, 2, 3, 4, 5};
+    std::vector<int> output(input.size());
+    grppi::map(seq, input.begin(), input.end(), output.begin(),
+               [](int x) { return x * 2; });
+
+    assert(output[0] == 2 && output[4] == 10 && "map should double values");
+    std::cout << "  ✓ grppi::map OK" << std::endl;
+
+    // reduce: sum
+    int sum = grppi::reduce(seq, output.begin(), output.end(), 0,
+                             [](int a, int b) { return a + b; });
+    assert(sum == 30 && "reduce should sum to 30");
+    std::cout << "  ✓ grppi::reduce OK (sum=" << sum << ")" << std::endl;
+
+    std::cout << "✅ GrPPI test passed!" << std::endl;
+}

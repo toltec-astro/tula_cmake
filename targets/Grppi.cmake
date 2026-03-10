@@ -1,52 +1,22 @@
 # Grppi.cmake - Generic and Reusable Parallel Pattern Interface
+#
+# Defines: tula_Grppi_add_cpm()
+# Called by: tula_deps_add(deps Grppi) from tula_deps.cmake
+# Note: CPM only - requires perflibs and Enum dependencies
+
 include_guard(GLOBAL)
 
+include(${CMAKE_CURRENT_LIST_DIR}/../utils/make_tula_target.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/verbose_message.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/_deps_callbacks.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../utils/_ensure_cpm.cmake)
 
 #[=======================================================================[
-@brief Setup Grppi package (CPM only, requires perflibs and Enum dependencies)
-@param MODE Resolution mode (AUTO, CPM)
+@brief Fetch Grppi via CPM (only supported mode)
 ]=======================================================================]
-function(tula_setup_Grppi MODE)
-    verbose_message("Setting up tula::Grppi (mode=${MODE})")
-    
-    if(TARGET tula::Grppi)
-        verbose_message("tula::Grppi already exists")
+function(tula_Grppi_add_cpm)
+    if(NOT DEFINED TULA_GRPPI_CPM_GITHUB_REPO)
         return()
-    endif()
-    
-    # Ensure perflibs is available (for OpenMP/threading)
-    if(NOT TARGET tula::perflibs)
-        verbose_message("Grppi requires perflibs, loading it first...")
-        tula_deps_add(_perflibs_dep perflibs)
-    endif()
-    
-    # Ensure Enum is available
-    if(NOT TARGET tula::Enum)
-        verbose_message("Grppi requires Enum, loading it first...")
-        tula_deps_add(_enum_dep Enum)
-    endif()
-    
-    if(MODE STREQUAL "AUTO" OR MODE STREQUAL "CPM")
-        TULA_Grppi_TRY_CPM()
-    elseif(MODE STREQUAL "CONAN" OR MODE STREQUAL "SYSTEM")
-        message(FATAL_ERROR "Grppi does not support ${MODE} mode (header-only, CPM only)")
-    else()
-        message(FATAL_ERROR "Invalid MODE for Grppi: ${MODE}")
-    endif()
-    
-    # Create wrapper
-    TULA_Grppi_CREATE_WRAPPER()
-    verbose_message("tula::Grppi ready")
-endfunction()
-
-#[=======================================================================[
-@brief Try to fetch Grppi via CPM
-]=======================================================================]
-function(TULA_Grppi_TRY_CPM)
-    if(NOT DEFINED GRPPI_CPM_GITHUB_REPO)
-        message(FATAL_ERROR "GRPPI_CPM_GITHUB_REPO not set. Check toolchain configuration.")
     endif()
     
     # Compiler version checks (from ref implementation)
@@ -65,43 +35,71 @@ function(TULA_Grppi_TRY_CPM)
         message(WARNING "Intel compiler is not currently supported for Grppi")
     endif()
     
-    tula_try_cpm(Grppi grppi::grppi
+    # Use DOWNLOAD_ONLY to avoid recursive project() call during toolchain phase
+    CPMAddPackage(
         NAME grppi
-        GITHUB_REPOSITORY "${GRPPI_CPM_GITHUB_REPO}"
-        GIT_TAG "${GRPPI_CPM_GIT_TAG}"
+        GITHUB_REPOSITORY "${TULA_GRPPI_CPM_GITHUB_REPO}"
+        GIT_TAG "${TULA_GRPPI_CPM_GIT_TAG}"
+        DOWNLOAD_ONLY YES
     )
-    
-    # CPM doesn't create the target automatically for header-only
+
+    # Create the interface target manually (header-only library)
     if(NOT TARGET grppi::grppi AND grppi_ADDED)
         add_library(grppi INTERFACE)
         target_include_directories(grppi SYSTEM INTERFACE ${grppi_SOURCE_DIR}/include)
         
-        # Add OpenMP support if available
-        find_package(OpenMP QUIET)
-        if(OpenMP_FOUND)
-            target_compile_definitions(grppi INTERFACE GRPPI_OMP)
+        # OpenMP/Threads detection requires languages to be enabled (not available in toolchain phase).
+        # If perflibs is available, it handles OpenMP+Threads; otherwise defer to user.
+        if(TARGET tula::perflibs)
+            target_link_libraries(grppi INTERFACE tula::perflibs)
+        elseif(CMAKE_CXX_COMPILER_LOADED)
+            # Only attempt language-requiring find_package after project() is called
+            find_package(OpenMP QUIET)
+            if(OpenMP_FOUND)
+                target_compile_definitions(grppi INTERFACE GRPPI_OMP)
+            endif()
+            find_package(Threads QUIET)
+            if(Threads_FOUND)
+                target_link_libraries(grppi INTERFACE Threads::Threads)
+            endif()
         endif()
-        
-        # Require threads
-        find_package(Threads REQUIRED)
-        if(NOT Threads_FOUND)
-            message(FATAL_ERROR "Grppi requires threads library")
-        endif()
-        
-        # Link perflibs for threading/OpenMP support
-        target_link_libraries(grppi INTERFACE tula::perflibs)
         
         add_library(grppi::grppi ALIAS grppi)
-        set(TULA_Grppi_CPM_SUCCESS TRUE PARENT_SCOPE)
-    else()
-        set(TULA_Grppi_CPM_SUCCESS ${TULA_Grppi_CPM_SUCCESS} PARENT_SCOPE)
     endif()
+    
+    if(NOT TARGET grppi::grppi)
+        return()
+    endif()
+    _tula_Grppi_create_wrapper()
 endfunction()
 
 #[=======================================================================[
 @brief Create tula::Grppi wrapper target
 ]=======================================================================]
-function(TULA_Grppi_CREATE_WRAPPER)
-    tula_create_wrapper(Grppi grppi::grppi tula::perflibs tula::Enum)
+function(_tula_Grppi_create_wrapper)
+    if(TARGET tula_Grppi)
+        return()
+    endif()
+    
+    if(NOT TARGET grppi::grppi)
+        message(FATAL_ERROR "Cannot create wrapper: grppi::grppi target does not exist")
+    endif()
+    
+    set(_deps grppi::grppi)
+    
+    if(TARGET tula::perflibs)
+        list(APPEND _deps tula::perflibs)
+    else()
+        verbose_message("Grppi: tula::perflibs not found, OpenMP/Threads support unavailable")
+    endif()
+
+    if(TARGET tula::Enum)
+        list(APPEND _deps tula::Enum)
+    else()
+        verbose_message("Grppi: tula::Enum not found, enum utilities unavailable")
+    endif()
+    
+    make_tula_target(Grppi ${_deps})
+    
     verbose_message("Created tula::Grppi wrapper")
 endfunction()

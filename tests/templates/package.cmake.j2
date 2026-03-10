@@ -7,32 +7,34 @@ project(
     LANGUAGES CXX
 )
 
-# Initialize tula build system (must be called after project())
-tula_bootstrap()
+# tula::tula is provided by the Conan toolchain (TulaConan).
+# It bundles tula headers + all dependency targets loaded during the toolchain phase.
+# CPM-compiled packages that were deferred (toolchain phase can't enable CXX recursively)
+# are retried here after project() has enabled the CXX language.
 
-# Note: tula_deps.cmake is automatically included by the Conan toolchain
-# No need to manually include it or set CMAKE_MODULE_PATH
+# Retry any packages that were deferred from the toolchain phase
+if(TULA_DEFERRED_PKGS)
+    message(STATUS "Retrying deferred packages post-project(): ${TULA_DEFERRED_PKGS}")
+    foreach(_deferred_pkg IN LISTS TULA_DEFERRED_PKGS)
+        if(NOT TARGET tula::${_deferred_pkg})
+            message(STATUS "  Loading deferred: ${_deferred_pkg}")
+            tula_deps_add(TULA_DEPS ${_deferred_pkg})
+        else()
+            list(APPEND TULA_DEPS tula::${_deferred_pkg})
+        endif()
+    endforeach()
+    set(TULA_DEFERRED_PKGS "" CACHE INTERNAL "")
+endif()
 
-# Add all packages specified in test
-{% for package, mode in PACKAGES.items() %}
-tula_deps_add(test_deps {{package}})
-{% endfor %}
-
-# Create test executable
 add_executable(test_{{PROJECT_NAME}} test_main.cpp)
-target_link_libraries(test_{{PROJECT_NAME}} PRIVATE ${test_deps})
-target_compile_features(test_{{PROJECT_NAME}} PRIVATE cxx_std_20)
+# Link to tula::tula (toolchain deps) plus TULA_DEPS which includes deferred packages
+target_link_libraries(test_{{PROJECT_NAME}} PRIVATE tula::tula ${TULA_DEPS})
+target_compile_features(test_{{PROJECT_NAME}} PRIVATE cxx_std_23)
 
-# Generate config headers to verify they work
-include(generate_config_header)
-generate_gitversion_header(${PROJECT_NAME})
-generate_config_header(${PROJECT_NAME})
-target_link_libraries(test_{{PROJECT_NAME}} PRIVATE tula::config_header)
-
-# Print diagnostic information
 message(STATUS "=== Test Configuration ===")
 message(STATUS "Test: {{TEST_NAME}}")
 message(STATUS "ID: {{TEST_ID}}")
-message(STATUS "Packages: ${test_deps}")
+message(STATUS "Packages: {% for p, m in PACKAGES.items() %}{{p}}={{m}} {% endfor %}")
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "TULA_DEPS: ${TULA_DEPS}")
 message(STATUS "========================")

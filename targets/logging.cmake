@@ -1,66 +1,25 @@
 # logging.cmake - Logging metapackage (spdlog + fmt)
-# Adapted for v3 Conan-centric architecture with stateless functions
+#
+# Defines: tula_logging_add_conan(), tula_logging_add_cpm(), tula_logging_add_system()
+# Called by: tula_deps_add(deps logging) from tula_deps.cmake
 
 include_guard(GLOBAL)
 
-# Include utilities
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/make_tula_target.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/verbose_message.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/_ensure_cpm.cmake)
 
 #[=======================================================================[
-@brief Main setup function for logging metapackage (stateless, mode as parameter)
-
-This is the entry point called by tula_deps_add().
-Mode is passed as parameter (not global variable).
-
-@param MODE Resolution mode (AUTO, CONAN, CPM, SYSTEM)
+@brief Load spdlog and fmt from Conan
 ]=======================================================================]
-function(tula_setup_logging MODE)
-    verbose_message("Setting up tula::logging metapackage (mode=${MODE})")
-    
-    # Idempotency check
-    if(TARGET tula::logging)
-        verbose_message("tula::logging already exists, skipping")
-        return()
-    endif()
-    
+function(tula_logging_add_conan)
     # Configure log level
-    set(default_loglevel "Trace")
-    if(CMAKE_BUILD_TYPE MATCHES "^(Release|MinSizeRel)$")
-        set(default_loglevel "Debug")
-    endif()
+    _tula_logging_configure_loglevel()
     
-    set(LOGLEVEL "${default_loglevel}" CACHE STRING "Minimum log level to enable at compile-time")
-    set_property(CACHE LOGLEVEL PROPERTY STRINGS "Trace" "Debug" "Info" "Warning" "Error")
-    
-    verbose_message("Log level: ${LOGLEVEL}")
-    
-    # Mode-driven resolution
-    if(MODE MATCHES "CONAN|AUTO")
-        _tula_logging_try_conan()
-    elseif(MODE STREQUAL "CPM")
-        _tula_logging_try_cpm()
-    elseif(MODE STREQUAL "SYSTEM")
-        _tula_logging_try_system()
-    else()
-        message(FATAL_ERROR "Unknown logging mode: ${MODE}")
-    endif()
-    
-    # Create metapackage wrapper
-    _tula_logging_create_wrapper()
-    
-    verbose_message("tula::logging ready")
-endfunction()
-
-#[=======================================================================[
-@brief Try to find spdlog and fmt via Conan
-]=======================================================================]
-function(_tula_logging_try_conan)
     # Try spdlog first (may bring fmt transitively)
     find_package(spdlog QUIET CONFIG)
     if(NOT TARGET spdlog::spdlog AND NOT TARGET spdlog)
-        message(FATAL_ERROR "spdlog not found via Conan CONFIG. Ensure it's in Conan requirements.")
+        return()
     endif()
     
     # Try fmt (should be available transitively from spdlog, or separately)
@@ -70,16 +29,26 @@ function(_tula_logging_try_conan)
     endif()
     
     verbose_message("Found spdlog and fmt via Conan")
+    _tula_logging_create_wrapper()
 endfunction()
 
 #[=======================================================================[
 @brief Fetch spdlog and fmt via CPM
 ]=======================================================================]
-function(_tula_logging_try_cpm)
-    if(NOT DEFINED LOGGING_SPDLOG_GITHUB_REPO)
-        message(FATAL_ERROR "LOGGING_SPDLOG_GITHUB_REPO not set. Check toolchain configuration.")
+function(tula_logging_add_cpm)
+    # Configure log level
+    _tula_logging_configure_loglevel()
+
+    if(NOT DEFINED TULA_LOGGING_SPDLOG_GITHUB_REPO)
+        return()
     endif()
-    
+
+    # CPM requires CXX language (compiles spdlog/fmt). Defer to post-project().
+    if(NOT CMAKE_CXX_COMPILER_LOADED)
+        message(STATUS "    Toolchain phase: deferring logging CPM to post-project() phase")
+        return()
+    endif()
+
     # Fetch fmt first (spdlog dependency)
     if(NOT TARGET fmt::fmt AND NOT TARGET fmt)
         CPMAddPackage(
@@ -96,22 +65,62 @@ function(_tula_logging_try_cpm)
     # Fetch spdlog
     CPMAddPackage(
         NAME spdlog
-        GITHUB_REPOSITORY "${LOGGING_SPDLOG_GITHUB_REPO}"
-        GIT_TAG "${LOGGING_SPDLOG_GIT_TAG}"
-        OPTIONS ${LOGGING_SPDLOG_OPTIONS}
+        GITHUB_REPOSITORY "${TULA_LOGGING_SPDLOG_GITHUB_REPO}"
+        GIT_TAG "${TULA_LOGGING_SPDLOG_GIT_TAG}"
+        OPTIONS ${TULA_LOGGING_SPDLOG_OPTIONS}
     )
     
+    if(NOT TARGET spdlog::spdlog AND NOT TARGET spdlog)
+        return()
+    endif()
+    
     verbose_message("Fetched spdlog and fmt via CPM")
+    _tula_logging_create_wrapper()
 endfunction()
 
 #[=======================================================================[
 @brief Find spdlog and fmt via system
 ]=======================================================================]
-function(_tula_logging_try_system)
-    find_package(fmt REQUIRED CONFIG)
-    find_package(spdlog REQUIRED CONFIG)
-    
+function(tula_logging_add_system)
+    # Configure log level
+    _tula_logging_configure_loglevel()
+
+    # spdlogConfig.cmake calls find_package(Threads) which requires CXX language.
+    # Skip entirely during toolchain phase; tula_deps.cmake will defer and retry.
+    if(NOT CMAKE_CXX_COMPILER_LOADED)
+        message(STATUS "    Toolchain phase: deferring logging system to post-project() phase")
+        return()
+    endif()
+
+    find_package(fmt QUIET CONFIG)
+    find_package(spdlog QUIET CONFIG)
+
+    if(NOT TARGET fmt::fmt AND NOT TARGET fmt)
+        message(STATUS "    fmt not found via system CONFIG")
+        return()
+    endif()
+    if(NOT TARGET spdlog::spdlog AND NOT TARGET spdlog)
+        message(STATUS "    spdlog not found via system CONFIG")
+        return()
+    endif()
+
     verbose_message("Found spdlog and fmt via system")
+    _tula_logging_create_wrapper()
+endfunction()
+
+#[=======================================================================[
+@brief Configure log level cache variable
+]=======================================================================]
+function(_tula_logging_configure_loglevel)
+    set(default_loglevel "Trace")
+    if(CMAKE_BUILD_TYPE MATCHES "^(Release|MinSizeRel)$")
+        set(default_loglevel "Debug")
+    endif()
+    
+    set(LOGLEVEL "${default_loglevel}" CACHE STRING "Minimum log level to enable at compile-time")
+    set_property(CACHE LOGLEVEL PROPERTY STRINGS "Trace" "Debug" "Info" "Warning" "Error")
+    
+    verbose_message("Log level: ${LOGLEVEL}")
 endfunction()
 
 #[=======================================================================[
@@ -119,7 +128,7 @@ endfunction()
 ]=======================================================================]
 function(_tula_logging_create_wrapper)
     if(TARGET tula_logging)
-        return()  # Already created
+        return()
     endif()
     
     set(_logging_libs "")
@@ -143,11 +152,9 @@ function(_tula_logging_create_wrapper)
         list(APPEND _logging_libs fmt)
         verbose_message("Using fmt")
     else()
-        # fmt might be provided transitively by spdlog, so just warn
         message(WARNING "fmt target not found, but may be available transitively from spdlog")
     endif()
     
-    # Create metapackage wrapper
     make_tula_target(logging ${_logging_libs})
     
     # Add log level compile definition

@@ -1,36 +1,36 @@
 """
 tula_cmake bootstrap utility.
 
-Locates tula_cmake (the directory containing tula_conan.py) via three
-strategies, in order:
+Creates ``<project>/build/tula_cmake/`` — a stable, predictable location
+for the tula_cmake directory that project profiles can reference with a
+plain Conan 2 ``include()``:
 
-  1. Sibling directory: <project_root>/../tula/tula_cmake/
-     Used in monorepo / side-by-side clone layouts.
+    include(../build/tula_cmake/profiles/linux-clang20-debug)
 
-  2. Environment variable: TULA_CMAKE_DIR
-     Useful for CI or custom tula installations.
+Resolution order (first match wins):
 
-  3. Local sparse-checkout cache: <project_root>/.tula_bootstrap/tula/tula_cmake/
-     Populated automatically by a git sparse-checkout that fetches only the
-     tula_cmake/ subdirectory from GitHub.  The repo URL and tag are also
-     overridable via environment variables:
-       TULA_GIT_REPO  (default: https://github.com/toltec-astro/tula.git)
-       TULA_GIT_TAG   (default: main)
+  1. Sibling directory: ``<project>/../tula/tula_cmake/`` — monorepo layout.
+     A symlink is created at ``build/tula_cmake → <abs-sibling-path>``.
 
-Usage — from a downstream conanfile.py
----------------------------------------
-    import sys
-    from pathlib import Path
-    from tula_cmake.bootstrap import find_tula_cmake   # only works if tula is already
-                                                        # a sibling — circular otherwise!
+  2. Environment variable: ``TULA_CMAKE_DIR``
+     A symlink is created pointing at that directory.
 
-For the truly standalone case (no tula on disk yet) copy the inline snippet
-from the bottom of this file into the downstream conanfile.py directly.
-The snippet is self-contained and has no imports beyond the stdlib.
+  3. Git sparse-checkout: clones only ``tula_cmake/`` from the tula repo
+     (or from ``TULA_GIT_REPO``) directly into ``build/tula_cmake/``.
 
-Usage — as a script (pre-fetch tula_cmake into a cache)
----------------------------------------------------------
-    python bootstrap.py [--cache-dir .tula_bootstrap] [--tag v3]
+After ``ensure_tula_cmake()`` returns, ``build/tula_cmake/`` exists and the
+native ``conan install . --profile=profiles/clang20-debug`` command works
+without any Python magic — the profile resolves the include path itself.
+
+Usage in a downstream conanfile.py::
+
+    if __name__ == "__main__":
+        import sys
+        from pathlib import Path
+        from tula_cmake.bootstrap import ensure_tula_cmake
+        ensure_tula_cmake(Path(__file__).parent)
+        import subprocess
+        raise SystemExit(subprocess.run(["conan"] + sys.argv[1:]).returncode)
 """
 
 from __future__ import annotations
@@ -41,181 +41,112 @@ import sys
 from pathlib import Path
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
+def ensure_tula_cmake(project_root: Path) -> Path:
+    """Ensure ``<project_root>/build/tula_cmake/`` exists and is valid.
 
-def find_tula_cmake(project_root: Path | None = None) -> Path:
-    """Return the Path to a valid tula_cmake directory.
+    Creates a symlink (monorepo / TULA_CMAKE_DIR) or a sparse git clone.
+    Returns the path ``<project_root>/build/tula_cmake/``.
 
-    Searches in this order:
-      1. Sibling ../tula/tula_cmake/ relative to *project_root*
-      2. TULA_CMAKE_DIR environment variable
-      3. Sparse-checkout cache in <project_root>/.tula_bootstrap/
-
-    Args:
-        project_root: Directory of the project's conanfile.py.
-                      Defaults to the directory that contains *this* file's
-                      parent (i.e. the tula repo root), which is useful when
-                      running the script standalone.
-
-    Returns:
-        Path to tula_cmake directory (guaranteed to contain tula_conan.py).
-
-    Raises:
-        RuntimeError if tula_cmake cannot be found or fetched.
+    Idempotent: if the target already exists and contains ``profiles/``,
+    returns immediately without any network access.
     """
-    if project_root is None:
-        project_root = Path(__file__).parent.parent  # tula_cmake/../  = tula repo root
+    project_root = project_root.resolve()
+    target = project_root / "build" / "tula_cmake"
 
-    # 1. Sibling directory
+    if _is_valid(target):
+        return target
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    # 1. Monorepo sibling: <project>/../tula/tula_cmake/
     sibling = project_root.parent / "tula" / "tula_cmake"
-    if (sibling / "tula_conan.py").exists():
-        return sibling
+    if _is_valid(sibling):
+        _symlink(target, sibling)
+        return target
 
-    # 2. Environment variable override
+    # 2. TULA_CMAKE_DIR environment variable
     env_dir = os.environ.get("TULA_CMAKE_DIR", "")
     if env_dir:
         p = Path(env_dir)
-        if (p / "tula_conan.py").exists():
-            return p
-        print(f"[tula] WARNING: TULA_CMAKE_DIR={env_dir!r} does not contain "
-              f"tula_conan.py; ignoring.")
+        if _is_valid(p):
+            _symlink(target, p)
+            return target
+        print(f"[tula] WARNING: TULA_CMAKE_DIR={env_dir!r} has no profiles/; ignoring.")
 
-    # 3. Sparse-checkout cache
-    cache_tula = project_root / ".tula_bootstrap" / "tula"
-    tula_cmake = cache_tula / "tula_cmake"
-    if not (tula_cmake / "tula_conan.py").exists():
-        _sparse_clone(cache_tula, project_root)
+    # 3. Git sparse-checkout directly into build/tula_cmake/
+    _sparse_clone(target)
 
-    if not (tula_cmake / "tula_conan.py").exists():
+    if not _is_valid(target):
         raise RuntimeError(
-            f"tula_cmake not found after fetch.  Expected: {tula_cmake}\n"
+            f"tula_cmake bootstrap failed — {target} is missing profiles/.\n"
             "Check your internet connection or set TULA_CMAKE_DIR."
         )
-    return tula_cmake
+    return target
 
 
 # ---------------------------------------------------------------------------
-# Internal helpers
+# Helpers
 # ---------------------------------------------------------------------------
 
-def _sparse_clone(target_dir: Path, project_root: Path) -> None:
-    """Clone only the tula_cmake/ subtree of the tula repo into *target_dir*."""
-    repo = os.environ.get("TULA_GIT_REPO",
-                          "https://github.com/toltec-astro/tula.git")
-    tag  = os.environ.get("TULA_GIT_TAG", "main")
+def _is_valid(p: Path) -> bool:
+    """True if *p* looks like a tula_cmake directory."""
+    return (p / "profiles").is_dir()
 
-    print(f"[tula] tula_cmake not found locally.")
+
+def _symlink(target: Path, source: Path) -> None:
+    if target.is_symlink():
+        target.unlink()
+    target.symlink_to(source.resolve())
+    print(f"[tula] build/tula_cmake → {source.resolve()}")
+
+
+def _sparse_clone(target: Path) -> None:
+    """Sparse-clone only tula_cmake/ from the tula repo into *target*."""
+    repo = os.environ.get(
+        "TULA_GIT_REPO",
+        "https://github.com/toltec-astro/tula_cmake.git",
+    )
+    tag = os.environ.get("TULA_GIT_TAG", "main")
+
     print(f"[tula] Fetching tula_cmake ({tag}) from {repo}")
-    print(f"[tula] Cache: {target_dir}")
+    print(f"[tula] Target: {target}")
 
-    target_dir.parent.mkdir(parents=True, exist_ok=True)
-
-    if target_dir.exists():
-        # Already cloned but tula_conan.py missing — try sparse-checkout repair
+    if target.exists():
+        # Repo already cloned but profiles/ missing — repair sparse-checkout
         subprocess.run(
-            ["git", "-C", str(target_dir), "sparse-checkout", "set", "tula_cmake"],
+            ["git", "-C", str(target), "sparse-checkout", "set", "."],
             check=True,
         )
-        subprocess.run(
-            ["git", "-C", str(target_dir), "checkout"],
-            check=True,
-        )
+        subprocess.run(["git", "-C", str(target), "checkout"], check=True)
     else:
-        # Fresh sparse clone — only materialise tula_cmake/
         subprocess.run(
             [
                 "git", "clone",
                 "--depth=1",
                 "--filter=blob:none",
-                "--sparse",
-                "--branch", tag,
                 repo,
-                str(target_dir),
+                str(target),
             ],
             check=True,
         )
-        subprocess.run(
-            ["git", "-C", str(target_dir), "sparse-checkout", "set", "tula_cmake"],
-            check=True,
-        )
 
 
 # ---------------------------------------------------------------------------
-# Inline snippet — copy this into a downstream conanfile.py
-# ---------------------------------------------------------------------------
-#
-# The snippet below is self-contained (stdlib only) and can be pasted
-# verbatim into any downstream conanfile.py that needs to bootstrap
-# tula_cmake without a sibling tula/ directory on disk.
-#
-# ----- cut here -----
-#
-# import os, subprocess, sys
-# from pathlib import Path
-#
-# def _find_tula_cmake(project_root: Path = Path(__file__).parent) -> Path:
-#     """Locate tula_cmake locally or fetch from GitHub (sparse clone)."""
-#     # 1. Sibling directory
-#     sibling = project_root.parent / "tula" / "tula_cmake"
-#     if (sibling / "tula_conan.py").exists():
-#         return sibling
-#     # 2. Environment variable
-#     if (env := os.environ.get("TULA_CMAKE_DIR")):
-#         p = Path(env)
-#         if (p / "tula_conan.py").exists():
-#             return p
-#     # 3. Sparse-checkout cache
-#     cache = project_root / ".tula_bootstrap" / "tula"
-#     tula_cmake = cache / "tula_cmake"
-#     if not (tula_cmake / "tula_conan.py").exists():
-#         repo = os.environ.get("TULA_GIT_REPO", "https://github.com/toltec-astro/tula.git")
-#         tag  = os.environ.get("TULA_GIT_TAG",  "main")
-#         print(f"[tula] fetching tula_cmake ({tag}) from {repo} → {cache.parent}")
-#         cache.parent.mkdir(parents=True, exist_ok=True)
-#         subprocess.run(["git", "clone", "--depth=1", "--filter=blob:none",
-#                         "--sparse", "--branch", tag, repo, str(cache)], check=True)
-#         subprocess.run(["git", "-C", str(cache), "sparse-checkout", "set",
-#                         "tula_cmake"], check=True)
-#     return tula_cmake
-#
-# sys.path.insert(0, str(_find_tula_cmake()))
-# from tula_conan import TulaConan
-#
-# ----- cut here -----
-
-
-# ---------------------------------------------------------------------------
-# Script entry-point
+# Script entry-point: python -m tula_cmake.bootstrap [--project-root DIR]
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Fetch tula_cmake from GitHub into a local sparse-checkout cache."
+        description="Bootstrap build/tula_cmake/ for a downstream project."
     )
     parser.add_argument(
         "--project-root", type=Path, default=Path.cwd(),
-        help="Project root (default: cwd).  Cache will be placed at "
-             "<project-root>/.tula_bootstrap/",
-    )
-    parser.add_argument(
-        "--tag", default=None,
-        help="Git tag/branch to fetch (default: TULA_GIT_TAG env or 'main').",
-    )
-    parser.add_argument(
-        "--repo", default=None,
-        help="Git repo URL (default: TULA_GIT_REPO env or the toltec-astro GitHub URL).",
+        help="Project root (default: cwd).",
     )
     args = parser.parse_args()
 
-    if args.tag:
-        os.environ["TULA_GIT_TAG"] = args.tag
-    if args.repo:
-        os.environ["TULA_GIT_REPO"] = args.repo
-
-    result = find_tula_cmake(args.project_root)
+    result = ensure_tula_cmake(args.project_root)
     print(f"[tula] tula_cmake ready at: {result}")
     sys.exit(0)

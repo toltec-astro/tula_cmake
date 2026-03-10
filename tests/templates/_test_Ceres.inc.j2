@@ -1,0 +1,35 @@
+{# Ceres nonlinear least squares test #}
+#include <ceres/ceres.h>
+#include <cassert>
+#include <cmath>
+
+struct CostFunctor {
+    template <typename T>
+    bool operator()(const T* const x, T* residual) const {
+        residual[0] = T(10.0) - x[0];
+        return true;
+    }
+};
+
+void test_ceres() {
+    std::cout << "=== Testing Ceres ===" << std::endl;
+
+    double x = 0.5;
+    ceres::Problem problem;
+    ceres::CostFunction* cost =
+        new ceres::AutoDiffCostFunction<CostFunctor, 1, 1>(new CostFunctor);
+    problem.AddResidualBlock(cost, nullptr, &x);
+
+    ceres::Solver::Options options;
+    options.minimizer_progress_to_stdout = false;
+    options.logging_type = ceres::SILENT;
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+
+    assert(summary.IsSolutionUsable() && "Ceres solution should be usable");
+    assert(std::abs(x - 10.0) < 1e-6 && "Solution should converge to x=10");
+
+    std::cout << "  Solution x = " << x << " (expected 10.0)" << std::endl;
+    std::cout << "  ✓ Optimization converged" << std::endl;
+    std::cout << "✅ Ceres test passed!" << std::endl;
+}

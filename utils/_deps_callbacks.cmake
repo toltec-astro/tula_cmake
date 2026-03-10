@@ -40,6 +40,9 @@ function(tula_try_conan_header_only PACKAGE UPSTREAM_TARGET)
     
     _tula_check_target_exists(${PACKAGE} ${UPSTREAM_TARGET} CONAN)
     if(_TULA_TARGET_EXISTS)
+        # Target already exists (e.g. created transitively by another package).
+        # Propagate success to the caller before returning.
+        set(TULA_${PACKAGE}_CONAN_SUCCESS TRUE PARENT_SCOPE)
         return()
     endif()
     
@@ -72,11 +75,21 @@ Usage:
 function(tula_try_cpm PACKAGE UPSTREAM_TARGET)
     _tula_check_target_exists(${PACKAGE} ${UPSTREAM_TARGET} CPM)
     if(_TULA_TARGET_EXISTS)
+        # Target already exists. Propagate success to the caller before returning.
+        set(TULA_${PACKAGE}_CPM_SUCCESS TRUE PARENT_SCOPE)
         return()
     endif()
-    
+
+    # CPM cannot add compiled packages during toolchain phase (before project() enables CXX).
+    # Skip silently; tula_deps.cmake will register this package for deferred post-project() retry.
+    if(NOT CMAKE_CXX_COMPILER_LOADED)
+        message(STATUS "    Toolchain phase: deferring ${PACKAGE} CPM to post-project() phase")
+        set(TULA_${PACKAGE}_CPM_SUCCESS FALSE PARENT_SCOPE)
+        return()
+    endif()
+
     include(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/_ensure_cpm.cmake)
-    
+
     # Forward remaining arguments to CPMAddPackage
     CPMAddPackage(${ARGN})
     
@@ -109,11 +122,30 @@ function(tula_try_system PACKAGE UPSTREAM_TARGET)
     
     _tula_check_target_exists(${PACKAGE} ${UPSTREAM_TARGET} SYSTEM)
     if(_TULA_TARGET_EXISTS)
+        # Target already exists. Propagate success to the caller before returning.
+        set(TULA_${PACKAGE}_SYSTEM_SUCCESS TRUE PARENT_SCOPE)
         return()
     endif()
-    
+
+    # During toolchain phase the system cmake paths are not yet populated.
+    # Temporarily extend CMAKE_PREFIX_PATH with common system cmake dirs,
+    # including package-specific subdirectories under cmake/.
+    if(NOT CMAKE_CXX_COMPILER_LOADED)
+        foreach(_arch_dir
+                "/usr/lib/aarch64-linux-gnu"
+                "/usr/lib/x86_64-linux-gnu"
+                "/usr/lib/arm-linux-gnueabihf"
+                "/usr/local"
+                "/usr")
+            list(APPEND CMAKE_PREFIX_PATH "${_arch_dir}")
+            # Also add the cmake/<pkg> subdir directly for packages like netCDF
+            # whose config lives in cmake/<PackageName>/<PackageName>Config.cmake
+            list(APPEND CMAKE_PREFIX_PATH "${_arch_dir}/cmake/${_find_name}")
+        endforeach()
+    endif()
+
     find_package(${_find_name} CONFIG QUIET)
-    
+
     if(TARGET ${UPSTREAM_TARGET})
         message(STATUS "    Found ${PACKAGE} via system find_package")
         set(TULA_${PACKAGE}_SYSTEM_SUCCESS TRUE PARENT_SCOPE)
