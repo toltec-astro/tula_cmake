@@ -210,53 +210,57 @@ class TestRunner:
             )
             if not result:
                 return "FAIL", "Conan install failed", self._duration(start_time)
-            
+
+            # Discover the actual preset name and binary dir from the generated presets.
+            # TulaConan.layout() nests generators under build/<compiler><ver>-<type>/,
+            # so we can't hardcode either the preset name or the binary dir.
+            preset_name, bin_dir = self._discover_preset(project_dir)
+            if preset_name is None:
+                return "FAIL", "Could not find Conan-generated CMake preset", self._duration(start_time)
+
             # CMake configure
             self.console.print("  [3/5] Running cmake configure...")
-            
-            # Use Conan-generated preset which contains CMAKE_BUILD_TYPE from profile
-            preset_name = f"conan-clang-{build_config.lower()}"
             cmake_cmd = [
                 "cmake", str(project_dir),
                 "--preset", preset_name,
             ]
-            
+
             # Add test-specific CMake variables
             for var_name, var_value in self.get_test_cmake_vars(test_id).items():
                 cmake_cmd.append(f"-D{var_name}={var_value}")
-            
+
             result = self._run_command(
                 cmake_cmd,
-                cwd=build_dir,
+                cwd=project_dir,
                 log_file=log_dir / "cmake.log",
                 timeout=60
             )
             if not result:
                 return "FAIL", "CMake configure failed", self._duration(start_time)
-            
-            # CMake build
+
+            # CMake build — use the binary dir discovered from the preset
             self.console.print("  [4/5] Running cmake build...")
             result = self._run_command(
-                ["cmake", "--build", ".", "-j", 
+                ["cmake", "--build", str(bin_dir), "-j",
                  str(self.config["global"]["parallel_jobs"])],
-                cwd=build_dir,
+                cwd=project_dir,
                 log_file=log_dir / "build.log",
                 timeout=self.get_test_timeout(test_id)
             )
             if not result:
                 return "FAIL", "Build failed", self._duration(start_time)
-            
+
             # Run executable
             self.console.print("  [5/5] Running test executable...")
             exe_name = f"test_{test_id.replace('-', '_')}"
             # tula_sensible.cmake sets RUNTIME_OUTPUT_DIRECTORY to bin/
-            exe_path = build_dir / "bin" / exe_name
+            exe_path = bin_dir / "bin" / exe_name
             if not exe_path.exists():
-                exe_path = build_dir / exe_name  # fallback: no bin/ subdir
+                exe_path = bin_dir / exe_name  # fallback: no bin/ subdir
             if not exe_path.exists():
-                exe_path = build_dir / "bin" / f"{exe_name}.exe"  # Windows in bin/
+                exe_path = bin_dir / "bin" / f"{exe_name}.exe"  # Windows in bin/
             if not exe_path.exists():
-                exe_path = build_dir / f"{exe_name}.exe"  # Windows flat
+                exe_path = bin_dir / f"{exe_name}.exe"  # Windows flat
 
             if exe_path.exists():
                 result = self._run_command(
@@ -281,6 +285,26 @@ class TestRunner:
             self.console.print(f"  [red]✗ ERROR:[/red] {e}")
             return "FAIL", str(e), self._duration(start_time)
     
+    def _discover_preset(self, project_dir: Path) -> Tuple[Optional[str], Optional[Path]]:
+        """Read CMakeUserPresets.json to find the Conan-generated preset name and binary dir."""
+        user_presets = project_dir / "CMakeUserPresets.json"
+        if not user_presets.exists():
+            return None, None
+        with open(user_presets) as f:
+            data = json.load(f)
+        for include_path in data.get("include", []):
+            nested = project_dir / include_path
+            if not nested.exists():
+                continue
+            with open(nested) as f:
+                nested_data = json.load(f)
+            for preset in nested_data.get("configurePresets", []):
+                name = preset.get("name")
+                binary_dir = preset.get("binaryDir")
+                if name and binary_dir:
+                    return name, Path(binary_dir)
+        return None, None
+
     def _run_command(self, cmd: List[str], cwd: Path, log_file: Path,
                     timeout: int) -> bool:
         """Run a command and log output."""

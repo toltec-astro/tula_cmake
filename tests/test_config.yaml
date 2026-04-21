@@ -139,6 +139,9 @@ tests:
   ceres_conan:
     name: "Ceres CONAN"
     description: "Nonlinear least squares via Conan"
+    # No pre-built Conan binary for ceres-solver/2.2.0 on ARM64+GCC14;
+    # builds from source fail on Eigen NEON SIMD code. ceres_system covers this.
+    enabled: false
     packages:
       Eigen3: conan
       Ceres: conan

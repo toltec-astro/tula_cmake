@@ -156,6 +156,22 @@ class TulaConan(ConanFile):
             self.name = Path(self.recipe_folder).name
             print(f"Inferred package name: {self.name}")
 
+    def layout(self):
+        """Route Conan generators to build/<compiler><version>-<build_type_lower>/.
+
+        This ensures 'conan install .' always generates into the same build
+        subdirectory that CMakeUserPresets.json includes — no -of flag required.
+        For example, clang 20 Debug → build/clang20-debug/.
+        """
+        compiler = str(self.settings.compiler).lower()
+        if "clang" in compiler:
+            compiler = "clang"
+        version = str(self.settings.compiler.version)
+        build_type = str(self.settings.build_type).lower()
+        subdir = f"build/{compiler}{version}-{build_type}"
+        self.folders.build = subdir
+        self.folders.generators = subdir
+
     def _get_package_mode(self, package_name: str) -> PackageMode:
         """Get the resolved mode for a package from Conan options."""
         mode_str = str(getattr(self.options, package_name, PackageMode.DISABLED.value))
@@ -240,9 +256,14 @@ include("{deps_file}")
         tula::headers  — tula include/ directory only
         tula::tula     — tula::headers + all enabled TULA_DEPS
         """
-        # tula_cmake lives at <tula_root>/tula_cmake/
-        tula_root = Path(__file__).parent.parent
-        tula_include = tula_root / "include"
+        # Locate the tula C++ headers.
+        # tula_cmake/include/ is a symlink → ../include/ (i.e. tula/include/).
+        # This works both in the source tree and when installed into a venv via pip
+        # (setuptools follows the symlink and copies the headers into site-packages).
+        tula_include = Path(__file__).parent / "include"
+        if not tula_include.is_dir():
+            # Fallback: tula_cmake is a subdir of tula (no symlink present)
+            tula_include = Path(__file__).parent.parent / "include"
 
         class TulaTargetBlock(Block):
             @property

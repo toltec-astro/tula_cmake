@@ -5,7 +5,7 @@ include(base)
 {% if platform.system() == "Darwin" %}
 include(brew-llvm)
 {% elif platform.system() == "Linux" %}
-include(linux-clang20)
+include(linux-gcc)
 {% else %}
 # Unsupported platform
 {{ error("Unsupported platform: " + platform.system()) }}

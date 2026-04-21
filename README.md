@@ -6,7 +6,7 @@ CMake infrastructure for tula v3 — Conan-centric, tri-modal dependency managem
 
 ## Downstream Projects (Quick Start)
 
-Each downstream project (`tula_example`, `kidscpp`, `tlaloc`, etc.) follows this layout:
+Each downstream project (`tula_boilerplate`, `kidscpp`, `tlaloc`, etc.) follows this layout:
 
 ```
 my_project/
@@ -59,19 +59,25 @@ The `_bootstrap` for examples inside `tula/examples/` additionally checks `../..
 
 ### `pyproject.toml` Sources
 
+**Monorepo** (project lives next to `tula/`, e.g. `kidscpp/`, `tlaloc/`):
 ```toml
 [tool.uv.sources]
-# Monorepo (sibling tula/):
 tula-cmake = { path = "../tula/tula_cmake" }
-# Standalone (git):
-# tula-cmake = { git = "https://github.com/toltec-astro/tula_cmake.git", branch = "v3.x" }
+```
+
+**Within-tula examples** (`tula/examples/<name>/`): no `[tool.uv.sources]` needed.
+The `tula/pyproject.toml` uv workspace root provides `tula_cmake/` automatically
+for all workspace members.
+
+**Standalone** (project copied outside `tula/` without a shared workspace):
+```toml
+[tool.uv.sources]
+tula-cmake = { git = "https://github.com/toltec-astro/tula_cmake.git", branch = "v3.x" }
 ```
 
 `uv run conan install .` creates a venv with `conan` and `tula-cmake` installed,
 then runs conan in that venv. The `_bootstrap` discovers `tula-cmake` via `os.sys.executable`
 (the venv Python running conan) — no global Python setup required.
-
----
 
 ---
 

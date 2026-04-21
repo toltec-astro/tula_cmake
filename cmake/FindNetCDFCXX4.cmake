@@ -6,6 +6,11 @@
 # Defines:
 #   NetCDFCXX4_FOUND          - True if found
 #   netCDF::netcdf-cxx4       - Imported target
+#
+# Note: find_program/find_library results are cached by CMake. When this module
+# is first called during the toolchain phase (before project()), those caches
+# may be populated as NOTFOUND. We explicitly unset them before searching so
+# that the post-project() retry gets a fresh search.
 
 cmake_minimum_required(VERSION 3.15)
 
@@ -22,8 +27,18 @@ if(TARGET netCDF::netcdf-cxx4)
     return()
 endif()
 
-# Fall back to ncxx4-config
-find_program(NCXX4_CONFIG ncxx4-config)
+# Fall back to ncxx4-config.
+# Unset cached results so a toolchain-phase NOTFOUND doesn't block the retry.
+unset(NCXX4_CONFIG CACHE)
+unset(NETCDF_CXX4_LIBRARY CACHE)
+
+find_program(NCXX4_CONFIG ncxx4-config
+    PATHS /usr/bin /usr/local/bin
+    NO_DEFAULT_PATH)
+if(NOT NCXX4_CONFIG)
+    find_program(NCXX4_CONFIG ncxx4-config)
+endif()
+
 if(NCXX4_CONFIG)
     execute_process(COMMAND ${NCXX4_CONFIG} --cflags
         OUTPUT_VARIABLE _ncxx4_cflags OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -32,11 +47,14 @@ if(NCXX4_CONFIG)
     execute_process(COMMAND ${NCXX4_CONFIG} --includedir
         OUTPUT_VARIABLE _ncxx4_includedir OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    # Find the library
+    # Find the library (unset cache ensures fresh search after toolchain phase)
     find_library(NETCDF_CXX4_LIBRARY
         NAMES netcdf_c++4 netcdf-cxx4
         PATHS /usr/lib /usr/lib/aarch64-linux-gnu /usr/local/lib
-    )
+        NO_DEFAULT_PATH)
+    if(NOT NETCDF_CXX4_LIBRARY)
+        find_library(NETCDF_CXX4_LIBRARY NAMES netcdf_c++4 netcdf-cxx4)
+    endif()
 
     if(NETCDF_CXX4_LIBRARY AND _ncxx4_includedir)
         add_library(netCDF::netcdf-cxx4 UNKNOWN IMPORTED)

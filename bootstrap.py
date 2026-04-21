@@ -54,6 +54,7 @@ def ensure_tula_cmake(project_root: Path) -> Path:
     target = project_root / "build" / "tula_cmake"
 
     if _is_valid(target):
+        _sync_profiles(target)
         return target
 
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -62,6 +63,7 @@ def ensure_tula_cmake(project_root: Path) -> Path:
     sibling = project_root.parent / "tula" / "tula_cmake"
     if _is_valid(sibling):
         _symlink(target, sibling)
+        _sync_profiles(target)
         return target
 
     # 2. TULA_CMAKE_DIR environment variable
@@ -70,6 +72,7 @@ def ensure_tula_cmake(project_root: Path) -> Path:
         p = Path(env_dir)
         if _is_valid(p):
             _symlink(target, p)
+            _sync_profiles(target)
             return target
         print(f"[tula] WARNING: TULA_CMAKE_DIR={env_dir!r} has no profiles/; ignoring.")
 
@@ -81,12 +84,39 @@ def ensure_tula_cmake(project_root: Path) -> Path:
             f"tula_cmake bootstrap failed — {target} is missing profiles/.\n"
             "Check your internet connection or set TULA_CMAKE_DIR."
         )
+    _sync_profiles(target)
     return target
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _sync_profiles(tula_cmake_dir: Path) -> None:
+    """Copy profiles/ from tula_cmake to ~/.conan2/profiles/.
+
+    Conan 2 resolves ``include()`` in profiles by searching ~/.conan2/profiles/
+    *before* the including file's directory.  We must keep the Conan home
+    profiles in sync with the tula_cmake source so that edits take effect.
+    """
+    import shutil
+    src = (tula_cmake_dir / "profiles").resolve()
+    if not src.is_dir():
+        return
+    conan_home = Path(os.environ.get("CONAN_HOME", Path.home() / ".conan2"))
+    dst = conan_home / "profiles"
+    dst.mkdir(parents=True, exist_ok=True)
+    # Copy every file/subdir from src into dst (overwrite, but leave other
+    # profiles the user may have in dst untouched).
+    for item in src.rglob("*"):
+        rel = item.relative_to(src)
+        target_item = dst / rel
+        if item.is_dir():
+            target_item.mkdir(parents=True, exist_ok=True)
+        else:
+            target_item.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(item, target_item)
+
 
 def _is_valid(p: Path) -> bool:
     """True if *p* looks like a tula_cmake directory."""

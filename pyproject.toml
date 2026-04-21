@@ -23,5 +23,7 @@ tula_cmake = [
     "targets/*.cmake",
     "targets/*.yaml",
     "utils/*.cmake",
+    "cmake/**",
     "*.cmake",
+    "include/**/*.h",
 ]
