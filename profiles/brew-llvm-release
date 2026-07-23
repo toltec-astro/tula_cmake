@@ -1,4 +1,0 @@
-# Homebrew LLVM Release
-include(_base/base)
-include(_base/brew-llvm)
-include(_base/release)

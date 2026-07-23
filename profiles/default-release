@@ -1,3 +1,0 @@
-# Default Release profile
-include(_base/default-common)
-include(_base/release)

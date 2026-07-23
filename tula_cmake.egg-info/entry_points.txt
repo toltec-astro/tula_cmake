@@ -1,2 +1,0 @@
-[console_scripts]
-tula-cmake = tula_cmake._cli:main

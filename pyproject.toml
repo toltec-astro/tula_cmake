@@ -1,29 +1,48 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "tula-cmake"
-version = "3.0.0"
-description = "tula v3 Conan + CMake build system utilities"
+version = "3.1.0"
+description = "Tula feature/provider integration for Conan 2 and CMake"
+readme = "README.md"
+license = "BSD-3-Clause"
 requires-python = ">=3.10"
-dependencies = ["pyyaml"]
+dependencies = [
+    "conan>=2.30,<3",
+    "pyyaml>=6",
+]
 
 [project.scripts]
 tula-cmake = "tula_cmake._cli:main"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.12",
+    "ty>=0.0.1a15",
+]
+
 [tool.setuptools]
-# tula_cmake is the package directory (contains __init__.py)
 package-dir = {"tula_cmake" = "."}
 packages = ["tula_cmake"]
+include-package-data = false
 
 [tool.setuptools.package-data]
 tula_cmake = [
+    "features.yaml",
+    "cmake/*.cmake",
+    "cmake/*.in",
     "profiles/**",
-    "targets/*.cmake",
-    "targets/*.yaml",
-    "utils/*.cmake",
-    "cmake/**",
-    "*.cmake",
-    "include/**/*.h",
 ]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
+
+[tool.ty.environment]
+python-version = "3.10"
+root = [".."]
