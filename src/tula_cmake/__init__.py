@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .model import FeatureMode, FeatureSpec, load_feature_registry, render_cmake_manifest
+from .model import (
+    FeatureMode,
+    FeatureSpec,
+    load_feature_registry,
+    render_cmake_manifest,
+    resolution_order,
+)
 
 
 def profiles_dir() -> Path:
@@ -27,4 +33,5 @@ __all__ = [
     "load_feature_registry",
     "profiles_dir",
     "render_cmake_manifest",
+    "resolution_order",
 ]

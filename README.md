@@ -1,45 +1,56 @@
 # tula_cmake 3.1
 
-`tula_cmake` preserves the Tula feature/provider contract while delegating each
-provider to the strongest available implementation:
+`tula_cmake` is the Tula superbuild infrastructure for Conan 2.31 and modern
+CMake.
 
-- `disabled`: the feature contributes no requirement or CMake target.
-- `conan`: Conan owns acquisition, graph resolution, and CMake discovery.
-- `cpm`: Tula uses pinned, checksummed CPM source archives.
-- `system`: CMake discovers an already-installed package.
+It is distributed in two forms:
 
-Every enabled provider produces the same logical `tula::<feature>` target.
-The initial vertical slice contains only `logging` (`spdlog` plus `fmt`).
+- a Python wheel containing the `tula-cmake` bootstrap/build CLI;
+- a Conan `python_requires` recipe containing reusable recipe behavior,
+  registry data, CMake modules, templates, and profiles.
 
-Downstream CMake is deliberately explicit:
+## User command
+
+A downstream repository can pin the tool in a small checked-in script:
+
+```sh
+uvx --from tula-cmake==3.1.0 tula-cmake build .
+```
+
+The CLI performs three visible phases:
+
+1. bootstrap Conan configuration/profile state;
+2. run `conan install --build=missing`;
+3. configure and build with Conan's generated CMake preset.
+
+Useful options:
+
+```sh
+tula-cmake build . \
+  --config-source https://example.org/conan-config.zip \
+  --profile /path/to/compiler-profile \
+  --output .tula
+```
+
+The wrapper follows Conan's recommended explicit install-plus-preset flow.
+CMake does not invoke Conan.
+
+## Recipe integration
+
+Packages built with the infrastructure declare:
+
+```python
+python_requires = "tula-cmake/3.1.0"
+python_requires_extend = "tula-cmake.TulaConan"
+```
+
+Projects then use an explicit post-`project()` CMake entry point:
 
 ```cmake
-project(my_project LANGUAGES CXX)
 include(TulaProject)
 tula_resolve_features()
 ```
 
-Profiles select the feature and provider:
-
-```ini
-[options]
-&:logging=conan
-&:logging_level=info
-```
-
-Compose that project profile with the compiler profile shipped by the installed
-package:
-
-```sh
-base_profile="$(uv run tula-cmake profile linux-gcc13-debug)"
-uv run conan install . \
-  --profile:all="${base_profile}" \
-  --profile:all=profiles/logging-conan \
-  --build=missing
-```
-
-Run the fast unit loop with:
-
-```sh
-uv run python -m unittest discover -s tests -v
-```
+The active registry contains generic `formatting` and custom `logging`
+features. `logging` depends on `formatting`. Every enabled provider produces a
+normalized `tula::<feature>` target.

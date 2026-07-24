@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
-from conan import ConanFile
 from conan.tools.cmake import CMakeDeps, CMakeToolchain, cmake_layout
 
 from .model import FeatureMode, load_feature_registry, render_cmake_manifest, validate_selection
@@ -25,37 +24,42 @@ def _static_block(content: str) -> type:
     return StaticBlock
 
 
-class TulaConan(ConanFile):
-    """Minimal Conan integration; CPM and system remain explicit Tula providers."""
+class TulaConan:
+    """Reusable Conan recipe behavior distributed as a ``python_requires`` package."""
 
-    required_conan_version = ">=2.30"
-    settings = "os", "arch", "compiler", "build_type"
-    options = {
+    _tula_settings = ("os", "arch", "compiler", "build_type")
+    _tula_options = {
         **{name: feature.option_values for name, feature in _REGISTRY.items()},
         "logging_level": _LOG_LEVELS,
     }
-    default_options = {
+    _tula_default_options = {
         **{name: FeatureMode.DISABLED.value for name in _REGISTRY},
         "logging_level": "info",
     }
 
-    def layout(self) -> None:
+    def init(self: Any) -> None:
+        """Compose Tula settings and options into the consuming recipe."""
+        existing_settings = tuple(self.settings or ())
+        self.settings = tuple(dict.fromkeys((*existing_settings, *self._tula_settings)))
+        self.options.update(self._tula_options, self._tula_default_options)
+
+    def layout(self: Any) -> None:
         cmake_layout(self)
 
-    def _selection(self) -> dict[str, FeatureMode]:
+    def _selection(self: Any) -> dict[str, FeatureMode]:
         selected = {name: FeatureMode(str(getattr(self.options, name))) for name in _REGISTRY}
         validate_selection(_REGISTRY, selected)
         return selected
 
-    def requirements(self) -> None:
+    def requirements(self: Any) -> None:
         for name, mode in self._selection().items():
             if mode is not FeatureMode.CONAN:
                 continue
             for requirement in _REGISTRY[name].conan_requires:
                 self.output.info(f"{name}: Conan provider requires {requirement}")
-                cast(Any, self.requires)(requirement)
+                self.requires(requirement)
 
-    def generate(self) -> None:
+    def generate(self: Any) -> None:
         selected = self._selection()
         generators = Path(self.generators_folder)
         manifest = generators / "tula_features.cmake"
@@ -63,7 +67,7 @@ class TulaConan(ConanFile):
             render_cmake_manifest(
                 _REGISTRY,
                 selected,
-                logging_level=str(cast(Any, self.options).logging_level),
+                logging_level=str(self.options.logging_level),
             )
         )
 

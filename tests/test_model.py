@@ -7,6 +7,7 @@ from tula_cmake.model import (
     FeatureMode,
     load_feature_registry,
     render_cmake_manifest,
+    resolution_order,
     validate_selection,
 )
 
@@ -23,7 +24,10 @@ class FeatureRegistryTests(TestCase):
         registry = load_feature_registry()
         manifest = render_cmake_manifest(
             registry,
-            {"logging": FeatureMode.DISABLED},
+            {
+                "formatting": FeatureMode.DISABLED,
+                "logging": FeatureMode.DISABLED,
+            },
             logging_level="info",
         )
         self.assertIn('set(TULA_FEATURE_logging_MODE "disabled")', manifest)
@@ -39,7 +43,11 @@ class FeatureRegistryTests(TestCase):
             (root / "cmake" / "Demo.cmake").write_text("")
             registry = root / "features.yaml"
             registry.write_text(
-                "Demo:\n  modes: [conan]\n  conan_requires: []\n  cmake_module: Demo.cmake\n"
+                "Demo:\n"
+                "  modes: [conan]\n"
+                "  conan_requires: []\n"
+                "  cmake_module: Demo.cmake\n"
+                "  resolver: tula_resolve_package\n"
             )
             with self.assertRaisesRegex(ValueError, "requires conan_requires"):
                 load_feature_registry(registry)
@@ -54,10 +62,12 @@ class FeatureRegistryTests(TestCase):
                 "base:\n"
                 "  modes: [system]\n"
                 "  cmake_module: Feature.cmake\n"
+                "  resolver: tula_resolve_package\n"
                 "feature:\n"
                 "  modes: [system]\n"
                 "  dependencies: [base]\n"
                 "  cmake_module: Feature.cmake\n"
+                "  resolver: tula_resolve_package\n"
             )
             registry = load_feature_registry(registry_file)
             with self.assertRaisesRegex(ValueError, "requires enabled feature base"):
@@ -68,3 +78,26 @@ class FeatureRegistryTests(TestCase):
                         "feature": FeatureMode.SYSTEM,
                     },
                 )
+
+    def test_resolution_order_is_dependency_first(self) -> None:
+        registry = load_feature_registry()
+        self.assertLess(
+            resolution_order(registry).index("formatting"),
+            resolution_order(registry).index("logging"),
+        )
+
+    def test_manifest_uses_dependency_first_order_and_explicit_resolvers(self) -> None:
+        registry = load_feature_registry()
+        manifest = render_cmake_manifest(
+            registry,
+            {
+                "formatting": FeatureMode.SYSTEM,
+                "logging": FeatureMode.SYSTEM,
+            },
+            logging_level="warning",
+        )
+        self.assertIn('set(TULA_FEATURES "formatting;logging")', manifest)
+        self.assertIn(
+            'set(TULA_FEATURE_formatting_RESOLVER "tula_resolve_package")',
+            manifest,
+        )
