@@ -30,7 +30,7 @@ class FeatureRegistryTests(TestCase):
         self.assertIn('set(TULA_LOGGING_LEVEL "info")', manifest)
 
     def test_bundled_profile_is_discoverable(self) -> None:
-        self.assertTrue((profiles_dir() / "linux-clang20-debug").is_file())
+        self.assertTrue((profiles_dir() / "linux-gcc13-debug").is_file())
 
     def test_conan_mode_requires_a_requirement(self) -> None:
         with TemporaryDirectory() as temporary:

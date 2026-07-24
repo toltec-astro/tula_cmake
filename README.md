@@ -31,7 +31,7 @@ Compose that project profile with the compiler profile shipped by the installed
 package:
 
 ```sh
-base_profile="$(uv run tula-cmake profile linux-clang20-debug)"
+base_profile="$(uv run tula-cmake profile linux-gcc13-debug)"
 uv run conan install . \
   --profile:all="${base_profile}" \
   --profile:all=profiles/logging-conan \
