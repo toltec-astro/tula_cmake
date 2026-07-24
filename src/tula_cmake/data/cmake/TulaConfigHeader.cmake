@@ -40,7 +40,11 @@ function(tula_add_config_header)
     set(_output "${_include_root}/${ARG_OUTPUT}")
     get_filename_component(_output_dir "${_output}" DIRECTORY)
     file(MAKE_DIRECTORY "${_output_dir}")
-    configure_file("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/TulaConfig.h.in" "${_output}" @ONLY)
+    configure_file(
+        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../templates/TulaConfig.h.in"
+        "${_output}"
+        @ONLY
+    )
 
     add_library("${ARG_TARGET}" INTERFACE)
     target_include_directories(

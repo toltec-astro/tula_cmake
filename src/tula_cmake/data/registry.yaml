@@ -1,0 +1,42 @@
+schema_version: 1
+
+features:
+  logging:
+    modes: [conan, cpm, system]
+    conan_requires:
+      - fmt/11.2.0
+      - spdlog/1.15.3
+    cmake_module: TulaLogging.cmake
+    resolver: tula_resolve_logging
+    cmake_vars:
+      FMT_URL: https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz
+      FMT_SHA256: bc23066d87ab3168f27cef3e97d545fa63314f5c79df5ea444d41d56f962c6af
+      SPDLOG_URL: https://github.com/gabime/spdlog/archive/refs/tags/v1.15.3.tar.gz
+      SPDLOG_SHA256: 15a04e69c222eb6c01094b5c7ff8a249b36bb22788d72519646fb85feb267e67
+    options:
+      logging_level:
+        values: [trace, debug, info, warning, error, critical, "off"]
+        default: info
+        cmake_variable: TULA_LOGGING_LEVEL
+
+  perflibs:
+    modes: [system]
+    cmake_module: TulaPerfLibs.cmake
+    resolver: tula_resolve_perflibs
+    options:
+      perflibs_oneapi:
+        values: [disabled, enabled]
+        default: disabled
+        cmake_variable: TULA_PERFLIBS_ONEAPI
+      perflibs_openmp:
+        values: [auto, disabled, required]
+        default: auto
+        cmake_variable: TULA_PERFLIBS_OPENMP
+      perflibs_openmp_runtime:
+        values: [auto, gnu, intel, llvm]
+        default: auto
+        cmake_variable: TULA_PERFLIBS_OPENMP_RUNTIME
+      perflibs_mkl_threading:
+        values: [sequential, openmp, tbb]
+        default: sequential
+        cmake_variable: TULA_PERFLIBS_MKL_THREADING

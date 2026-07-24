@@ -5,6 +5,15 @@ include(TulaCPM)
 function(_tula_logging_cpm)
     tula_load_cpm()
     CPMAddPackage(
+        NAME fmt
+        URL "${TULA_FEATURE_logging_FMT_URL}"
+        URL_HASH "SHA256=${TULA_FEATURE_logging_FMT_SHA256}"
+        OPTIONS
+            "FMT_TEST OFF"
+            "FMT_DOC OFF"
+            "FMT_INSTALL OFF"
+    )
+    CPMAddPackage(
         NAME spdlog
         URL "${TULA_FEATURE_logging_SPDLOG_URL}"
         URL_HASH "SHA256=${TULA_FEATURE_logging_SPDLOG_SHA256}"
@@ -18,15 +27,13 @@ function(_tula_logging_cpm)
 endfunction()
 
 function(_tula_logging_installed)
+    find_package(fmt CONFIG REQUIRED)
     find_package(spdlog CONFIG REQUIRED)
 endfunction()
 
 function(tula_resolve_logging FEATURE MODE)
     if(TARGET tula::logging)
         return()
-    endif()
-    if(NOT TARGET tula::formatting)
-        message(FATAL_ERROR "logging requires resolved target tula::formatting")
     endif()
     if(MODE STREQUAL "conan" OR MODE STREQUAL "system")
         _tula_logging_installed()
@@ -43,6 +50,13 @@ function(tula_resolve_logging FEATURE MODE)
     else()
         message(FATAL_ERROR "logging: spdlog provider target is unavailable")
     endif()
+    if(TARGET fmt::fmt-header-only)
+        set(_fmt_target fmt::fmt-header-only)
+    elseif(TARGET fmt::fmt)
+        set(_fmt_target fmt::fmt)
+    else()
+        message(FATAL_ERROR "logging: fmt provider target is unavailable")
+    endif()
     string(TOUPPER "${TULA_LOGGING_LEVEL}" _level)
     if(_level STREQUAL "WARNING")
         set(_level "WARN")
@@ -53,7 +67,10 @@ function(tula_resolve_logging FEATURE MODE)
     endif()
 
     add_library(tula_logging INTERFACE)
-    target_link_libraries(tula_logging INTERFACE "${_spdlog_target}" tula::formatting)
+    target_link_libraries(
+        tula_logging
+        INTERFACE "${_spdlog_target}" "${_fmt_target}"
+    )
     target_compile_definitions(
         tula_logging
         INTERFACE "SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${_level}"

@@ -1,26 +1,23 @@
-"""Tula's Conan-driven feature/provider integration."""
+"""Typed Conan 2 and CMake superbuild infrastructure for TolTEC packages."""
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import Any
 
-from .model import (
+from .models import (
     FeatureMode,
+    FeatureRegistry,
     FeatureSpec,
-    load_feature_registry,
-    render_cmake_manifest,
-    resolution_order,
+    OptionSpec,
 )
+from .registry import load_registry, render_manifest, resolution_order
+from .resources import profiles_dir
 
 
-def profiles_dir() -> Path:
-    """Return the profiles shipped with this installed distribution."""
-    return Path(__file__).parent / "profiles"
-
-
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
+    """Load Conan only when a recipe asks for the mixin."""
     if name == "TulaConan":
-        from .tula_conan import TulaConan
+        from .recipe import TulaConan
 
         return TulaConan
     raise AttributeError(name)
@@ -28,10 +25,12 @@ def __getattr__(name: str):
 
 __all__ = [
     "FeatureMode",
+    "FeatureRegistry",
     "FeatureSpec",
+    "OptionSpec",
     "TulaConan",
-    "load_feature_registry",
+    "load_registry",
     "profiles_dir",
-    "render_cmake_manifest",
+    "render_manifest",
     "resolution_order",
 ]

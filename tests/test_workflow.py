@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from tula_cmake.models import BuildRequest
+from tula_cmake.workflow import BuildWorkflow
+
+
+def test_generated_preset_is_read_through_models(tmp_path: Path) -> None:
+    generated = tmp_path / "build" / "generators" / "CMakePresets.json"
+    generated.parent.mkdir(parents=True)
+    generated.write_text(json.dumps({"buildPresets": [{"name": "conan-debug"}]}))
+    (tmp_path / "CMakeUserPresets.json").write_text(
+        json.dumps({"include": ["build/generators/CMakePresets.json"]})
+    )
+    assert BuildWorkflow._generated_preset(tmp_path) == "conan-debug"
+
+
+def test_workflow_runs_conan_then_generated_cmake_presets(
+    tmp_path: Path,
+) -> None:
+    generated = tmp_path / "build" / "generators" / "CMakePresets.json"
+    generated.parent.mkdir(parents=True)
+    generated.write_text(json.dumps({"buildPresets": [{"name": "conan-debug"}]}))
+    (tmp_path / "CMakeUserPresets.json").write_text(
+        json.dumps({"include": ["build/generators/CMakePresets.json"]})
+    )
+    calls: list[tuple[tuple[str, ...], Path | None]] = []
+
+    def record(command: Any, cwd: Path | None) -> None:
+        calls.append((tuple(command), cwd))
+
+    request = BuildRequest(
+        source=tmp_path,
+        output=tmp_path / "build",
+        profiles=("base-profile", "feature-profile"),
+    )
+    BuildWorkflow(request, runner=record).execute()
+
+    assert calls[0][0][1:3] == ("install", str(tmp_path))
+    assert calls[0][0].count("--profile:all") == 2
+    assert calls[1] == (
+        ("cmake", "--preset", "conan-debug", "--fresh"),
+        tmp_path,
+    )
+    assert calls[2] == (
+        ("cmake", "--build", "--preset", "conan-debug"),
+        tmp_path,
+    )

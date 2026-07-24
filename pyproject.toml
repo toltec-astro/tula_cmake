@@ -1,50 +1,128 @@
 [build-system]
-requires = ["setuptools>=77"]
+requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "tula-cmake"
 version = "3.1.0"
-description = "Tula feature/provider integration for Conan 2 and CMake"
+description = "Typed Conan 2 and CMake superbuild infrastructure for TolTEC C++ packages"
 readme = "README.md"
 license = "BSD-3-Clause"
-requires-python = ">=3.10"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
 dependencies = [
     "conan>=2.31,<3",
+    "pydantic>=2.12,<3",
     "pyyaml>=6",
+    "typer>=0.20,<1",
+]
+classifiers = [
+    "Typing :: Typed",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
+[project.urls]
+documentation = "https://toltec-astro.github.io/tula_cmake/"
+homepage = "https://github.com/toltec-astro/tula_cmake"
+issues = "https://github.com/toltec-astro/tula_cmake/issues"
+
 [project.scripts]
-tula-cmake = "tula_cmake._cli:main"
+tula-cmake = "tula_cmake.cli:app"
 
 [dependency-groups]
 dev = [
+    { include-group = "test" },
+    { include-group = "docs" },
     "ruff>=0.12",
     "ty>=0.0.1a15",
+]
+test = [
+    "coverage[toml]>=7.10",
+    "pytest>=8.4",
+]
+docs = [
+    "autodoc-pydantic>=2.2",
+    "myst-parser>=4",
+    "sphinx>=8.2",
+    "sphinx-book-theme>=1.1",
+    "sphinxcontrib-typer>=0.7",
 ]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-include-package-data = false
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
 tula_cmake = [
-    "features.yaml",
-    "cmake/*.cmake",
-    "cmake/*.in",
-    "profiles/**",
+    "py.typed",
+    "data/registry.yaml",
+    "data/cmake/*.cmake",
+    "data/templates/*.in",
+    "data/profiles/*",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-config", "--strict-markers"]
+xfail_strict = true
+filterwarnings = ["error"]
+
 [tool.ruff]
-target-version = "py310"
-line-length = 100
+target-version = "py311"
+line-length = 88
 
 [tool.ruff.lint]
-select = ["B", "E", "F", "I", "UP"]
+select = ["ALL"]
+ignore = [
+    "ANN401",
+    "B008",
+    "COM812",
+    "D102",
+    "D105",
+    "EM101",
+    "EM102",
+    "ISC001",
+    "PLC0415",
+    "PLR0913",
+    "S603",
+    "SLF001",
+    "T201",
+    "TC003",
+    "TRY003",
+    "TRY004",
+]
 
-[tool.ty.environment]
-python-version = "3.10"
-root = [".."]
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "PLR2004", "S101"]
+"conanfile.py" = ["E402"]
+"docs/conf.py" = ["A001", "D", "INP001", "S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ty.src]
+exclude = ["docs/conf.py"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/tula_cmake"]
+omit = [
+    "src/tula_cmake/__main__.py",
+    "src/tula_cmake/recipe.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 85
+
+[tool.cruft]
+skip = [".git"]
