@@ -15,12 +15,29 @@ resources:
    └── data/
        ├── registry.yaml
        ├── cmake/
+       │   ├── infrastructure/
+       │   └── resolvers/
        ├── templates/
        └── profiles/
 
 All external YAML and JSON inputs cross a Pydantic boundary before they reach
-Conan or CMake.  The registry is declarative; feature-specific behavior remains
-in named CMake resolver modules.
+Conan or CMake. The generated :doc:`models` page exposes those field contracts,
+validators, and JSON schemas directly from the runtime models.
+
+The registry is declarative; feature-specific behavior remains in CMake
+resolver modules. Resolver wiring is derived rather than copied into YAML:
+
+.. code-block:: text
+
+   feature: logging
+      │
+      ├── module: data/cmake/resolvers/logging.cmake
+      └── command: tula_resolve_logging()
+
+``load_registry()`` verifies the convention-derived module exists before Conan
+generation. ``TulaProject.cmake`` derives the corresponding command directly
+and verifies that it and the normalized target exist during configure; the
+generated manifest does not repeat the command name.
 
 Feature contracts
 -----------------
@@ -37,7 +54,15 @@ Feature contracts
 Resource placement
 ------------------
 
-CMake modules and templates are package data because they must be addressable
-through the installed wheel and through Conan's exported Python-require.
-Keeping them below ``tula_cmake/data`` avoids global installation paths and
-makes resource ownership explicit.
+``cmake/infrastructure``
+   Public framework modules placed on ``CMAKE_MODULE_PATH``. They load the
+   manifest, generate configuration headers, and provide shared CPM support.
+
+``cmake/resolvers``
+   Feature implementations loaded by absolute path from the generated
+   manifest. One file and one public command exist per feature.
+
+CMake resources and templates are package data because they must be
+addressable through the installed wheel and through Conan's exported
+Python-require. Keeping them below ``tula_cmake/data`` avoids global
+installation paths and makes resource ownership explicit.

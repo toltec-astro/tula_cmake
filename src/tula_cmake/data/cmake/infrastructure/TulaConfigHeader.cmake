@@ -41,7 +41,7 @@ function(tula_add_config_header)
     get_filename_component(_output_dir "${_output}" DIRECTORY)
     file(MAKE_DIRECTORY "${_output_dir}")
     configure_file(
-        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../templates/TulaConfig.h.in"
+        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../../templates/TulaConfig.h.in"
         "${_output}"
         @ONLY
     )

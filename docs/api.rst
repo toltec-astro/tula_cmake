@@ -1,11 +1,8 @@
 Python API
 ==========
 
-Models
-------
-
-.. automodule:: tula_cmake.models
-   :members:
+The generated Pydantic field contracts are documented separately in
+:doc:`models`.
 
 Registry
 --------

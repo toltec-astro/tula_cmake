@@ -24,7 +24,7 @@ build:
     uv build
 
 docs:
-    uv run --group docs sphinx-build -M html docs docs/_build -T
+    uv run --group docs sphinx-build -M html docs docs/_build -T -W
 
 cruft-check:
     uvx cruft check --checkout v2026

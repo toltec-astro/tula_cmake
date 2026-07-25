@@ -16,14 +16,17 @@ from pydantic import (
 )
 
 Identifier = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
-CMakeCommand = Annotated[str, StringConstraints(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")]
 CMakeVariable = Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Z0-9_]*$")]
 CMakeScalar = str | int | float | bool
 CMakeValue = CMakeScalar | tuple[CMakeScalar, ...]
 
 
 class FeatureMode(StrEnum):
-    """Supported acquisition policies for a feature."""
+    """Supported acquisition policies for a feature.
+
+    ``disabled`` is always accepted by the generated Conan option even though
+    it is intentionally omitted from each feature's declarative ``modes``.
+    """
 
     DISABLED = "disabled"
     CONAN = "conan"
@@ -36,9 +39,14 @@ class OptionSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    values: tuple[str, ...] = Field(min_length=1)
-    default: str
-    cmake_variable: CMakeVariable
+    values: tuple[str, ...] = Field(
+        min_length=1,
+        description="Complete ordered domain accepted by Conan and CMake.",
+    )
+    default: str = Field(description="Value used when a recipe does not override it.")
+    cmake_variable: CMakeVariable = Field(
+        description="CMake cache variable written into the generated manifest."
+    )
 
     @model_validator(mode="after")
     def default_must_be_allowed(self) -> OptionSpec:
@@ -52,18 +60,37 @@ class OptionSpec(BaseModel):
 
 
 class FeatureSpec(BaseModel):
-    """Immutable description of one logical CMake feature."""
+    """Immutable declarative description of one logical CMake feature.
+
+    Resolver wiring is convention-based rather than stored in the registry.
+    A feature named ``logging`` is implemented by
+    ``data/cmake/resolvers/logging.cmake`` and that module must export
+    ``tula_resolve_logging()``.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    name: Identifier
-    modes: tuple[FeatureMode, ...] = Field(min_length=1)
-    dependencies: tuple[Identifier, ...] = ()
-    conan_requires: tuple[str, ...] = ()
-    cmake_module: str
-    resolver: CMakeCommand
-    cmake_vars: dict[CMakeVariable, CMakeValue] = Field(default_factory=dict)
-    options: dict[Identifier, OptionSpec] = Field(default_factory=dict)
+    name: Identifier = Field(description="Canonical feature identifier.")
+    modes: tuple[FeatureMode, ...] = Field(
+        min_length=1,
+        description="Enabled acquisition modes; disabled is implicit.",
+    )
+    dependencies: tuple[Identifier, ...] = Field(
+        default=(),
+        description="Features which must be enabled and resolved first.",
+    )
+    conan_requires: tuple[str, ...] = Field(
+        default=(),
+        description="Conan references activated only by the Conan mode.",
+    )
+    cmake_vars: dict[CMakeVariable, CMakeValue] = Field(
+        default_factory=dict,
+        description="Feature constants forwarded to the CMake resolver.",
+    )
+    options: dict[Identifier, OptionSpec] = Field(
+        default_factory=dict,
+        description="Additional feature-owned Conan/CMake options.",
+    )
 
     @model_validator(mode="after")
     def validate_modes_and_requirements(self) -> FeatureSpec:
@@ -87,8 +114,14 @@ class FeatureRegistry(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    schema_version: int = Field(ge=1)
-    features: dict[Identifier, FeatureSpec] = Field(min_length=1)
+    schema_version: int = Field(
+        ge=1,
+        description="Version of the declarative registry contract.",
+    )
+    features: dict[Identifier, FeatureSpec] = Field(
+        min_length=1,
+        description="Ordered mapping of feature names to their contracts.",
+    )
 
     @model_validator(mode="after")
     def validate_graph(self) -> FeatureRegistry:
@@ -157,12 +190,24 @@ class BuildRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    source: Path
-    output: Path
-    profiles: tuple[str, ...] = ()
-    config_source: str | None = None
-    preset: str | None = None
-    build_policy: str = "missing"
+    source: Path = Field(description="Downstream CMake/Conan project directory.")
+    output: Path = Field(description="Conan output folder.")
+    profiles: tuple[str, ...] = Field(
+        default=(),
+        description="Ordered Conan host profiles.",
+    )
+    config_source: str | None = Field(
+        default=None,
+        description="Optional source passed to `conan config install`.",
+    )
+    preset: str | None = Field(
+        default=None,
+        description="Explicit generated CMake preset, or automatic selection.",
+    )
+    build_policy: str = Field(
+        default="missing",
+        description="Value forwarded to Conan's `--build` option.",
+    )
 
 
 class BuildPreset(BaseModel):

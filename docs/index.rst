@@ -11,4 +11,8 @@ one-command downstream workflow.
 
    architecture
    workflow
+   models
    api
+
+The registry and workflow inputs are Pydantic models. Their generated field
+contracts and JSON schemas are available in :doc:`models`.

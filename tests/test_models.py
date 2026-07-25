@@ -25,8 +25,6 @@ def test_registry_rejects_unknown_dependencies() -> None:
                         "name": "demo",
                         "modes": ["system"],
                         "dependencies": ["missing"],
-                        "cmake_module": "Demo.cmake",
-                        "resolver": "resolve_demo",
                     }
                 },
             }
@@ -43,15 +41,11 @@ def test_registry_rejects_dependency_cycles() -> None:
                         "name": "one",
                         "modes": ["system"],
                         "dependencies": ["two"],
-                        "cmake_module": "One.cmake",
-                        "resolver": "resolve_one",
                     },
                     "two": {
                         "name": "two",
                         "modes": ["system"],
                         "dependencies": ["one"],
-                        "cmake_module": "Two.cmake",
-                        "resolver": "resolve_two",
                     },
                 },
             }

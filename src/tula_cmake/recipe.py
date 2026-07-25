@@ -9,7 +9,7 @@ from conan.tools.cmake import CMakeDeps, CMakeToolchain, cmake_layout
 
 from .models import FeatureMode
 from .registry import load_registry, render_manifest
-from .resources import cmake_dir
+from .resources import infrastructure_dir
 
 _REGISTRY = load_registry()
 _SETTINGS = ("os", "arch", "compiler", "build_type")
@@ -91,7 +91,7 @@ class TulaConan:
             "\n".join(
                 [
                     "########## tula feature/provider entrypoint ##########",
-                    f'list(PREPEND CMAKE_MODULE_PATH "{cmake_dir()}")',
+                    f'list(PREPEND CMAKE_MODULE_PATH "{infrastructure_dir()}")',
                     f'set(TULA_FEATURE_MANIFEST "{manifest}")',
                     "",
                 ]

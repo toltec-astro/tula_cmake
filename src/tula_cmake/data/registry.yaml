@@ -6,8 +6,6 @@ features:
     conan_requires:
       - fmt/11.2.0
       - spdlog/1.15.3
-    cmake_module: TulaLogging.cmake
-    resolver: tula_resolve_logging
     cmake_vars:
       FMT_URL: https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz
       FMT_SHA256: bc23066d87ab3168f27cef3e97d545fa63314f5c79df5ea444d41d56f962c6af
@@ -21,8 +19,6 @@ features:
 
   perflibs:
     modes: [system]
-    cmake_module: TulaPerfLibs.cmake
-    resolver: tula_resolve_perflibs
     options:
       perflibs_oneapi:
         values: [disabled, enabled]

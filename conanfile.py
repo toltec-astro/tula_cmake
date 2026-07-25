@@ -23,7 +23,7 @@ class TulaCMakeRecipe(ConanFile):
         "src/tula_cmake/*.py",
         "src/tula_cmake/py.typed",
         "src/tula_cmake/data/*",
-        "src/tula_cmake/data/cmake/*",
+        "src/tula_cmake/data/cmake/*/*",
         "src/tula_cmake/data/profiles/*",
         "src/tula_cmake/data/templates/*",
     )

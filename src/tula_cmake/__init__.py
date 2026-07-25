@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from .models import (
@@ -12,6 +13,11 @@ from .models import (
 )
 from .registry import load_registry, render_manifest, resolution_order
 from .resources import profiles_dir
+
+try:
+    __version__ = version("tula-cmake")
+except PackageNotFoundError:
+    __version__ = "0+unknown"
 
 
 def __getattr__(name: str) -> Any:
@@ -29,6 +35,7 @@ __all__ = [
     "FeatureSpec",
     "OptionSpec",
     "TulaConan",
+    "__version__",
     "load_registry",
     "profiles_dir",
     "render_manifest",

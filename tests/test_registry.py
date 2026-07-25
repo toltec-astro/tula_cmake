@@ -7,8 +7,12 @@ import pytest
 import tula_cmake
 from tula_cmake import profiles_dir
 from tula_cmake.models import FeatureMode
-from tula_cmake.registry import load_registry, render_manifest, resolution_order
-from tula_cmake.resources import template_path
+from tula_cmake.registry import (
+    load_registry,
+    render_manifest,
+    resolution_order,
+)
+from tula_cmake.resources import infrastructure_dir, resolver_path, template_path
 
 
 def _defaults() -> tuple[dict[str, FeatureMode], dict[str, str]]:
@@ -46,6 +50,8 @@ def test_manifest_records_providers_and_feature_options() -> None:
     manifest = render_manifest(registry, providers, options)
     assert 'set(TULA_FEATURES "logging;perflibs")' in manifest
     assert 'set(TULA_FEATURE_logging_MODE "system")' in manifest
+    assert f'"{resolver_path("logging").resolve()}"' in manifest
+    assert "TULA_FEATURE_logging_RESOLVER" not in manifest
     assert 'set(TULA_LOGGING_LEVEL "warning")' in manifest
     assert 'set(TULA_PERFLIBS_OPENMP "required")' in manifest
 
@@ -58,19 +64,18 @@ def test_manifest_requires_every_option() -> None:
         render_manifest(registry, providers, options)
 
 
-def test_registry_rejects_missing_cmake_module(tmp_path: Path) -> None:
-    (tmp_path / "cmake").mkdir()
+def test_registry_rejects_missing_resolver_module(tmp_path: Path) -> None:
+    (tmp_path / "cmake" / "resolvers").mkdir(parents=True)
     registry_file = tmp_path / "registry.yaml"
     registry_file.write_text(
-        "schema_version: 1\n"
-        "features:\n"
-        "  demo:\n"
-        "    modes: [system]\n"
-        "    cmake_module: Missing.cmake\n"
-        "    resolver: resolve_demo\n"
+        "schema_version: 1\nfeatures:\n  demo:\n    modes: [system]\n"
     )
-    with pytest.raises(ValueError, match="missing CMake module"):
+    with pytest.raises(ValueError, match="missing resolver module"):
         load_registry(registry_file)
+
+
+def test_resolver_wiring_is_derived_from_feature_name() -> None:
+    assert resolver_path("perflibs").name == "perflibs.cmake"
 
 
 def test_bundled_profile_is_discoverable() -> None:
@@ -78,7 +83,13 @@ def test_bundled_profile_is_discoverable() -> None:
     assert template_path("TulaConfig.h.in").is_file()
 
 
+def test_infrastructure_layout_reaches_shared_templates() -> None:
+    relative_template = infrastructure_dir() / ".." / ".." / "templates"
+    assert relative_template.resolve() == template_path("TulaConfig.h.in").parent
+
+
 def test_package_lazily_exposes_conan_mixin() -> None:
+    assert tula_cmake.__version__ == "3.1.0"
     assert tula_cmake.TulaConan.__name__ == "TulaConan"
     with pytest.raises(AttributeError):
         tula_cmake.__getattr__("missing")

@@ -13,7 +13,7 @@ from .models import (
     FeatureRegistry,
     FeatureSelection,
 )
-from .resources import cmake_dir, registry_path
+from .resources import registry_path, resolver_path
 
 
 def load_registry(path: Path | None = None) -> FeatureRegistry:
@@ -33,16 +33,16 @@ def load_registry(path: Path | None = None) -> FeatureRegistry:
         },
     }
     registry = FeatureRegistry.model_validate(normalized)
-    module_root = cmake_dir() if path is None else source.parent / "cmake"
-    resolved_features = {}
+    module_root = None if path is None else source.parent / "cmake" / "resolvers"
     for feature in registry.features.values():
-        module = (module_root / feature.cmake_module).resolve()
+        module = (
+            resolver_path(feature.name)
+            if module_root is None
+            else module_root / f"{feature.name}.cmake"
+        ).resolve()
         if not module.is_file():
-            raise ValueError(f"{feature.name}: missing CMake module: {module}")
-        resolved_features[feature.name] = feature.model_copy(
-            update={"cmake_module": str(module)}
-        )
-    return registry.model_copy(update={"features": resolved_features})
+            raise ValueError(f"{feature.name}: missing resolver module: {module}")
+    return registry
 
 
 def resolution_order(registry: FeatureRegistry) -> tuple[str, ...]:
@@ -99,14 +99,11 @@ def render_manifest(
     ]
     for name in ordered:
         feature = registry.features[name]
+        module = resolver_path(name).resolve()
         lines.extend(
             [
                 f'set(TULA_FEATURE_{name}_MODE "{selection.root[name].value}")',
-                (
-                    f"set(TULA_FEATURE_{name}_MODULE "
-                    f'"{_cmake_quote(feature.cmake_module)}")'
-                ),
-                f'set(TULA_FEATURE_{name}_RESOLVER "{feature.resolver}")',
+                (f'set(TULA_FEATURE_{name}_MODULE "{_cmake_quote(str(module))}")'),
             ]
         )
         for key, value in feature.cmake_vars.items():

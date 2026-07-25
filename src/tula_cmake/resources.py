@@ -19,8 +19,23 @@ def data_path(*parts: str) -> Path:
 
 
 def cmake_dir() -> Path:
-    """Return the directory containing public CMake modules."""
+    """Return the root directory containing packaged CMake resources."""
     return data_path("cmake")
+
+
+def infrastructure_dir() -> Path:
+    """Return public superbuild infrastructure modules for ``CMAKE_MODULE_PATH``."""
+    return cmake_dir() / "infrastructure"
+
+
+def resolvers_dir() -> Path:
+    """Return convention-based feature resolver modules."""
+    return cmake_dir() / "resolvers"
+
+
+def resolver_path(feature: str) -> Path:
+    """Return the resolver module derived from a validated feature name."""
+    return resolvers_dir() / f"{feature}.cmake"
 
 
 def profiles_dir() -> Path:

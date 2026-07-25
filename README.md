@@ -57,6 +57,13 @@ src/tula_cmake/
 └── data/
     ├── registry.yaml
     ├── cmake/
+    │   ├── infrastructure/
+    │   │   ├── TulaProject.cmake
+    │   │   ├── TulaConfigHeader.cmake
+    │   │   └── TulaCPM.cmake
+    │   └── resolvers/
+    │       ├── logging.cmake
+    │       └── perflibs.cmake
     ├── templates/
     └── profiles/
 ```
@@ -64,6 +71,15 @@ src/tula_cmake/
 Pydantic models validate YAML and generated preset JSON boundaries. Package
 data remains below the installed Python package so both wheels and Conan
 exports resolve the same resources reliably.
+
+Resolver wiring follows one convention instead of repeating Python/CMake
+symbols in YAML. A registry feature named `logging` maps to
+`cmake/resolvers/logging.cmake`, whose public entry point is
+`tula_resolve_logging()`.
+
+The Sphinx site explicitly renders every public Pydantic model, its field
+descriptions, validators, and JSON schema. Documentation warnings fail the
+build.
 
 ## Development
 
