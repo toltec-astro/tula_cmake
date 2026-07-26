@@ -120,12 +120,12 @@ The Ubuntu 24.04 ARM64 dev container produced these results on 26 July 2026:
      - GNU 14.2.0
      - 56 passed, 6 capability-skipped
      - GNU OpenMP passed
-     - Tula, kidscpp, Citlali, and their consumers passed
+     - 13 Tula, 3 kidscpp, 2 Citlali tests, and all consumers passed
    * - ``just clang20``
      - Clang 20.1.2
      - 56 passed, 6 capability-skipped
      - LLVM OpenMP passed
-     - Tula, kidscpp, Citlali, and their consumers passed
+     - 13 Tula, 3 kidscpp, 2 Citlali tests, and all consumers passed
 
 All 62 cases remain collected. The six deliberate skips correspond to
 oneMKL/threading, Intel OpenMP, and the alternate compiler family's OpenMP
