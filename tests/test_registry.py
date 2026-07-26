@@ -150,8 +150,16 @@ def test_resolver_wiring_is_derived_from_feature_name() -> None:
             assert f"function(tula_resolve_{name}_{mode.value})" in content
 
 
-def test_bundled_profile_is_discoverable() -> None:
-    assert (profiles_dir() / "linux-gcc13-debug").is_file()
+@pytest.mark.parametrize(
+    "name",
+    [
+        "linux-gcc13-debug",
+        "linux-gcc14-debug",
+        "linux-clang20-debug",
+    ],
+)
+def test_bundled_profile_is_discoverable(name: str) -> None:
+    assert (profiles_dir() / name).is_file()
     assert template_path("TulaConfig.h.in").is_file()
 
 

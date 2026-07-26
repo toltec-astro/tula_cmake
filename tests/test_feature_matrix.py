@@ -82,7 +82,10 @@ def test_feature_matrix(
     profile = (
         os.environ[case.profile_env]
         if case.profile_env is not None
-        else str(profiles_dir() / "linux-gcc13-debug")
+        else os.environ.get(
+            "TULA_TEST_PROFILE",
+            str(profiles_dir() / "linux-gcc13-debug"),
+        )
     )
     BuildWorkflow(
         BuildRequest(

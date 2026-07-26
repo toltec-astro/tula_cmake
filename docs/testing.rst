@@ -57,6 +57,9 @@ Test tiers
 
    $ just matrix
    $ just matrix-all
+   $ just gcc14
+   $ just clang20
+   $ just compilers
    $ uv run pytest -m feature_matrix -k logging
    $ uv run pytest -m "feature_matrix and network"
 
@@ -71,21 +74,62 @@ environment advertises them:
        TULA_TEST_INTEL_PROFILE=/profiles/intel-debug \
        just matrix-all
 
-   $ TULA_TEST_CAPABILITIES=llvm-openmp \
+   $ TULA_TEST_PROFILE=/profiles/clang-debug \
+       TULA_TEST_CAPABILITIES=llvm-openmp \
        TULA_TEST_LLVM_PROFILE=/profiles/clang-debug \
        just matrix-all
 
-The default dev container currently exercises all logging levels; every
+The Ubuntu 24.04 dev container installs GCC 13, GCC 14, Clang 20, and the
+LLVM 20 OpenMP runtime. It also installs ``clang-tools-20`` because CMake's
+C++20 module-dependency scan invokes ``clang-scan-deps``. ``matrix`` and
+``matrix-all`` retain GCC 13 as the baseline. ``gcc14`` and ``clang20`` each
+run the complete applicable feature matrix and then create the installed
+Tula → kidscpp → Citlali package chain.
+``TULA_TEST_PROFILE`` selects the ordinary matrix profile; runtime-specific
+cases additionally require their matching capability and profile variable.
+The Clang profile deliberately selects ``libstdc++11`` to match Ubuntu's
+system packages and the rest of the packaged graph.
+
+The compiler gates exercise all logging levels; every
 yaml-cpp and Eigen provider; the disabled and CPM csv-parser cases; every
 NetCDF C and C++ provider; disabled and CPM bitmask and meta-enum cases; both
 Conan and CPM clipp providers; disabled and CPM GrPPI cases; both Eigen
 multithreading values; disabled and Conan Spectra, Boost, FFTW, CCfits, and
 Ceres cases; disabled and system features; all OpenMP
-policies; and the GNU OpenMP runtime. oneAPI,
-Intel OpenMP, LLVM OpenMP, and MKL threading cases remain first-class
-collected tests for the corresponding validation images. Runtime cases assert
+policies; and the matching GNU or LLVM OpenMP runtime. oneAPI,
+Intel OpenMP, and MKL threading cases remain first-class collected tests for
+the corresponding validation images. Runtime cases assert
 a matching compiler family rather than accepting the requested runtime label
 alone.
+
+Measured compiler results
+-------------------------
+
+The Ubuntu 24.04 ARM64 dev container produced these results on 26 July 2026:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 16 19 23 18 24
+
+   * - Gate
+     - Compiler
+     - Applicable matrix
+     - Runtime case
+     - Installed chain
+   * - ``just gcc14``
+     - GNU 14.2.0
+     - 56 passed, 6 capability-skipped
+     - GNU OpenMP passed
+     - Tula, kidscpp, Citlali, and their consumers passed
+   * - ``just clang20``
+     - Clang 20.1.2
+     - 56 passed, 6 capability-skipped
+     - LLVM OpenMP passed
+     - Tula, kidscpp, Citlali, and their consumers passed
+
+All 62 cases remain collected. The six deliberate skips correspond to
+oneMKL/threading, Intel OpenMP, and the alternate compiler family's OpenMP
+runtime.
 
 The Tula package gate separately runs thirteen behavior executables. In addition
 to core, Eigen, nddata, and ECSV coverage, these verify ``FlatConfig`` typed

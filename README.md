@@ -168,8 +168,18 @@ each case as an individually selectable Pytest item:
 ```sh
 just matrix
 just matrix-all
+just gcc14
+just clang20
+just compilers
 uv run pytest -m feature_matrix -k logging
 ```
+
+The compiler gates select the bundled GCC 14 or Clang 20 Conan profile, run
+the applicable 62-case matrix, and then build the installed
+Tula → kidscpp → Citlali package chain. GCC 13 remains the default baseline.
+The dev container installs the versioned compiler executables, matching
+OpenMP runtimes, and `clang-tools-20` (needed by CMake for
+`clang-scan-deps`).
 
 Provider cases are derived from `registry.yaml`. The matrix metadata defines
 one option axis per feature-owned option, and the runner derives one case for

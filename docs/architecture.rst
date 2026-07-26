@@ -19,6 +19,9 @@ resources:
        │   └── resolvers/
        ├── templates/
        └── profiles/
+           ├── linux-gcc13-debug
+           ├── linux-gcc14-debug
+           └── linux-clang20-debug
 
 The repository additionally owns ``examples/tula_boilerplate`` and
 ``examples/tula_downstream``. They validate the package-author and

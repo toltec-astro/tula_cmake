@@ -30,6 +30,12 @@ root-package overrides for experiments:
        --option perflibs=system \
        --option perflibs_openmp=auto
 
+Bundled debug profiles cover the three compilers installed by the dev
+container: ``linux-gcc13-debug``, ``linux-gcc14-debug``, and
+``linux-clang20-debug``. The Clang profile intentionally uses Ubuntu's
+``libstdc++11`` ABI so system packages and Conan dependencies share one C++
+standard-library boundary.
+
 The command performs three visible phases:
 
 ``bootstrap``

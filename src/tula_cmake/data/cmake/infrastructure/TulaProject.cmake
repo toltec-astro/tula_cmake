@@ -68,6 +68,10 @@ function(tula_install_bundled_headers)
             _include_dir
             GLOBAL PROPERTY "TULA_BUNDLED_HEADER_${_feature}_DIR"
         )
-        install(DIRECTORY "${_include_dir}/" DESTINATION include)
+        install(
+            DIRECTORY "${_include_dir}/"
+            DESTINATION include
+            PATTERN ".git*" EXCLUDE
+        )
     endforeach()
 endfunction()

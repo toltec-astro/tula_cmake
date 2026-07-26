@@ -48,6 +48,8 @@ features:
           gnu:
             options:
               perflibs_openmp: required
+            capabilities: [gnu-openmp]
+            profile_env: TULA_TEST_GNU_PROFILE
           intel:
             options:
               perflibs_oneapi: enabled
