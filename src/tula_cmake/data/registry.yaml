@@ -17,6 +17,52 @@ features:
         default: info
         cmake_variable: TULA_LOGGING_LEVEL
 
+  yaml_cpp:
+    modes: [conan, cpm, system]
+    conan_requires:
+      - yaml-cpp/0.9.0
+    cmake_vars:
+      URL: https://github.com/jbeder/yaml-cpp/archive/yaml-cpp-0.9.0.tar.gz
+      SHA256: 25cb043240f828a8c51beb830569634bc7ac603978e0f69d6b63558dadefd49a
+
+  csv_parser:
+    modes: [cpm]
+    cmake_vars:
+      URL: https://github.com/Jerry-Ma/csv-parser/archive/bc3bebcc16fb74144e9d94035346b3d9150b39c5.tar.gz
+      SHA256: 55362b6595a9869b0cc20178ebc746fa0000fa252eeca935cd906c367aa7bc7e
+
+  netcdf_c:
+    modes: [conan, system]
+    conan_requires:
+      - netcdf/4.8.1
+
+  netcdf_cxx4:
+    modes: [cpm, system]
+    dependencies: [netcdf_c]
+    cmake_vars:
+      URL: https://github.com/Unidata/netcdf-cxx4/archive/refs/tags/v4.3.1.tar.gz
+      SHA256: e3fe3d2ec06c1c2772555bf1208d220aab5fee186d04bd265219b0bc7a978edc
+
+  bitmask:
+    modes: [cpm]
+    cmake_vars:
+      URL: https://github.com/oliora/bitmask/archive/0454f32733d4fc910ac0c3c85e61b45b9ae7eee9.tar.gz
+      SHA256: 5fa767a9bf78948ff50c056469a35b2f50e41dec6b7e1b15ca6372cb5403a317
+
+  meta_enum:
+    modes: [cpm]
+    cmake_vars:
+      URL: https://github.com/Jerry-Ma/meta_enum/archive/f940f15bc3f4321f5ef458742b7731c7f03543ff.tar.gz
+      SHA256: d44aceebba0dff499c3757da9678292db4b462c539677c7fac27ab0c84082e3d
+
+  clipp:
+    modes: [conan, cpm]
+    conan_requires:
+      - clipp/1.2.3
+    cmake_vars:
+      URL: https://github.com/muellan/clipp/archive/refs/tags/v1.2.3.tar.gz
+      SHA256: 73da8e3d354fececdea99f7deb79d0343647349563ace3eafb7f4cca6e86e90b
+
   perflibs:
     modes: [system]
     options:
@@ -36,3 +82,51 @@ features:
         values: [sequential, openmp, tbb]
         default: sequential
         cmake_variable: TULA_PERFLIBS_MKL_THREADING
+
+  eigen:
+    modes: [conan, cpm, system]
+    dependencies: [perflibs]
+    conan_requires:
+      - eigen/3.4.0
+    cmake_vars:
+      URL: https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
+      SHA256: b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
+    options:
+      eigen_multithreading:
+        values: [enabled, disabled]
+        default: enabled
+        cmake_variable: TULA_EIGEN_MULTITHREADING
+
+  spectra:
+    modes: [conan]
+    dependencies: [perflibs, eigen]
+    conan_requires:
+      - spectra/1.0.1
+
+  boost:
+    modes: [conan]
+    conan_requires:
+      - boost/1.91.0
+
+  fftw:
+    modes: [conan]
+    conan_requires:
+      - fftw/3.3.10
+
+  ccfits:
+    modes: [conan]
+    conan_requires:
+      - ccfits/2.6
+
+  ceres:
+    modes: [conan]
+    dependencies: [perflibs, eigen]
+    conan_requires:
+      - ceres-solver/2.2.0
+
+  grppi:
+    modes: [cpm]
+    dependencies: [logging, bitmask, meta_enum, perflibs]
+    cmake_vars:
+      URL: https://github.com/Jerry-Ma/grppi/archive/12f5c11b1a5ad4a283e313bd1966bfd6446b9e24.tar.gz
+      SHA256: cdfd607573aa75272b5963d0142b90d6cbf684936f5ccc1451568669d88c2169

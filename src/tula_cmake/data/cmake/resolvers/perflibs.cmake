@@ -74,12 +74,9 @@ function(_tula_perflibs_resolve_mkl OUT_TARGET OUT_FOUND)
     set("${OUT_FOUND}" 1 PARENT_SCOPE)
 endfunction()
 
-function(tula_resolve_perflibs FEATURE MODE)
+function(tula_resolve_perflibs_system)
     if(TARGET tula::perflibs)
         return()
-    endif()
-    if(NOT MODE STREQUAL "system")
-        message(FATAL_ERROR "perflibs: unsupported provider ${MODE}")
     endif()
 
     _tula_perflibs_validate()

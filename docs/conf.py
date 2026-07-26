@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import tula_cmake
+
+sys.path.insert(0, str(Path(__file__).parent / "_ext"))
 
 project = "tula-cmake"
 author = "TolTEC developers"
@@ -11,6 +16,7 @@ version = ".".join(tula_cmake.__version__.split(".")[:2])
 release = tula_cmake.__version__
 
 extensions = [
+    "feature_matrix",
     "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",

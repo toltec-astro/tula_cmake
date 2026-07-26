@@ -17,6 +17,9 @@ class TulaCMakeRecipe(ConanFile):
 
     name = "tula-cmake"
     version = "3.1.0"
+    description = "Conan and CMake superbuild infrastructure for TolTEC C++ packages"
+    license = "BSD-3-Clause"
+    url = "https://github.com/toltec-astro/tula_cmake"
     package_type = "python-require"
     required_conan_version = ">=2.31"
     exports = (

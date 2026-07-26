@@ -8,7 +8,7 @@ from typing import Any
 from conan.tools.cmake import CMakeDeps, CMakeToolchain, cmake_layout
 
 from .models import FeatureMode
-from .registry import load_registry, render_manifest
+from .registry import cmake_cache_variables, load_registry, render_manifest
 from .resources import infrastructure_dir
 
 _REGISTRY = load_registry()
@@ -45,6 +45,12 @@ class TulaConan:
             for name, option in feature.options.items():
                 values[name] = option.values
                 defaults[name] = option.default
+        project_defaults = getattr(self, "tula_default_options", {})
+        unknown_defaults = project_defaults.keys() - defaults.keys()
+        if unknown_defaults:
+            unknown = ", ".join(sorted(unknown_defaults))
+            raise ValueError(f"unknown Tula default option(s): {unknown}")
+        defaults.update(project_defaults)
         self.options.update(values, defaults)
 
     def layout(self: Any) -> None:
@@ -66,12 +72,22 @@ class TulaConan:
 
     def requirements(self: Any) -> None:
         """Declare requirements owned by features using the Conan provider."""
+        public_features = set(getattr(self, "tula_public_features", ()))
+        unknown_public = public_features - _REGISTRY.features.keys()
+        if unknown_public:
+            unknown = ", ".join(sorted(unknown_public))
+            raise ValueError(f"unknown public Tula feature(s): {unknown}")
         for name, mode in self._providers().items():
             if mode is not FeatureMode.CONAN:
                 continue
             for requirement in _REGISTRY.features[name].conan_requires:
                 self.output.info(f"{name}: Conan provider requires {requirement}")
-                self.requires(requirement)
+                is_public = name in public_features
+                self.requires(
+                    requirement,
+                    transitive_headers=is_public,
+                    transitive_libs=is_public,
+                )
 
     def generate(self: Any) -> None:
         """Generate CMake dependency files, toolchain, and Tula manifest."""
@@ -81,12 +97,18 @@ class TulaConan:
             render_manifest(
                 _REGISTRY,
                 self._providers(),
-                self._option_values(),
             )
         )
 
         CMakeDeps(self).generate()
         toolchain = CMakeToolchain(self)
+        toolchain.cache_variables.update(
+            cmake_cache_variables(
+                _REGISTRY,
+                self._providers(),
+                self._option_values(),
+            )
+        )
         toolchain.blocks["tula_feature_entrypoint"] = _static_block(
             "\n".join(
                 [

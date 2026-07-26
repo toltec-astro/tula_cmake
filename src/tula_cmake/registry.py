@@ -72,12 +72,12 @@ def _cmake_quote(value: CMakeValue) -> str:
     return text.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def render_manifest(
+def cmake_cache_variables(
     registry: FeatureRegistry,
     providers: Mapping[str, FeatureMode],
     option_values: Mapping[str, str],
-) -> str:
-    """Render deterministic input for the post-project CMake resolver."""
+) -> dict[str, str]:
+    """Validate feature options and map them to generated preset variables."""
     selection = FeatureSelection.model_validate(dict(providers))
     selection.validate_for(registry)
     expected_options = {
@@ -91,6 +91,25 @@ def render_manifest(
             f"missing={sorted(missing)}, unknown={sorted(unknown)}"
         )
         raise ValueError(msg)
+
+    result: dict[str, str] = {}
+    for feature_name, feature in registry.features.items():
+        for option_name, option in feature.options.items():
+            value = option_values[option_name]
+            if value not in option.values:
+                raise ValueError(f"{option_name}: unsupported value {value!r}")
+            if selection.root[feature_name] is not FeatureMode.DISABLED:
+                result[option.cmake_variable] = value
+    return result
+
+
+def render_manifest(
+    registry: FeatureRegistry,
+    providers: Mapping[str, FeatureMode],
+) -> str:
+    """Render provider state and immutable resolver data for CMake."""
+    selection = FeatureSelection.model_validate(dict(providers))
+    selection.validate_for(registry)
 
     ordered = resolution_order(registry)
     lines = [
@@ -108,10 +127,5 @@ def render_manifest(
         )
         for key, value in feature.cmake_vars.items():
             lines.append(f'set(TULA_FEATURE_{name}_{key} "{_cmake_quote(value)}")')
-        for option_name, option in feature.options.items():
-            value = option_values[option_name]
-            if value not in option.values:
-                raise ValueError(f"{option_name}: unsupported value {value!r}")
-            lines.append(f'set({option.cmake_variable} "{_cmake_quote(value)}")')
     lines.append("")
     return "\n".join(lines)

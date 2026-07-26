@@ -71,6 +71,8 @@ class BuildWorkflow:
         ]
         for profile in self.request.profiles:
             install.extend(("--profile:all", profile))
+        for option in self.request.options:
+            install.extend(("--options:host", f"&:{option}"))
         self._phase("conan: resolve the package graph and generate build files")
         self._run(install, None)
 

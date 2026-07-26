@@ -71,14 +71,26 @@ tula_cmake = [
     "data/profiles/*",
 ]
 
+[tool.uv.workspace]
+members = ["examples/tula_boilerplate"]
+
+[tool.uv.sources]
+tula-cmake = { workspace = true }
+
 [tool.pytest.ini_options]
 testpaths = ["tests", "docs"]
 norecursedirs = [".*", "docs/_build"]
 addopts = [
     "-ra",
+    "-m",
+    "not feature_matrix",
     "--doctest-glob=*.rst",
     "--strict-config",
     "--strict-markers",
+]
+markers = [
+    "feature_matrix: configure, build, and run one generated feature-matrix case",
+    "network: feature-matrix case which may download a Conan or CPM dependency",
 ]
 xfail_strict = true
 filterwarnings = ["error"]
@@ -111,13 +123,17 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "PLR2004", "S101"]
 "conanfile.py" = ["E402"]
+"examples/**/conanfile.py" = ["INP001"]
 "docs/conf.py" = ["A001", "D", "INP001", "S101"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
 [tool.ty.src]
-exclude = ["docs/conf.py"]
+exclude = [
+    "docs/conf.py",
+    "examples/**/conanfile.py",
+]
 
 [tool.coverage.run]
 branch = true

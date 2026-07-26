@@ -42,9 +42,20 @@ def build(
         list[str] | None,
         typer.Option("--profile", help="Profile for build and host; repeatable."),
     ] = None,
+    options: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--option",
+            "-o",
+            help="Root-package Conan option as NAME=VALUE; repeatable.",
+        ),
+    ] = None,
     config_source: Annotated[
         str | None,
-        typer.Option(help="Optional source for 'conan config install'."),
+        typer.Option(
+            help="Optional source for 'conan config install'.",
+            envvar="TULA_CONAN_CONFIG_SOURCE",
+        ),
     ] = None,
     preset: Annotated[
         str | None,
@@ -60,6 +71,7 @@ def build(
         source=source,
         output=output,
         profiles=tuple(profiles or ()),
+        options=tuple(options or ()),
         config_source=config_source,
         preset=preset,
         build_policy=build_policy,

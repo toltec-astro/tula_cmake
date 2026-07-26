@@ -1,1 +1,1 @@
-"""Tests for tula_cmake."""
+"""tula_cmake test suite."""

@@ -36,11 +36,15 @@ def test_workflow_runs_conan_then_generated_cmake_presets(
         source=tmp_path,
         output=tmp_path / "build",
         profiles=("base-profile", "feature-profile"),
+        options=("perflibs=system", "perflibs_openmp=required"),
     )
     BuildWorkflow(request, runner=record).execute()
 
     assert calls[0][0][1:3] == ("install", str(tmp_path))
     assert calls[0][0].count("--profile:all") == 2
+    assert calls[0][0].count("--options:host") == 2
+    assert "&:perflibs=system" in calls[0][0]
+    assert "&:perflibs_openmp=required" in calls[0][0]
     assert calls[1] == (
         ("cmake", "--preset", "conan-debug", "--fresh"),
         tmp_path,

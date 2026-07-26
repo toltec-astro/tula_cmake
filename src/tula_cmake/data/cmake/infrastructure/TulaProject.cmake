@@ -27,11 +27,12 @@ function(tula_resolve_features)
 
         set(_module_variable "TULA_FEATURE_${_feature}_MODULE")
         include("${${_module_variable}}")
-        set(_resolver "tula_resolve_${_feature}")
-        if(NOT COMMAND "${_resolver}")
-            message(FATAL_ERROR "${_feature}: missing resolver ${_resolver}()")
+        set(_entrypoint "tula_resolve_${_feature}_${_mode}")
+        if(NOT COMMAND "${_entrypoint}")
+            message(FATAL_ERROR
+                "${_feature}: missing provider entrypoint ${_entrypoint}()")
         endif()
-        cmake_language(CALL "${_resolver}" "${_feature}" "${_mode}")
+        cmake_language(CALL "${_entrypoint}")
         if(NOT TARGET "tula::${_feature}")
             message(FATAL_ERROR
                 "${_feature}: ${_mode} provider did not create tula::${_feature}")
@@ -49,4 +50,24 @@ function(tula_get_feature_provider OUT_VAR FEATURE)
         set(_provider "disabled")
     endif()
     set("${OUT_VAR}" "${_provider}" PARENT_SCOPE)
+endfunction()
+
+function(tula_register_bundled_headers FEATURE SOURCE_DIR)
+    if(NOT IS_DIRECTORY "${SOURCE_DIR}/include")
+        message(FATAL_ERROR
+            "${FEATURE}: bundled provider has no include directory at ${SOURCE_DIR}")
+    endif()
+    set_property(GLOBAL APPEND PROPERTY TULA_BUNDLED_HEADER_FEATURES "${FEATURE}")
+    set_property(GLOBAL PROPERTY "TULA_BUNDLED_HEADER_${FEATURE}_DIR" "${SOURCE_DIR}/include")
+endfunction()
+
+function(tula_install_bundled_headers)
+    get_property(_features GLOBAL PROPERTY TULA_BUNDLED_HEADER_FEATURES)
+    foreach(_feature IN LISTS _features)
+        get_property(
+            _include_dir
+            GLOBAL PROPERTY "TULA_BUNDLED_HEADER_${_feature}_DIR"
+        )
+        install(DIRECTORY "${_include_dir}/" DESTINATION include)
+    endforeach()
 endfunction()

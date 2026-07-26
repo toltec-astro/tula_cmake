@@ -20,6 +20,17 @@ qa:
 test:
     uv run pytest
 
+matrix:
+    uv run conan export .
+    uv run pytest -m "feature_matrix and not network" -vv
+
+matrix-all:
+    uv run conan export .
+    uv run pytest -m feature_matrix -vv
+
+matrix-list:
+    uv run pytest -m feature_matrix --collect-only -q
+
 build:
     uv build
 

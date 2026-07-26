@@ -47,7 +47,33 @@ def test_build_constructs_and_executes_workflow(
             "base",
             "--profile",
             "features",
+            "--option",
+            "perflibs=system",
+            "-o",
+            "perflibs_openmp=required",
         ],
     )
     assert result.exit_code == 0
     assert requests[0].profiles == ("base", "features")
+    assert requests[0].options == (
+        "perflibs=system",
+        "perflibs_openmp=required",
+    )
+
+
+def test_build_reads_config_source_from_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requests: list[BuildRequest] = []
+
+    def execute(workflow: BuildWorkflow) -> None:
+        requests.append(workflow.request)
+
+    monkeypatch.setattr(BuildWorkflow, "execute", execute)
+    result = runner.invoke(
+        app,
+        ["build", "."],
+        env={"TULA_CONAN_CONFIG_SOURCE": "https://example.invalid/conan-config.zip"},
+    )
+    assert result.exit_code == 0
+    assert requests[0].config_source == "https://example.invalid/conan-config.zip"

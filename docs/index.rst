@@ -11,6 +11,9 @@ one-command downstream workflow.
 
    architecture
    workflow
+   distribution
+   features
+   testing
    models
    api
 

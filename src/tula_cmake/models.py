@@ -17,6 +17,10 @@ from pydantic import (
 
 Identifier = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
 CMakeVariable = Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Z0-9_]*$")]
+OptionAssignment = Annotated[
+    str,
+    StringConstraints(pattern=r"^[a-z][a-z0-9_]*=.+$"),
+]
 CMakeScalar = str | int | float | bool
 CMakeValue = CMakeScalar | tuple[CMakeScalar, ...]
 
@@ -45,7 +49,7 @@ class OptionSpec(BaseModel):
     )
     default: str = Field(description="Value used when a recipe does not override it.")
     cmake_variable: CMakeVariable = Field(
-        description="CMake cache variable written into the generated manifest."
+        description="CMake cache variable written into the generated preset."
     )
 
     @model_validator(mode="after")
@@ -195,6 +199,10 @@ class BuildRequest(BaseModel):
     profiles: tuple[str, ...] = Field(
         default=(),
         description="Ordered Conan host profiles.",
+    )
+    options: tuple[OptionAssignment, ...] = Field(
+        default=(),
+        description="Root-package Conan option overrides as NAME=VALUE.",
     )
     config_source: str | None = Field(
         default=None,

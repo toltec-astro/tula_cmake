@@ -1,0 +1,105 @@
+schema_version: 1
+
+features:
+  logging:
+    probe: logging.cpp
+    provider_options:
+      logging_level: info
+    option_axes:
+      logging_level:
+        mode: system
+
+  yaml_cpp:
+    probe: yaml_cpp.cpp
+
+  csv_parser:
+    probe: csv_parser.cpp
+
+  netcdf_c:
+    probe: netcdf_c.cpp
+
+  netcdf_cxx4:
+    probe: netcdf_cxx4.cpp
+    dependencies:
+      netcdf_c: system
+
+  bitmask:
+    probe: bitmask.cpp
+
+  meta_enum:
+    probe: meta_enum.cpp
+
+  clipp:
+    probe: clipp.cpp
+
+  perflibs:
+    probe: perflibs.cpp
+    option_axes:
+      perflibs_oneapi:
+        mode: system
+        values:
+          enabled:
+            capabilities: [oneapi]
+      perflibs_openmp:
+        mode: system
+      perflibs_openmp_runtime:
+        mode: system
+        values:
+          gnu:
+            options:
+              perflibs_openmp: required
+          intel:
+            options:
+              perflibs_oneapi: enabled
+              perflibs_openmp: required
+            capabilities: [oneapi]
+            profile_env: TULA_TEST_INTEL_PROFILE
+          llvm:
+            options:
+              perflibs_openmp: required
+            capabilities: [llvm-openmp]
+            profile_env: TULA_TEST_LLVM_PROFILE
+      perflibs_mkl_threading:
+        mode: system
+        common_options:
+          perflibs_oneapi: enabled
+        capabilities: [oneapi]
+
+  eigen:
+    probe: eigen.cpp
+    provider_options:
+      eigen_multithreading: enabled
+    dependencies:
+      perflibs: system
+    option_axes:
+      eigen_multithreading:
+        mode: system
+
+  spectra:
+    probe: spectra.cpp
+    dependencies:
+      perflibs: system
+      eigen: conan
+
+  boost:
+    probe: boost.cpp
+
+  fftw:
+    probe: fftw.cpp
+
+  ccfits:
+    probe: ccfits.cpp
+
+  ceres:
+    probe: ceres.cpp
+    dependencies:
+      perflibs: system
+      eigen: conan
+
+  grppi:
+    probe: grppi.cpp
+    dependencies:
+      logging: conan
+      bitmask: cpm
+      meta_enum: cpm
+      perflibs: system

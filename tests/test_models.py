@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from tula_cmake.models import FeatureRegistry, OptionSpec
+from tula_cmake.models import BuildRequest, FeatureRegistry, OptionSpec
 
 
 def test_option_default_must_be_allowed() -> None:
@@ -13,6 +13,11 @@ def test_option_default_must_be_allowed() -> None:
             default="three",
             cmake_variable="DEMO_OPTION",
         )
+
+
+def test_build_request_rejects_unscoped_option_text() -> None:
+    with pytest.raises(ValidationError, match="options"):
+        BuildRequest(source=".", output=".tula", options=("not-an-assignment",))
 
 
 def test_registry_rejects_unknown_dependencies() -> None:

@@ -11,7 +11,12 @@ from .models import (
     FeatureSpec,
     OptionSpec,
 )
-from .registry import load_registry, render_manifest, resolution_order
+from .registry import (
+    cmake_cache_variables,
+    load_registry,
+    render_manifest,
+    resolution_order,
+)
 from .resources import profiles_dir
 
 try:
@@ -36,6 +41,7 @@ __all__ = [
     "OptionSpec",
     "TulaConan",
     "__version__",
+    "cmake_cache_variables",
     "load_registry",
     "profiles_dir",
     "render_manifest",
