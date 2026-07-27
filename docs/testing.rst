@@ -144,7 +144,9 @@ sequential map.
 
 The final package-chain gate is ``just citlali``. It creates Tula, kidscpp,
 and Citlali as installed Conan packages, compiles the five-source Citlali v4
-library, and runs two Gaussian-model regressions. Public package edges opt in
+library plus its reduction CLI, and runs six regressions covering Gaussian
+behavior, CLI help/version/default configuration, and real-file adapter
+equivalence. Public package edges opt in
 to transitive headers and libraries, so Citlali receives ``tula::headers``
 through ``kids::kids`` rather than from workspace include paths.
 
@@ -152,5 +154,17 @@ Tula, kidscpp, and Citlali each include a Conan ``test_package``. These small
 consumers compile against the packaged CMake target after ``conan create``;
 they catch missing installed headers, target metadata, and transitive public
 requirements that source-tree tests cannot detect. In particular, this gate
-verifies Tula's bundled CPM header closure and Citlali's public Ceres include
-path.
+verifies Tula's bundled CPM header closure, Kidscpp's installed raw-reader
+symbol and NetCDF system link libraries, and Citlali's public Ceres include
+path. The Citlali consumer also executes the packaged ``citlali --version``
+and ``citlali --dump_config`` commands through ``VirtualRunEnv``.
+
+If ``TOLTECA_TEST_DATA_ROOT`` points at the sibling ``tolteca_test_data``
+checkout, Kidscpp additionally opens the 2024
+``toltec0_018230_111_0000`` timestream. It asserts metadata, dimensions,
+tone-model labels, exact first-sample I/Q/time values, slice metadata, and
+invalid-stride rejection. Citlali uses the same fixture to compare its
+file/slice adapter with a direct Kidscpp reader/solver call, including
+metadata, axes, model inputs, solved arrays, and matching NaNs. The package
+test remains hermetic; these source-tree fixture cases are skipped when the
+external data checkout is unavailable.

@@ -72,6 +72,11 @@ def _render_reference() -> str:
             if feature.conan_requires
             else "none"
         )
+        system_libs = (
+            ", ".join(f"``{item}``" for item in feature.system_libs)
+            if feature.system_libs
+            else "none"
+        )
         dependencies = (
             ", ".join(f"``{item}``" for item in feature.dependencies)
             if feature.dependencies
@@ -86,6 +91,7 @@ def _render_reference() -> str:
                 ":Provider default: ``disabled``",
                 f":Feature dependencies: {dependencies}",
                 f":Conan requirements: {requirements}",
+                f":Public system link libraries: {system_libs}",
                 "",
             ]
         )

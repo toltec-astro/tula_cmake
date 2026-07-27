@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 
 import pytest
 
+from tula_cmake.models import FeatureMode
 from tula_cmake.recipe import TulaConan
 
 
@@ -59,3 +60,24 @@ def test_unknown_public_feature_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="unknown public Tula feature"):
         TulaConan.requirements(recipe)
+
+
+def test_public_system_libraries_are_propagated() -> None:
+    class SystemRecipe:
+        tula_public_features = ("netcdf_c", "netcdf_cxx4")
+        cpp_info = type("CppInfo", (), {"system_libs": []})()
+
+        @staticmethod
+        def _providers() -> dict[str, object]:
+            return {
+                "netcdf_c": "system",
+                "netcdf_cxx4": "system",
+            }
+
+    recipe: Any = SystemRecipe()
+    recipe._providers = lambda: {
+        name: FeatureMode(mode) for name, mode in SystemRecipe._providers().items()
+    }
+    TulaConan.package_info(recipe)
+
+    assert recipe.cpp_info.system_libs == ["netcdf", "netcdf_c++4"]

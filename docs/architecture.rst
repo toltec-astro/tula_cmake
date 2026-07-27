@@ -162,6 +162,13 @@ recipe mixin maps Conan requirements for those features to transitive header
 and library edges. Provider selection and public API visibility are therefore
 separate, explicit decisions.
 
+System providers also declare any link libraries that must survive package
+installation. ``TulaConan.package_info()`` projects those registry entries
+into ``cpp_info.system_libs`` for public features. This is essential for
+static libraries: a source-tree target can link ``PkgConfig::NETCDF_CXX4``,
+but an installed ``kids::kids`` consumer still needs ``netcdf_c++4`` and
+``netcdf`` on its final link line.
+
 CMake resources and templates are package data because they must be
 addressable through the installed wheel and through Conan's exported
 Python-require. Keeping them below ``tula_cmake/data`` avoids global

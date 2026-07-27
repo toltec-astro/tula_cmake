@@ -87,6 +87,13 @@ class FeatureSpec(BaseModel):
         default=(),
         description="Conan references activated only by the Conan mode.",
     )
+    system_libs: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Platform libraries propagated by Conan packages when the "
+            "system provider is public."
+        ),
+    )
     cmake_vars: dict[CMakeVariable, CMakeValue] = Field(
         default_factory=dict,
         description="Feature constants forwarded to the CMake resolver.",
@@ -105,6 +112,8 @@ class FeatureSpec(BaseModel):
             raise ValueError("feature modes must be unique")
         if FeatureMode.CONAN in self.modes and not self.conan_requires:
             raise ValueError("conan mode requires conan_requires")
+        if self.system_libs and FeatureMode.SYSTEM not in self.modes:
+            raise ValueError("system_libs requires the system mode")
         return self
 
     @property

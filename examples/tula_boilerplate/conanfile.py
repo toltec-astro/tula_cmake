@@ -36,3 +36,4 @@ class TulaBoilerplateRecipe(ConanFile):
             "cmake_target_name",
             "tula_boilerplate::headers",
         )
+        super().package_info()

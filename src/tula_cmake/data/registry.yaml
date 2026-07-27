@@ -35,10 +35,12 @@ features:
     modes: [conan, system]
     conan_requires:
       - netcdf/4.8.1
+    system_libs: [netcdf]
 
   netcdf_cxx4:
     modes: [cpm, system]
     dependencies: [netcdf_c]
+    system_libs: [netcdf_c++4]
     cmake_vars:
       URL: https://github.com/Unidata/netcdf-cxx4/archive/refs/tags/v4.3.1.tar.gz
       SHA256: e3fe3d2ec06c1c2772555bf1208d220aab5fee186d04bd265219b0bc7a978edc

@@ -121,6 +121,21 @@ class TulaConan:
         )
         toolchain.generate()
 
+    def package_info(self: Any) -> None:
+        """Propagate public system-provider link libraries to consumers."""
+        public_features = set(getattr(self, "tula_public_features", ()))
+        system_libs = [
+            library
+            for name, mode in self._providers().items()
+            if mode is FeatureMode.SYSTEM and name in public_features
+            for library in _REGISTRY.features[name].system_libs
+        ]
+        self.cpp_info.system_libs.extend(
+            library
+            for library in system_libs
+            if library not in self.cpp_info.system_libs
+        )
+
 
 def feature_registry() -> Any:
     """Expose the immutable registry to Conan diagnostics."""

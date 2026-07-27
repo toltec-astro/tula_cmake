@@ -36,6 +36,22 @@ def test_registry_rejects_unknown_dependencies() -> None:
         )
 
 
+def test_system_libraries_require_system_provider() -> None:
+    with pytest.raises(ValidationError, match="system_libs requires"):
+        FeatureRegistry.model_validate(
+            {
+                "schema_version": 1,
+                "features": {
+                    "demo": {
+                        "name": "demo",
+                        "modes": ["cpm"],
+                        "system_libs": ["demo"],
+                    }
+                },
+            }
+        )
+
+
 def test_registry_rejects_dependency_cycles() -> None:
     with pytest.raises(ValidationError, match="cycle"):
         FeatureRegistry.model_validate(
