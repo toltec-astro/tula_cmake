@@ -43,6 +43,19 @@ def profiles_dir() -> Path:
     return data_path("profiles")
 
 
+def recipes_dir() -> Path:
+    """Return the directory containing project-owned Conan recipes."""
+    return data_path("recipes")
+
+
+def recipe_dir(name: str) -> Path:
+    """Return one bundled project-owned Conan recipe directory."""
+    path = recipes_dir() / name
+    if not (path / "conanfile.py").is_file():
+        raise ValueError(f"unknown bundled recipe: {name}")
+    return path
+
+
 def registry_path() -> Path:
     """Return the feature registry path."""
     return data_path("registry.yaml")

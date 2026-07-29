@@ -39,13 +39,12 @@ features:
     system_include_command: [nc-config, --includedir]
 
   netcdf_cxx4:
-    modes: [cpm, system]
+    modes: [conan, system]
     dependencies: [netcdf_c]
+    conan_requires:
+      - netcdf-cxx4/4.3.1
     system_link_command: [ncxx4-config, --libs]
     system_include_command: [ncxx4-config, --includedir]
-    cmake_vars:
-      URL: https://github.com/Unidata/netcdf-cxx4/archive/refs/tags/v4.3.1.tar.gz
-      SHA256: e3fe3d2ec06c1c2772555bf1208d220aab5fee186d04bd265219b0bc7a978edc
 
   bitmask:
     modes: [cpm]

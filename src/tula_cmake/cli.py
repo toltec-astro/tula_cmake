@@ -9,8 +9,8 @@ from typing import Annotated
 import typer
 
 from .models import BuildRequest
-from .resources import profiles_dir
-from .workflow import BuildWorkflow
+from .resources import profiles_dir, recipe_dir
+from .workflow import BuildWorkflow, conan_command, run_command
 
 app = typer.Typer(
     name="tula-cmake",
@@ -26,6 +26,19 @@ def profile(name: str) -> None:
     if not path.is_file():
         raise typer.BadParameter(f"unknown bundled profile: {name}")
     typer.echo(path)
+
+
+@app.command()
+def bootstrap() -> None:
+    """Export project-owned dependency recipes into the active Conan home."""
+    for name in ("netcdf-cxx4",):
+        path = recipe_dir(name)
+        typer.echo(f"==> bootstrap: export {name}")
+        try:
+            run_command((*conan_command(), "export", str(path)))
+        except (OSError, subprocess.CalledProcessError) as error:
+            typer.echo(f"tula-cmake: {error}", err=True)
+            raise typer.Exit(1) from error
 
 
 @app.command()

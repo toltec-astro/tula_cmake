@@ -92,8 +92,8 @@ system packages and the rest of the packaged graph.
 
 The compiler gates exercise all logging levels; every
 yaml-cpp and Eigen provider; the disabled and CPM csv-parser cases; every
-NetCDF C and C++ provider; disabled and CPM bitmask and meta-enum cases; both
-Conan and CPM clipp providers; disabled and CPM GrPPI cases; both Eigen
+NetCDF C and C++ provider; disabled and CPM bitmask and meta-enum cases; the
+CPM clipp provider; disabled and CPM GrPPI cases; both Eigen
 multithreading values; disabled and Conan Spectra, Boost, FFTW, CCfits, and
 Ceres cases; disabled and system features; all OpenMP
 policies; and the matching GNU or LLVM OpenMP runtime. oneAPI,
@@ -127,22 +127,24 @@ The Ubuntu 24.04 ARM64 dev container produced these results on 26 July 2026:
      - LLVM OpenMP passed
      - 13 Tula, 5 kidscpp, 6 Citlali tests, and all consumers passed
 
-All 62 cases remain collected. The six deliberate skips correspond to
+All 61 cases remain collected. The six deliberate skips correspond to
 oneMKL/threading, Intel OpenMP, and the alternate compiler family's OpenMP
 runtime.
 
 macOS validation uses the checked-in ``macos-brew-llvm-debug`` profile. It
-selects ``$(brew --prefix llvm)/bin/clang++`` with libc++, never native
-AppleClang, and obtains OpenMP from Homebrew ``libomp``. CMake 3.31.12 is
-pinned where a dependency declares a CMake tool requirement. The profile also
-exports ``CMAKE_POLICY_VERSION_MINIMUM=3.5`` so a host CMake 4 installation
-cannot break older CFITSIO sources when a third-party recipe bypasses that
-tool requirement.
+selects ``$(brew --prefix llvm@20)/bin/clang++`` with libc++, never native
+AppleClang, and obtains OpenMP from Homebrew ``libomp``. Profile rendering
+validates the detected major version and stops before graph resolution when
+the keg or symlink is not LLVM 20. CMake 3.31.12 is pinned where a dependency
+declares a CMake tool requirement. The profile also exports
+``CMAKE_POLICY_VERSION_MINIMUM=3.5`` so a host CMake 4 installation cannot
+break older CFITSIO sources when a third-party recipe bypasses that tool
+requirement.
 
-The measured macOS package gate uses Homebrew Clang 21.1.4 and passes 13
-Tula, 5 kidscpp, and 6 Citlali tests plus every installed-package consumer.
-The Linux baseline independently passes the same chain with GCC 13.3.0 from
-a clean Conan home.
+The current host has a stale ``llvm@20`` prefix resolving to Clang 21.1.4, and
+the profile correctly rejects it. A measured macOS LLVM 20 package-chain result
+therefore remains pending until that keg is repaired. The Linux baseline
+independently passes the chain with GCC 13.3.0 from a clean Conan home.
 
 The Tula package gate separately runs thirteen behavior executables. In addition
 to core, Eigen, nddata, and ECSV coverage, these verify ``FlatConfig`` typed

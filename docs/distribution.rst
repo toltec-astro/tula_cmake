@@ -82,6 +82,8 @@ creates packages in dependency order:
 .. code-block:: text
 
    conan export tula_cmake
+       → tula-cmake bootstrap
+       → conan export netcdf-cxx4/4.3.1
        → conan create tula
        → conan create kidscpp
        → conan create citlali
@@ -89,6 +91,11 @@ creates packages in dependency order:
 That path is a release-pipeline simulation, not the intended end-user
 installation procedure. Each ``conan create`` runs source behavior tests and
 an installed-target ``test_package`` consumer.
+
+``tula-cmake bootstrap`` exports project-owned third-party recipes into the
+active Conan home. Once the TolTEC remote exists, CI uploads the same recipe
+and binaries; the bundled export remains the deterministic pre-publication
+path.
 
 Release order
 -------------

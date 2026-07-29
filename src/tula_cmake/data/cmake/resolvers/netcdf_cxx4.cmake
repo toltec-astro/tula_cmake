@@ -1,40 +1,5 @@
 include_guard(GLOBAL)
 
-include(TulaCPM)
-
-function(_tula_netcdf_cxx4_cpm)
-    tula_load_cpm()
-    CPMAddPackage(
-        NAME netcdf_cxx4
-        URL "${TULA_FEATURE_netcdf_cxx4_URL}"
-        URL_HASH "SHA256=${TULA_FEATURE_netcdf_cxx4_SHA256}"
-        DOWNLOAD_ONLY YES
-    )
-    if(NOT netcdf_cxx4_SOURCE_DIR)
-        message(FATAL_ERROR
-            "netcdf_cxx4: CPM did not provide a source directory")
-    endif()
-
-    file(
-        GLOB _netcdf_cxx4_sources
-        CONFIGURE_DEPENDS
-        "${netcdf_cxx4_SOURCE_DIR}/cxx4/nc*.cpp"
-    )
-    if(NOT _netcdf_cxx4_sources)
-        message(FATAL_ERROR "netcdf_cxx4: no C++ library sources found")
-    endif()
-    add_library(tula_netcdf_cxx4_cpm STATIC ${_netcdf_cxx4_sources})
-    set_target_properties(
-        tula_netcdf_cxx4_cpm
-        PROPERTIES POSITION_INDEPENDENT_CODE ON
-    )
-    target_include_directories(
-        tula_netcdf_cxx4_cpm
-        PUBLIC "${netcdf_cxx4_SOURCE_DIR}/cxx4"
-    )
-    target_link_libraries(tula_netcdf_cxx4_cpm PUBLIC tula::netcdf_c)
-endfunction()
-
 function(_tula_netcdf_cxx4_system)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)
@@ -102,9 +67,9 @@ function(_tula_netcdf_cxx4_finalize provider_target)
     add_library(tula::netcdf_cxx4 ALIAS tula_netcdf_cxx4)
 endfunction()
 
-function(tula_resolve_netcdf_cxx4_cpm)
-    _tula_netcdf_cxx4_cpm()
-    _tula_netcdf_cxx4_finalize(tula_netcdf_cxx4_cpm)
+function(tula_resolve_netcdf_cxx4_conan)
+    find_package(netCDFCxx CONFIG REQUIRED)
+    _tula_netcdf_cxx4_finalize(netCDF::netcdf-cxx4)
 endfunction()
 
 function(tula_resolve_netcdf_cxx4_system)

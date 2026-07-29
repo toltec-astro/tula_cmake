@@ -28,6 +28,7 @@ class TulaCMakeRecipe(ConanFile):
         "src/tula_cmake/data/*",
         "src/tula_cmake/data/cmake/*/*",
         "src/tula_cmake/data/profiles/*",
+        "src/tula_cmake/data/recipes/*/*",
         "src/tula_cmake/data/templates/*",
     )
 

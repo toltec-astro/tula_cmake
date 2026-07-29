@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from typer.testing import CliRunner
 
 from tula_cmake.cli import app
+from tula_cmake.resources import recipe_dir
 from tula_cmake.workflow import BuildWorkflow
 
 if TYPE_CHECKING:
@@ -25,6 +26,24 @@ def test_profile_rejects_unknown_name() -> None:
     result = runner.invoke(app, ["profile", "missing"])
     assert result.exit_code == 2
     assert "unknown bundled profile" in result.output
+
+
+def test_bootstrap_exports_bundled_dependency_recipes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr("tula_cmake.cli.conan_command", lambda: ("conan",))
+    monkeypatch.setattr(
+        "tula_cmake.cli.run_command",
+        lambda command: calls.append(tuple(command)),
+    )
+
+    result = runner.invoke(app, ["bootstrap"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        ("conan", "export", str(recipe_dir("netcdf-cxx4"))),
+    ]
 
 
 def test_build_constructs_and_executes_workflow(

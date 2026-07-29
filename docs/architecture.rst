@@ -78,10 +78,11 @@ Feature contracts
 
 ``netcdf_cxx4``
    The C++ API layered on ``netcdf_c``. System mode uses the distribution's
-   ``netcdf-cxx4`` pkg-config interface. CPM pins v4.3.1 and creates the static
-   library directly from its ``cxx4/nc*.cpp`` sources because upstream's
-   top-level CMake assumes it is the root project. Consumers link only
-   ``tula::netcdf_cxx4``.
+   ``netcdf-cxx4`` pkg-config interface. Conan mode uses the project-owned
+   ``netcdf-cxx4/4.3.1`` recipe bundled with the wheel and Python-require. The
+   recipe packages the upstream ``cxx4/nc*.cpp`` sources and public headers,
+   publishes ``netCDF::netcdf-cxx4``, and propagates ``netcdf/4.8.1``.
+   Consumers link only ``tula::netcdf_cxx4``.
 
 ``bitmask``
    The header-only implementation used by Tula's flag-enum API. CPM retrieves

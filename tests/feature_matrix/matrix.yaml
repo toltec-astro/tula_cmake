@@ -21,7 +21,7 @@ features:
   netcdf_cxx4:
     probe: netcdf_cxx4.cpp
     dependencies:
-      netcdf_c: system
+      netcdf_c: conan
 
   bitmask:
     probe: bitmask.cpp

@@ -167,6 +167,14 @@ def test_bundled_profile_is_discoverable(name: str) -> None:
     assert template_path("TulaConfig.h.in").is_file()
 
 
+def test_netcdf_cxx4_uses_an_exportable_conan_provider() -> None:
+    registry = load_registry()
+    feature = registry.features["netcdf_cxx4"]
+
+    assert feature.modes == (FeatureMode.CONAN, FeatureMode.SYSTEM)
+    assert feature.conan_requires == ("netcdf-cxx4/4.3.1",)
+
+
 def test_infrastructure_layout_reaches_shared_templates() -> None:
     relative_template = infrastructure_dir() / ".." / ".." / "templates"
     assert relative_template.resolve() == template_path("TulaConfig.h.in").parent

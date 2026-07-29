@@ -1,5 +1,8 @@
-{% set llvm_prefix = subprocess.check_output(["brew", "--prefix", "llvm"], text=True).strip() %}
+{% set llvm_prefix = subprocess.check_output(["brew", "--prefix", "llvm@20"], text=True).strip() %}
 {% set compiler, version, compiler_exe = detect_api.detect_clang_compiler(llvm_prefix + "/bin/clang") %}
+{% if version.major != "20" %}
+ERROR: macos-brew-llvm-debug requires Homebrew LLVM major 20, detected {{ version }} at {{ llvm_prefix }}
+{% endif %}
 
 [settings]
 os=Macos

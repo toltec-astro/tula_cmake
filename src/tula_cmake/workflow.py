@@ -20,9 +20,14 @@ def run_command(command: Sequence[str], cwd: Path | None = None) -> None:
 
 
 def conan_command() -> tuple[str, ...]:
-    """Return the installed Conan entry point or its module invocation."""
+    """Return the Conan entry point from this environment or ``PATH``."""
+    environment_entry_point = Path(sys.executable).with_name("conan")
+    if environment_entry_point.is_file():
+        return (str(environment_entry_point),)
     executable = shutil.which("conan")
-    return (executable,) if executable else (sys.executable, "-m", "conan")
+    if executable:
+        return (executable,)
+    raise FileNotFoundError("Conan entry point is not installed")
 
 
 class BuildWorkflow:

@@ -68,8 +68,8 @@ The current registry contains:
 - `csv_parser`: the production Jerry-Ma fork pinned by commit and checksum,
   acquired as a header-only CPM source and normalized as `tula::csv_parser`;
 - `netcdf_c`: NetCDF C 4.8.1 through Conan or the system NetCDF config target;
-- `netcdf_cxx4`: NetCDF C++ 4.3.1 through a pinned CPM source or the system
-  pkg-config interface, layered on `netcdf_c`;
+- `netcdf_cxx4`: NetCDF C++ 4.3.1 through a project-owned Conan recipe or the
+  system pkg-config interface, layered on `netcdf_c`;
 - `bitmask`: the production header-only bitmask implementation, pinned by
   commit and checksum and normalized as `tula::bitmask`;
 - `meta_enum`: the production compile-time enum parser, pinned by commit and
@@ -111,7 +111,9 @@ src/tula_cmake/
     │       ├── perflibs.cmake
     │       └── yaml_cpp.cmake
     ├── templates/
-    └── profiles/
+    ├── profiles/
+    └── recipes/
+        └── netcdf-cxx4/
 ```
 
 The repository also contains `examples/tula_boilerplate` and
@@ -175,7 +177,7 @@ uv run pytest -m feature_matrix -k logging
 ```
 
 The compiler gates select the bundled GCC 14 or Clang 20 Conan profile, run
-the applicable 62-case matrix, and then build the installed
+the applicable 61-case matrix, and then build the installed
 Tula → kidscpp → Citlali package chain. GCC 13 remains the default baseline.
 The dev container installs the versioned compiler executables, matching
 OpenMP runtimes, and `clang-tools-20` (needed by CMake for
