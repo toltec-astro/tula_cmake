@@ -218,7 +218,7 @@ Repository boundary
 -------------------
 
 ``tula_cmake`` is no longer nested below Tula as a Git submodule. A checked-in
-``./build`` launcher obtains the pinned wheel with ``uvx`` before any CMake or
+``./build`` launcher obtains the pinned wheel with ``uv tool run`` before any CMake or
 Conan graph exists. Local development selects this checkout through
 ``TULA_CMAKE_DEV_PROJECT``. The Conan Python-require remains available for
 optional package production during the migration, but is not the bootstrap

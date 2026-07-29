@@ -6,6 +6,6 @@ projects:
     version: 3.1.0
     source:
       git_repository: https://github.com/toltec-astro/tula_cmake.git
-      git_revision: d27aa6e653b4f96fe3187f3cd8c2b4ae4feb6a73
+      git_revision: 6071444782d913f6294685552bc6a8913c2a121d
       source_subdir: examples/tula_boilerplate
     cmake_target: tula_boilerplate::headers

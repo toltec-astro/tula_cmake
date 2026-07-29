@@ -29,7 +29,7 @@ from tula_cmake.workflow import BuildWorkflow
 _ROOT = Path(__file__).parents[1]
 _BOILERPLATE = _ROOT / "examples" / "tula_boilerplate"
 _DOWNSTREAM = _ROOT / "examples" / "tula_downstream"
-_PINNED_REVISION = "d27aa6e653b4f96fe3187f3cd8c2b4ae4feb6a73"
+_PINNED_REVISION = "6071444782d913f6294685552bc6a8913c2a121d"
 
 
 def _local_sources() -> dict[str, Path]:

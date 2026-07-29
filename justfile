@@ -65,7 +65,7 @@ vertical-slice: sync
         "$run_root/conan/generated/tula_projects.cmake"
     grep -F 'kind: catalog' \
         "$run_root/conan/generated/tula-project-lock.yaml"
-    grep -F 'git_revision: d27aa6e653b4f96fe3187f3cd8c2b4ae4feb6a73' \
+    grep -F 'git_revision: 6071444782d913f6294685552bc6a8913c2a121d' \
         "$run_root/conan/generated/tula-project-lock.yaml"
 
     uv run tula-cmake build "$downstream" \
@@ -83,7 +83,7 @@ vertical-slice: sync
         "$run_root/system/generated/tula-project-lock.yaml"
 
 cruft-check:
-    uvx cruft check --checkout v2026
+    uv tool run cruft check --checkout v2026
 
 cruft-update:
-    uvx cruft update --checkout v2026
+    uv tool run cruft update --checkout v2026
