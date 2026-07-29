@@ -12,3 +12,6 @@ dist/
 conanbuild*.sh
 conanrun*.sh
 deactivate_conan*.sh
+CMakeUserPresets.json
+.tula/
+.tula-*/

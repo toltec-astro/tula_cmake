@@ -1,13 +1,14 @@
 Build workflow
 ==============
 
-The downstream entry point is:
+The downstream entry point remains one checked-in command:
 
 .. code-block:: console
 
    $ ./build
 
-The checked-in launcher runs the equivalent pinned command:
+The launcher obtains the pinned Python tool before any dependency graph
+exists:
 
 .. code-block:: console
 
@@ -16,86 +17,108 @@ The checked-in launcher runs the equivalent pinned command:
        tula-cmake build .
 
 During joint development, ``TULA_CMAKE_DEV_PROJECT`` selects a local
-``tula_cmake`` checkout instead. ``TULA_CMAKE_SOURCE`` can override the
-release source without editing the launcher.
+``tula_cmake`` checkout. ``TULA_CMAKE_SOURCE`` can override the release source
+without editing the launcher.
 
-Reproducible feature choices are supplied through Conan profiles. Repeatable
-``--option NAME=VALUE`` arguments are available as higher-priority,
-root-package overrides for experiments:
+Project manifest
+----------------
+
+Every project describes its identity and direct edges in
+``tula-project.yaml``:
+
+.. code-block:: yaml
+
+   project:
+     name: tula_downstream
+     version: 3.1.0
+   dependencies:
+     projects:
+       - name: tula_boilerplate
+         provider: cpm
+         source:
+           path: ../tula_boilerplate
+         target: tula_boilerplate::headers
+
+The dependency's own manifest declares its external features:
+
+.. code-block:: yaml
+
+   project:
+     name: tula_boilerplate
+     version: 3.1.0
+   dependencies:
+     features:
+       - name: logging
+         provider: conan
+
+Only direct dependencies are repeated. The root graph resolver loads
+transitive manifests, verifies identity, detects cycles and duplicate sources,
+and computes one effective provider assignment for each feature.
+
+Lifecycle and artifacts
+-----------------------
+
+``bootstrap``
+   ``uvx`` supplies the versioned CLI. The workflow optionally installs shared
+   Conan configuration and ensures that a profile exists.
+
+``resolve projects``
+   Pydantic models validate the recursive ``tula-project.yaml`` graph. The
+   workflow writes ``.tula/generated/tula_projects.cmake`` and
+   ``tula_features.cmake``.
+
+``prepare Conan externals``
+   The workflow creates a virtual ``.tula/generated/conanfile.txt`` containing
+   only external requirements whose selected provider is Conan. It invokes
+   ``conan install --build=missing`` explicitly; CMake never invokes Conan.
+
+``compose source projects``
+   ``TulaProject.cmake`` reads the generated project manifest and calls
+   ``CPMAddPackage(SOURCE_DIR ...)`` for each owned project. A recursion guard
+   ensures that a dependency cannot start a second graph traversal.
+
+``configure and build``
+   The workflow rebases Conan's generated toolchain into a root
+   ``CMakeUserPresets.json``, injects ``TulaBootstrap.cmake`` and both
+   manifests, then runs CMake configure and build through that preset.
+
+Provider overrides
+------------------
+
+The root can change an external feature provider without changing a child
+project:
 
 .. code-block:: console
 
-   $ tula-cmake build . \
-       --profile profiles/linux-gcc13-debug \
-       --option perflibs=system \
-       --option perflibs_openmp=auto
+   $ ./build --provider logging=system
 
-Bundled debug profiles cover the three compilers installed by the dev
-container: ``linux-gcc13-debug``, ``linux-gcc14-debug``, and
-``linux-clang20-debug``. The Clang profile intentionally uses Ubuntu's
-``libstdc++11`` ABI so system packages and Conan dependencies share one C++
-standard-library boundary.
+Project acquisition and feature acquisition are separate decisions.
+``tula_boilerplate`` is always a source project in this example; only its
+logging implementation changes provider.
 
-The command performs three visible phases:
-
-``bootstrap``
-   Optionally installs shared Conan configuration and ensures a default profile
-   exists when the caller did not supply profiles.
-
-The ``--config-source`` option can also be supplied through
-``TULA_CONAN_CONFIG_SOURCE``. This is the future zero-configuration handoff
-from the GitHub-hosted CLI to the TolTEC Conan remote definition.
-
-``conan``
-   Resolves the dependency graph and generates a toolchain, dependency files,
-   feature manifest, and CMake presets. Enabled-feature options are materialized
-   as generated preset cache variables.
-
-``cmake``
-   Reads the generated preset document through typed models, then configures
-   and builds with that preset.
-
-Projects consume the Conan recipe behavior with:
-
-.. code-block:: python
-
-   python_requires = "tula-cmake/3.1.0"
-   python_requires_extend = "tula-cmake.TulaConan"
-
-A production recipe may define its normal feature set without redeclaring
-registry options:
-
-.. code-block:: python
-
-   tula_default_options = {
-       "logging": "conan",
-       "perflibs": "system",
-       "eigen": "conan",
-   }
-
-The mixin validates every key against the registry. Profiles and explicit
-root-package options can still override these defaults.
-
-Public package chains
+Remote source catalog
 ---------------------
 
-Conan 2 package types do not imply that headers and static libraries should
-cross every dependency edge. A library whose public headers or link interface
-exposes a requirement declares that intent explicitly:
+The implemented slice uses local source paths so the entire orchestration can
+be tested without publishing repositories. The next slice replaces those
+paths with defaults from a central owned-project catalog:
 
-.. code-block:: python
+.. code-block:: yaml
 
-   self.requires(
-       "tula/3.1.0",
-       transitive_headers=True,
-       transitive_libs=True,
-   )
+   tula:
+     git: https://github.com/toltec-astro/tula.git
+     revision: <immutable-commit>
+     target: tula::headers
 
-The production chain uses this rule from Tula through kidscpp to Citlali.
-Provider selection remains local to each recipe; visibility of an installed
-package is ordinary Conan graph metadata.
+Each project will continue to own its direct dependency declaration. The
+catalog supplies only acquisition coordinates and expected targets. Root
+local overrides, a shared CPM source cache, and a generated lock record retain
+the same workflow for development, CI, and releases.
 
-The boilerplate and downstream example live in this repository. Tula,
-kidscpp, and Citlali are intentionally not CPM entries: keeping them as Conan
-requirements preserves package identity, binary reuse, graph conflicts, and
-lockfile visibility.
+Optional package workflow
+-------------------------
+
+The existing Conan recipes, Python-require mixin, package tests, and compiler
+matrix remain useful for producing and verifying installed packages. They are
+a separate release/validation path and no longer define how the ordinary
+downstream source graph is assembled.

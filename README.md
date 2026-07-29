@@ -1,14 +1,21 @@
 # tula_cmake 3.1
 
-`tula_cmake` is the typed Conan 2 and CMake superbuild infrastructure for
-TolTEC C++ packages.
+The authoritative architecture and implementation decisions live in
+[`design/`](design/README.md). Sphinx documentation under `docs/` describes
+the currently validated user interface.
 
-It is distributed as:
+`tula_cmake` is the typed source-superbuild infrastructure for TolTEC C++
+projects. It separates two graphs:
 
-- a Python wheel containing the `tula-cmake` CLI, validated models, and build
-  workflow;
-- a Conan `python_requires` recipe containing reusable recipe behavior and the
-  installed registry/CMake resources.
+- the project graph (Tula, Kidscpp, Citlali, and other owned source projects)
+  is composed recursively with CMake/CPM;
+- the external dependency graph uses the provider selected for each feature:
+  Conan, CPM, system, or disabled.
+
+The Python wheel contains the `tula-cmake` CLI, Pydantic models, graph
+resolver, feature registry, and installed CMake resources. Conan recipes
+remain available for package production and regression testing, but Conan is
+not required to own the first-party project graph.
 
 ## Downstream command
 
@@ -16,12 +23,13 @@ It is distributed as:
 ./build
 ```
 
-Released packages carry the same thin launcher. It obtains the pinned CLI from
-the `tula_cmake` GitHub tag with `uvx`, then exposes three phases:
+Released projects carry the same thin launcher. It obtains the pinned CLI from
+the `tula_cmake` GitHub tag with `uvx`, then:
 
-1. bootstrap Conan configuration and profile state;
-2. run `conan install --build=missing`;
-3. configure and build through Conan's generated CMake preset.
+1. validates and recursively resolves `tula-project.yaml`;
+2. prepares only the external dependencies assigned to Conan;
+3. writes inspectable CMake project and feature manifests;
+4. composes owned projects through CPM and builds with the generated preset.
 
 CMake does not invoke Conan.
 
@@ -32,32 +40,49 @@ will define the remote and profiles without requiring package-specific setup.
 
 ## Repository ownership
 
-This repository owns both infrastructure examples:
+This repository owns the complete minimal vertical slice:
 
 - `examples/tula_boilerplate`: the minimal logging and generated-header
   package;
-- `examples/tula_downstream`: an independent consumer of the packaged
-  boilerplate.
+- `examples/tula_downstream`: a source-superbuild consumer that acquires
+  boilerplate with CPM.
 
-Tula, kidscpp, and Citlali remain separate Conan packages. They are not
-FetchContent/CPM features, because their versions, options, package IDs, and
-public dependency edges belong in the Conan graph.
+Tula, Kidscpp, and Citlali remain separate repositories. Each repository owns
+its direct dependencies in `tula-project.yaml`; a root project recursively
+composes that graph. A central owned-project catalog will provide default,
+immutable Git coordinates and expected CMake targets. Local path overrides
+use CPM's normal source override semantics and are implemented in the current
+slice.
 
-The former Tula submodule is no longer part of the release topology.
-`tula-cmake/3.1.0` is retrieved as a Conan Python-require, while the CLI is a
-Python wheel bootstrapped from the matching GitHub tag.
+In this context, making a project “available” means publishing catalog source
+metadata, not exporting it as a Conan package.
 
-## Recipe integration
+## Project integration
 
-```python
-python_requires = "tula-cmake/3.1.0"
-python_requires_extend = "tula-cmake.TulaConan"
+```yaml
+# tula-project.yaml
+project:
+  name: tula_downstream
+  version: 3.1.0
+dependencies:
+  projects:
+    - name: tula_boilerplate
+      provider: cpm
+      source:
+        path: ../tula_boilerplate
+      target: tula_boilerplate::headers
 ```
 
 ```cmake
 include(TulaProject)
+tula_resolve_project_dependencies()
 tula_resolve_features()
 ```
+
+The first slice intentionally supports local project paths. Catalog-backed Git
+acquisition, immutable revision locking, and per-project local overrides are
+the next implementation slice; their accepted design is recorded in
+[`design/`](design/README.md).
 
 The current registry contains:
 
@@ -87,6 +112,7 @@ The current registry contains:
 src/tula_cmake/
 ├── models.py
 ├── registry.py
+├── superbuild.py
 ├── recipe.py
 ├── workflow.py
 ├── cli.py
@@ -96,6 +122,7 @@ src/tula_cmake/
     ├── registry.yaml
     ├── cmake/
     │   ├── infrastructure/
+    │   │   ├── TulaBootstrap.cmake
     │   │   ├── TulaProject.cmake
     │   │   ├── TulaConfigHeader.cmake
     │   │   └── TulaCPM.cmake
@@ -132,34 +159,20 @@ switch.
 
 ## User configuration
 
-Feature mode and feature customization are Conan options. Reproducible
-configuration belongs in an overlay profile:
-
-```ini
-[options]
-&:logging=disabled
-&:perflibs=system
-&:perflibs_oneapi=disabled
-&:perflibs_openmp=required
-&:perflibs_openmp_runtime=gnu
-&:perflibs_mkl_threading=sequential
-```
-
-For one-off experiments, the build command accepts repeatable root-package
-overrides:
+Project acquisition and feature acquisition are deliberately distinct.
+Project dependencies are declared in `tula-project.yaml`; root provider
+overrides select feature acquisition without editing downstream CMake:
 
 ```sh
-tula-cmake build . \
-  --option perflibs=system \
-  --option perflibs_openmp=required \
-  --option perflibs_openmp_runtime=gnu
+./build --provider logging=system
 ```
 
-Conan validates these values and includes them in package identity. During
-generation, `CMakeToolchain.cache_variables` writes options owned by enabled
-features into Conan's `CMakePresets.json`. CMake therefore sees ordinary,
-inspectable cache variables such as `TULA_PERFLIBS_OPENMP`, but the generated
-preset is output—not a second user configuration surface.
+The default downstream slice selects Conan for the `logging` meta-feature, so
+the generated virtual Conan recipe contains only `fmt` and `spdlog`.
+`tula_boilerplate` itself never enters that Conan graph.
+
+Existing Conan recipe options remain supported by the optional package-build
+path while production projects migrate to the root-owned source graph.
 
 ## Feature matrix tests
 
@@ -206,6 +219,16 @@ carry the `network` marker so the fast local tier can exclude them.
 
 `tula_boilerplate` is consequently only a minimal usage example. It has no
 feature-matrix profiles.
+
+The source-superbuild acceptance is independent:
+
+```sh
+just vertical-slice
+```
+
+It builds `tula_downstream → tula_boilerplate` twice (Conan logging and system
+logging), runs the resulting binaries, and asserts that the generated Conan
+input contains external libraries but never the owned boilerplate project.
 
 The Sphinx site explicitly renders every public Pydantic model, its field
 descriptions, validators, and JSON schema. It also generates the provider

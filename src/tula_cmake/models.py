@@ -21,6 +21,10 @@ OptionAssignment = Annotated[
     str,
     StringConstraints(pattern=r"^[a-z][a-z0-9_]*=.+$"),
 ]
+ProviderAssignment = Annotated[
+    str,
+    StringConstraints(pattern=r"^[a-z][a-z0-9_]*=(conan|cpm|system)$"),
+]
 CMakeScalar = str | int | float | bool
 CMakeValue = CMakeScalar | tuple[CMakeScalar, ...]
 
@@ -36,6 +40,105 @@ class FeatureMode(StrEnum):
     CONAN = "conan"
     CPM = "cpm"
     SYSTEM = "system"
+
+
+class ProjectMode(StrEnum):
+    """Supported acquisition policies for a project dependency."""
+
+    CONAN = "conan"
+    CPM = "cpm"
+    SYSTEM = "system"
+
+
+class ProjectIdentity(BaseModel):
+    """Stable identity declared by one participating CMake project."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: Identifier
+    version: str = Field(min_length=1)
+
+
+class ProjectSource(BaseModel):
+    """Source coordinates for a project dependency."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    path: Path
+
+
+class ProjectDependency(BaseModel):
+    """One direct TolTEC project dependency."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    default_provider: ProjectMode
+    source: ProjectSource
+    cmake_target: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_vertical_slice_provider(self) -> ProjectDependency:
+        """Limit the first slice to the implemented local CPM provider."""
+        if self.default_provider is not ProjectMode.CPM:
+            raise ValueError("only local-path cpm project dependencies are implemented")
+        return self
+
+
+class FeatureDependency(BaseModel):
+    """One direct external feature dependency."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    default_provider: FeatureMode
+
+    @model_validator(mode="after")
+    def feature_must_be_enabled(self) -> FeatureDependency:
+        """Reject dependency declarations which default to disabled."""
+        if self.default_provider is FeatureMode.DISABLED:
+            raise ValueError("feature dependency default cannot be disabled")
+        return self
+
+
+class ProjectDependencies(BaseModel):
+    """Direct project and external-feature dependencies."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    projects: dict[Identifier, ProjectDependency] = Field(default_factory=dict)
+    features: dict[Identifier, FeatureDependency] = Field(default_factory=dict)
+
+
+class ProjectManifest(BaseModel):
+    """Validated ``tula-project.yaml`` contract."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: int = Field(ge=1)
+    project: ProjectIdentity
+    dependencies: ProjectDependencies = Field(default_factory=ProjectDependencies)
+
+
+class ResolvedProject(BaseModel):
+    """One source project materialized in the root build graph."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: Identifier
+    version: str
+    provider: ProjectMode
+    source_dir: Path
+    cmake_target: str
+
+
+class ResolvedSuperbuild(BaseModel):
+    """Complete root-owned graph consumed by Conan and CMake generation."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    root: ProjectIdentity
+    projects: tuple[ResolvedProject, ...]
+    providers: dict[Identifier, FeatureMode]
+    conan_requires: tuple[str, ...]
 
 
 class OptionSpec(BaseModel):
@@ -229,7 +332,11 @@ class BuildRequest(BaseModel):
     )
     options: tuple[OptionAssignment, ...] = Field(
         default=(),
-        description="Root-package Conan option overrides as NAME=VALUE.",
+        description="Conan dependency option overrides as NAME=VALUE.",
+    )
+    providers: tuple[ProviderAssignment, ...] = Field(
+        default=(),
+        description="Root-owned feature-provider overrides as NAME=PROVIDER.",
     )
     config_source: str | None = Field(
         default=None,

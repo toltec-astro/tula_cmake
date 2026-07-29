@@ -2,8 +2,24 @@ Feature matrix testing
 ======================
 
 The feature matrix is tested independently of example and production
-packages. ``tula_boilerplate`` demonstrates minimal package UX; it is not a
-matrix fixture.
+projects. ``tula_boilerplate`` demonstrates minimal project-author UX; it is
+not a matrix fixture.
+
+Source-superbuild acceptance
+----------------------------
+
+``just vertical-slice`` validates the graph boundary end to end. In isolated
+build trees it:
+
+#. resolves ``tula_downstream → tula_boilerplate`` from the two manifests;
+#. builds and runs the executable with the default Conan logging provider;
+#. verifies that the virtual Conan recipe contains ``fmt`` and ``spdlog`` but
+   never ``tula_boilerplate``;
+#. repeats the build with ``--provider logging=system``;
+#. verifies that the system case has no Conan requirements.
+
+The gate therefore catches graph inversion: an owned project accidentally
+placed in Conan fails even if the C++ executable itself still compiles.
 
 Test architecture
 -----------------

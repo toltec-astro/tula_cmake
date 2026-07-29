@@ -31,6 +31,51 @@ Registry models
    :model-show-json: true
    :model-show-field-summary: true
 
+Project graph models
+--------------------
+
+.. autopydantic_model:: tula_cmake.models.ProjectIdentity
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+
+.. autopydantic_model:: tula_cmake.models.ProjectSource
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+
+.. autopydantic_model:: tula_cmake.models.ProjectDependency
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+   :model-show-validator-summary: true
+
+.. autopydantic_model:: tula_cmake.models.FeatureDependency
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+   :model-show-validator-summary: true
+
+.. autopydantic_model:: tula_cmake.models.ProjectDependencies
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+
+.. autopydantic_model:: tula_cmake.models.ProjectManifest
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+
+.. autopydantic_model:: tula_cmake.models.ResolvedProject
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+
+.. autopydantic_model:: tula_cmake.models.ResolvedSuperbuild
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+
 Workflow models
 ---------------
 

@@ -6,7 +6,9 @@ project(tula_downstream
     LANGUAGES CXX
 )
 
-find_package(tula_boilerplate CONFIG REQUIRED)
+include(TulaProject)
+tula_resolve_project_dependencies()
+tula_resolve_features()
 
 add_executable(tula_downstream src/main.cpp)
 target_link_libraries(

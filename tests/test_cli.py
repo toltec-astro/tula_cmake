@@ -70,6 +70,8 @@ def test_build_constructs_and_executes_workflow(
             "perflibs=system",
             "-o",
             "perflibs_openmp=required",
+            "--provider",
+            "logging=system",
         ],
     )
     assert result.exit_code == 0
@@ -78,6 +80,7 @@ def test_build_constructs_and_executes_workflow(
         "perflibs=system",
         "perflibs_openmp=required",
     )
+    assert requests[0].providers == ("logging=system",)
 
 
 def test_build_reads_config_source_from_environment(

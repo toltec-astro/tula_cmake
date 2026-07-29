@@ -37,6 +37,38 @@ build:
 docs:
     uv run --group docs sphinx-build -M html docs docs/_build -T -W
 
+# Prove root-owned provider selection across a transitive CPM source project.
+vertical-slice: sync
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="$(pwd)"
+    downstream="$root/examples/tula_downstream"
+    run_root="$(mktemp -d /tmp/tula-vertical-slice.XXXXXX)"
+    trap 'rm -rf "$run_root"' EXIT
+    profile="$(uv run tula-cmake profile linux-gcc13-debug)"
+
+    uv run tula-cmake build "$downstream" \
+        --output "$run_root/conan" \
+        --profile "$profile"
+    conan_output="$("$run_root/conan/build/bin/tula_downstream")"
+    printf '%s\n' "$conan_output"
+    grep -F 'source-superbuild logging provider: conan' <<<"$conan_output"
+    grep -F 'fmt/12.1.0' "$run_root/conan/generated/conanfile.txt"
+    grep -F 'spdlog/1.17.0' "$run_root/conan/generated/conanfile.txt"
+    ! grep -F 'tula-boilerplate' "$run_root/conan/generated/conanfile.txt"
+    grep -F 'TULA_PROJECT_tula_boilerplate_MODE "cpm"' \
+        "$run_root/conan/generated/tula_projects.cmake"
+
+    uv run tula-cmake build "$downstream" \
+        --output "$run_root/system" \
+        --profile "$profile" \
+        --provider logging=system
+    system_output="$("$run_root/system/build/bin/tula_downstream")"
+    printf '%s\n' "$system_output"
+    grep -F 'source-superbuild logging provider: system' <<<"$system_output"
+    ! grep -F 'fmt/' "$run_root/system/generated/conanfile.txt"
+    ! grep -F 'spdlog/' "$run_root/system/generated/conanfile.txt"
+
 cruft-check:
     uvx cruft check --checkout v2026
 

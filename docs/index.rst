@@ -1,10 +1,11 @@
 tula-cmake
 ===========
 
-``tula-cmake`` is the typed Python distribution that connects Conan 2 package
-recipes to reusable CMake feature resolvers.  It owns the feature registry,
-Conan recipe mixin, generated manifest, installed CMake modules, and the
-one-command downstream workflow.
+``tula-cmake`` is the typed Python source-superbuild for TolTEC C++ projects.
+It recursively composes owned projects with CMake/CPM while selecting Conan,
+CPM, system, or disabled acquisition independently for external features. It
+owns the project-manifest models, feature registry, generated manifests,
+installed CMake modules, and one-command downstream workflow.
 
 .. toctree::
    :maxdepth: 2

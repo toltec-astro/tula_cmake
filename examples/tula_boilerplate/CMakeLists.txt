@@ -7,6 +7,7 @@ project(tula_boilerplate
 )
 
 include(TulaProject)
+tula_resolve_project_dependencies()
 tula_resolve_features()
 tula_add_config_header(
     TARGET tula_boilerplate_config
@@ -22,19 +23,23 @@ target_include_directories(
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>"
 )
-target_link_libraries(tula_boilerplate_headers INTERFACE tula_boilerplate::config)
+target_link_libraries(
+    tula_boilerplate_headers
+    INTERFACE
+        tula_boilerplate::config
+        tula::logging
+)
 add_library(tula_boilerplate::headers ALIAS tula_boilerplate_headers)
 
-add_executable(tula_boilerplate src/main.cpp)
-target_link_libraries(tula_boilerplate PRIVATE tula_boilerplate::headers)
-if(TARGET tula::logging)
-    target_link_libraries(tula_boilerplate PRIVATE tula::logging)
+if(PROJECT_IS_TOP_LEVEL)
+    add_executable(tula_boilerplate src/main.cpp)
+    target_link_libraries(tula_boilerplate PRIVATE tula_boilerplate::headers)
+    target_compile_features(tula_boilerplate PRIVATE cxx_std_23)
+    set_target_properties(
+        tula_boilerplate
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
 endif()
-target_compile_features(tula_boilerplate PRIVATE cxx_std_23)
-set_target_properties(
-    tula_boilerplate
-    PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
 
 install(TARGETS tula_boilerplate_headers EXPORT tula_boilerplate_targets)
 install(DIRECTORY include/ DESTINATION include)

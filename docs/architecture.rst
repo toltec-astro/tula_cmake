@@ -9,6 +9,7 @@ resources:
    src/tula_cmake/
    ├── models.py          # Pydantic contracts
    ├── registry.py        # YAML loading and manifest rendering
+   ├── superbuild.py      # recursive project graph and generated inputs
    ├── recipe.py          # Conan python_requires mixin
    ├── workflow.py        # bootstrap → Conan → CMake orchestration
    ├── cli.py             # Typer command surface
@@ -24,11 +25,28 @@ resources:
            └── linux-clang20-debug
 
 The repository additionally owns ``examples/tula_boilerplate`` and
-``examples/tula_downstream``. They validate the package-author and
-package-consumer experiences without becoming feature-matrix fixtures.
+``examples/tula_downstream``. Together they validate the smallest complete
+source-superbuild without becoming feature-matrix fixtures.
 
-Tula, kidscpp, and Citlali are separate repositories and Conan graph nodes.
-They are not registry features and are never acquired through CPM.
+Two graph categories
+--------------------
+
+The design deliberately separates:
+
+``project dependencies``
+   Owned CMake projects such as Tula, Kidscpp, and Citlali. Each repository
+   declares its direct edges in ``tula-project.yaml``. The root recursively
+   resolves those manifests and composes the result through CPM. The current
+   vertical slice supports local paths; the accepted next slice adds a central
+   catalog of immutable Git coordinates and expected targets.
+
+``feature dependencies``
+   External capabilities such as logging, yaml-cpp, or NetCDF. Their provider
+   can be Conan, CPM, system, or disabled according to the feature registry.
+
+Conan therefore remains a dependency provider, not the owner of the
+first-party project graph. “Exporting” an owned project means adding its
+source metadata to the catalog; it does not require a Conan package export.
 
 All external YAML and JSON inputs cross a Pydantic boundary before they reach
 Conan or CMake. The generated :doc:`models` page exposes those field contracts,
@@ -151,14 +169,22 @@ The registry distinguishes two kinds of CMake input:
    Immutable implementation data such as pinned CPM URLs and checksums. These
    remain in the generated feature manifest.
 
-``options``
-   User-selected package configuration. Values enter through Conan profiles or
-   CLI option overrides, participate in Conan's graph/package identity, and are
-   projected by ``CMakeToolchain.cache_variables`` into the generated
-   ``CMakePresets.json``. Only enabled features emit cache variables.
+``provider assignments``
+   Root-selected feature acquisition supplied as repeatable
+   ``--provider NAME=MODE`` values. They override the recursively collected
+   manifest defaults and determine which external requirements enter the
+   generated virtual Conan recipe.
 
-The generated preset is deliberately not edited by users. Direct CMake
-overrides would allow CMake state to disagree with the Conan graph.
+``options``
+   Feature-specific customization retained by the existing packaging path.
+   As production projects migrate, these values will be projected from the
+   root manifest into the same generated CMake state rather than duplicated
+   in per-project profiles.
+
+The generated preset is deliberately not edited by users. The workflow
+rebases Conan's toolchain and build paths into a root
+``CMakeUserPresets.json`` and injects the generated project and feature
+manifests.
 
 Recipes list publicly linked features in ``tula_public_features``. The shared
 recipe mixin maps Conan requirements for those features to transitive header
@@ -189,8 +215,9 @@ completeness test rejects any provider or option value without coverage.
 Repository boundary
 -------------------
 
-``tula_cmake`` is no longer nested below Tula as a Git submodule. The wheel
-bootstraps the user command, and the matching ``tula-cmake/3.1.0``
-Python-require supplies recipe behavior to Conan. Local development selects
-this checkout through ``TULA_CMAKE_DEV_PROJECT``; released builds resolve both
-artifacts by version.
+``tula_cmake`` is no longer nested below Tula as a Git submodule. A checked-in
+``./build`` launcher obtains the pinned wheel with ``uvx`` before any CMake or
+Conan graph exists. Local development selects this checkout through
+``TULA_CMAKE_DEV_PROJECT``. The Conan Python-require remains available for
+optional package production during the migration, but is not the bootstrap
+boundary for the source-superbuild.

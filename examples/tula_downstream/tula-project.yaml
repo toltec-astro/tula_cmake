@@ -1,0 +1,14 @@
+schema_version: 1
+
+project:
+  name: tula_downstream
+  version: 3.1.0
+
+dependencies:
+  projects:
+    tula_boilerplate:
+      default_provider: cpm
+      source:
+        path: ../tula_boilerplate
+      cmake_target: tula_boilerplate::headers
+  features: {}

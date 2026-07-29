@@ -10,6 +10,12 @@ Registry
 .. automodule:: tula_cmake.registry
    :members:
 
+Source superbuild
+-----------------
+
+.. automodule:: tula_cmake.superbuild
+   :members:
+
 Workflow
 --------
 

@@ -106,6 +106,7 @@ Release order
 #. Build and upload Citlali against packaged kidscpp.
 #. Promote the verified graph and its lockfile from development to release.
 
-Once these artifacts exist, a Citlali user clones only Citlali and runs
-``./build``. Conan retrieves the internal and third-party graph from the
-configured virtual remote.
+This remains the optional installed-package release pipeline. The ordinary
+source-superbuild instead lets a Citlali user clone only Citlali and run
+``./build``; the owned-project catalog retrieves Tula and Kidscpp sources,
+while Conan retrieves only external features assigned to it.

@@ -63,6 +63,13 @@ def build(
             help="Root-package Conan option as NAME=VALUE; repeatable.",
         ),
     ] = None,
+    providers: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--provider",
+            help="Root feature provider as NAME=conan|cpm|system; repeatable.",
+        ),
+    ] = None,
     config_source: Annotated[
         str | None,
         typer.Option(
@@ -85,6 +92,7 @@ def build(
         output=output,
         profiles=tuple(profiles or ()),
         options=tuple(options or ()),
+        providers=tuple(providers or ()),
         config_source=config_source,
         preset=preset,
         build_policy=build_policy,

@@ -1,6 +1,58 @@
 include_guard(GLOBAL)
 
 include(TulaConfigHeader)
+include(TulaCPM)
+
+function(tula_resolve_project_dependencies)
+    get_property(_resolved GLOBAL PROPERTY TULA_PROJECTS_RESOLVED)
+    if(_resolved)
+        return()
+    endif()
+    get_property(_resolving GLOBAL PROPERTY TULA_PROJECTS_RESOLVING)
+    if(_resolving)
+        return()
+    endif()
+    if(NOT TULA_PROJECT_MANIFEST OR NOT EXISTS "${TULA_PROJECT_MANIFEST}")
+        message(FATAL_ERROR
+            "TULA_PROJECT_MANIFEST is unavailable; run the tula-cmake launcher")
+    endif()
+
+    include("${TULA_PROJECT_MANIFEST}")
+    set_property(GLOBAL PROPERTY TULA_PROJECTS_RESOLVING TRUE)
+    foreach(_project IN LISTS TULA_PROJECT_DEPENDENCIES)
+        set(_mode_variable "TULA_PROJECT_${_project}_MODE")
+        set(_source_variable "TULA_PROJECT_${_project}_SOURCE_DIR")
+        set(_target_variable "TULA_PROJECT_${_project}_TARGET")
+        set(_mode "${${_mode_variable}}")
+        set(_source_dir "${${_source_variable}}")
+        set(_target "${${_target_variable}}")
+        if(NOT _mode STREQUAL "cpm")
+            message(FATAL_ERROR
+                "${_project}: project provider ${_mode} is not implemented")
+        endif()
+        if(NOT IS_DIRECTORY "${_source_dir}")
+            message(FATAL_ERROR
+                "${_project}: source directory is unavailable: ${_source_dir}")
+        endif()
+
+        tula_load_cpm()
+        CPMAddPackage(
+            NAME "${_project}"
+            SOURCE_DIR "${_source_dir}"
+            EXCLUDE_FROM_ALL YES
+            SYSTEM NO
+        )
+        if(NOT TARGET "${_target}")
+            message(FATAL_ERROR
+                "${_project}: cpm provider did not create ${_target}")
+        endif()
+        set_property(
+            GLOBAL PROPERTY "TULA_PROJECT_${_project}_PROVIDER" "${_mode}")
+        message(STATUS "(tula) ${_project}: ${_mode}")
+    endforeach()
+    set_property(GLOBAL PROPERTY TULA_PROJECTS_RESOLVING FALSE)
+    set_property(GLOBAL PROPERTY TULA_PROJECTS_RESOLVED TRUE)
+endfunction()
 
 function(tula_resolve_features)
     get_property(_resolved GLOBAL PROPERTY TULA_FEATURES_RESOLVED)
@@ -12,7 +64,7 @@ function(tula_resolve_features)
     endif()
     if(NOT TULA_FEATURE_MANIFEST OR NOT EXISTS "${TULA_FEATURE_MANIFEST}")
         message(FATAL_ERROR
-            "TULA_FEATURE_MANIFEST is unavailable; run 'conan install' and use its preset")
+            "TULA_FEATURE_MANIFEST is unavailable; run the tula-cmake launcher")
     endif()
 
     include("${TULA_FEATURE_MANIFEST}")

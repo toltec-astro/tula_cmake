@@ -4,13 +4,8 @@ set -euo pipefail
 source_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ -n "${TULA_CMAKE_DEV_PROJECT:-}" ]]; then
-    base_profile="$(
-        uv run --project "${TULA_CMAKE_DEV_PROJECT}" \
-            tula-cmake profile linux-gcc13-debug
-    )"
     exec uv run --project "${TULA_CMAKE_DEV_PROJECT}" \
         tula-cmake build "${source_dir}" \
-        --profile "${base_profile}" \
         "$@"
 fi
 
