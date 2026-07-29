@@ -52,6 +52,22 @@ def test_system_libraries_require_system_provider() -> None:
         )
 
 
+def test_system_link_command_requires_system_provider() -> None:
+    with pytest.raises(ValidationError, match="system_link_command requires"):
+        FeatureRegistry.model_validate(
+            {
+                "schema_version": 1,
+                "features": {
+                    "demo": {
+                        "name": "demo",
+                        "modes": ["cpm"],
+                        "system_link_command": ["demo-config", "--libs"],
+                    }
+                },
+            }
+        )
+
+
 def test_registry_rejects_dependency_cycles() -> None:
     with pytest.raises(ValidationError, match="cycle"):
         FeatureRegistry.model_validate(

@@ -9,6 +9,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from .models import BuildRequest, GeneratedPresets, UserPresets
+from .resources import profiles_dir
 
 CommandRunner = Callable[[Sequence[str], Path | None], None]
 
@@ -54,12 +55,7 @@ class BuildWorkflow:
                 ),
                 None,
             )
-        if not self.request.profiles:
-            self._phase("bootstrap: ensure the default Conan profile exists")
-            self._run(
-                (*conan_command(), "profile", "detect", "--exist-ok"),
-                None,
-            )
+        profiles = self.request.profiles or (str(self._default_profile()),)
 
         install = [
             *conan_command(),
@@ -69,7 +65,7 @@ class BuildWorkflow:
             str(output),
             f"--build={self.request.build_policy}",
         ]
-        for profile in self.request.profiles:
+        for profile in profiles:
             install.extend(("--profile:all", profile))
         for option in self.request.options:
             install.extend(("--options:host", f"&:{option}"))
@@ -99,3 +95,11 @@ class BuildWorkflow:
         if not generated.buildPresets:
             raise RuntimeError(f"{generated_path} contains no build presets")
         return generated.buildPresets[0].name
+
+    @staticmethod
+    def _default_profile() -> Path:
+        """Return the supported host profile for the current platform."""
+        name = (
+            "macos-brew-llvm-debug" if sys.platform == "darwin" else "linux-gcc13-debug"
+        )
+        return profiles_dir() / name

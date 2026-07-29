@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import os
+import shlex
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
+from conan.errors import ConanInvalidConfiguration
 from conan.tools.cmake import CMakeDeps, CMakeToolchain, cmake_layout
 
 from .models import FeatureMode
@@ -13,6 +18,61 @@ from .resources import infrastructure_dir
 
 _REGISTRY = load_registry()
 _SETTINGS = ("os", "arch", "compiler", "build_type")
+_LINK_FLAG_PREFIX_LENGTH = 2
+
+
+def _append_unique(values: list[str], candidates: tuple[str, ...] | list[str]) -> None:
+    """Append candidates while preserving order and removing duplicates."""
+    values.extend(candidate for candidate in candidates if candidate not in values)
+
+
+def _system_link_metadata(
+    feature_name: str,
+    command: tuple[str, ...],
+) -> tuple[list[str], list[str]]:
+    """Return library directories and names emitted by a config helper."""
+    try:
+        link_flags = subprocess.check_output(command, text=True).strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        command_text = " ".join(command)
+        msg = (
+            f"{feature_name}: unable to discover system link metadata "
+            f"with {command_text!r}"
+        )
+        raise ConanInvalidConfiguration(msg) from error
+    if not link_flags:
+        command_text = " ".join(command)
+        msg = f"{feature_name}: {command_text!r} returned empty link metadata"
+        raise ConanInvalidConfiguration(msg)
+    library_dirs: list[str] = []
+    libraries: list[str] = []
+    for flag in shlex.split(link_flags):
+        if flag.startswith("-L") and len(flag) > _LINK_FLAG_PREFIX_LENGTH:
+            library_dirs.append(flag[_LINK_FLAG_PREFIX_LENGTH:])
+        elif flag.startswith("-l") and len(flag) > _LINK_FLAG_PREFIX_LENGTH:
+            libraries.append(flag[_LINK_FLAG_PREFIX_LENGTH:])
+    return library_dirs, libraries
+
+
+def _system_include_directory(
+    feature_name: str,
+    command: tuple[str, ...],
+) -> str:
+    """Return the include directory emitted by a config helper."""
+    try:
+        include_dir = subprocess.check_output(command, text=True).strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        command_text = " ".join(command)
+        msg = (
+            f"{feature_name}: unable to discover system include metadata "
+            f"with {command_text!r}"
+        )
+        raise ConanInvalidConfiguration(msg) from error
+    if not include_dir:
+        command_text = " ".join(command)
+        msg = f"{feature_name}: {command_text!r} returned empty include metadata"
+        raise ConanInvalidConfiguration(msg)
+    return include_dir
 
 
 def _static_block(content: str) -> type:
@@ -122,19 +182,68 @@ class TulaConan:
         toolchain.generate()
 
     def package_info(self: Any) -> None:
-        """Propagate public system-provider link libraries to consumers."""
+        """Propagate public system-provider link metadata to consumers."""
         public_features = set(getattr(self, "tula_public_features", ()))
-        system_libs = [
-            library
-            for name, mode in self._providers().items()
-            if mode is FeatureMode.SYSTEM and name in public_features
-            for library in _REGISTRY.features[name].system_libs
-        ]
-        self.cpp_info.system_libs.extend(
-            library
-            for library in system_libs
-            if library not in self.cpp_info.system_libs
-        )
+        for name, mode in self._providers().items():
+            if mode is not FeatureMode.SYSTEM or name not in public_features:
+                continue
+            feature = _REGISTRY.features[name]
+            _append_unique(self.cpp_info.system_libs, feature.system_libs)
+            if feature.system_include_command:
+                include_dir = _system_include_directory(
+                    name,
+                    feature.system_include_command,
+                )
+                _append_unique(self.cpp_info.includedirs, [include_dir])
+            if not feature.system_link_command:
+                continue
+            library_dirs, libraries = _system_link_metadata(
+                name,
+                feature.system_link_command,
+            )
+            _append_unique(self.cpp_info.libdirs, library_dirs)
+            _append_unique(self.cpp_info.system_libs, libraries)
+        if (
+            self._providers().get("perflibs") is FeatureMode.SYSTEM
+            and "perflibs" in public_features
+            and str(self.options.perflibs_openmp) == "required"
+        ):
+            self._propagate_required_openmp()
+
+    def _propagate_required_openmp(self: Any) -> None:
+        """Publish compiler and linker metadata for required system OpenMP."""
+        compile_flags = ["-fopenmp"]
+        link_flags = ["-fopenmp"]
+        if str(self.settings.os) == "Macos":
+            prefix = os.environ.get("OPENMP_ROOT")
+            if not prefix:
+                brew = shutil.which("brew")
+                if not brew:
+                    msg = (
+                        "perflibs: required AppleClang OpenMP needs OPENMP_ROOT "
+                        "or a Homebrew libomp installation"
+                    )
+                    raise ConanInvalidConfiguration(msg)
+                try:
+                    prefix = subprocess.check_output(
+                        (brew, "--prefix", "libomp"),
+                        text=True,
+                    ).strip()
+                except (OSError, subprocess.CalledProcessError) as error:
+                    msg = (
+                        "perflibs: required AppleClang OpenMP needs OPENMP_ROOT "
+                        "or a Homebrew libomp installation"
+                    )
+                    raise ConanInvalidConfiguration(msg) from error
+            include_dir = str(Path(prefix) / "include")
+            library_dir = str(Path(prefix) / "lib")
+            _append_unique(self.cpp_info.includedirs, [include_dir])
+            _append_unique(self.cpp_info.libdirs, [library_dir])
+            _append_unique(self.cpp_info.system_libs, ["omp"])
+        _append_unique(self.cpp_info.cxxflags, compile_flags)
+        for attribute in ("sharedlinkflags", "exelinkflags"):
+            values = getattr(self.cpp_info, attribute)
+            _append_unique(values, link_flags)
 
 
 def feature_registry() -> Any:

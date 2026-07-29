@@ -48,8 +48,8 @@ def test_registry_has_current_feature_slice() -> None:
         "grppi",
     )
     assert registry.features["logging"].conan_requires == (
-        "fmt/11.2.0",
-        "spdlog/1.15.3",
+        "fmt/12.1.0",
+        "spdlog/1.17.0",
     )
     assert registry.features["perflibs"].option_values == (
         "disabled",
@@ -57,7 +57,10 @@ def test_registry_has_current_feature_slice() -> None:
     )
     assert registry.features["yaml_cpp"].conan_requires == ("yaml-cpp/0.9.0",)
     assert registry.features["netcdf_c"].conan_requires == ("netcdf/4.8.1",)
-    assert registry.features["clipp"].conan_requires == ("clipp/1.2.3",)
+    assert registry.features["clipp"].modes == (FeatureMode.CPM,)
+    assert registry.features["clipp"].cmake_vars["GIT_TAG"] == (
+        "ddf69f70eaaefe318cc8aa0d018ff523111410bb"
+    )
     assert registry.features["eigen"].conan_requires == ("eigen/3.4.0",)
     assert registry.features["spectra"].conan_requires == ("spectra/1.0.1",)
     assert registry.features["boost"].conan_requires == ("boost/1.91.0",)
@@ -156,6 +159,7 @@ def test_resolver_wiring_is_derived_from_feature_name() -> None:
         "linux-gcc13-debug",
         "linux-gcc14-debug",
         "linux-clang20-debug",
+        "macos-brew-llvm-debug",
     ],
 )
 def test_bundled_profile_is_discoverable(name: str) -> None:

@@ -7,3 +7,8 @@ __pycache__/
 .coverage
 docs/_build/
 dist/
+.DS_Store
+**/.DS_Store
+conanbuild*.sh
+conanrun*.sh
+deactivate_conan*.sh

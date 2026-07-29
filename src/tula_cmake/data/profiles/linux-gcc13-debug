@@ -11,3 +11,9 @@ build_type=Debug
 tools.build:compiler_executables={"c": "gcc", "cpp": "g++"}
 tools.build:jobs=8
 tools.cmake.cmaketoolchain:generator=Ninja
+
+[buildenv]
+CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+[replace_tool_requires]
+cmake/*: cmake/3.31.12

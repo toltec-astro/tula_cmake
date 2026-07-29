@@ -118,18 +118,31 @@ The Ubuntu 24.04 ARM64 dev container produced these results on 26 July 2026:
      - Installed chain
    * - ``just gcc14``
      - GNU 14.2.0
-     - 56 passed, 6 capability-skipped
+     - 55 passed, 6 capability-skipped
      - GNU OpenMP passed
-     - 13 Tula, 3 kidscpp, 2 Citlali tests, and all consumers passed
+     - 13 Tula, 5 kidscpp, 6 Citlali tests, and all consumers passed
    * - ``just clang20``
      - Clang 20.1.2
-     - 56 passed, 6 capability-skipped
+     - 55 passed, 6 capability-skipped
      - LLVM OpenMP passed
-     - 13 Tula, 3 kidscpp, 2 Citlali tests, and all consumers passed
+     - 13 Tula, 5 kidscpp, 6 Citlali tests, and all consumers passed
 
 All 62 cases remain collected. The six deliberate skips correspond to
 oneMKL/threading, Intel OpenMP, and the alternate compiler family's OpenMP
 runtime.
+
+macOS validation uses the checked-in ``macos-brew-llvm-debug`` profile. It
+selects ``$(brew --prefix llvm)/bin/clang++`` with libc++, never native
+AppleClang, and obtains OpenMP from Homebrew ``libomp``. CMake 3.31.12 is
+pinned where a dependency declares a CMake tool requirement. The profile also
+exports ``CMAKE_POLICY_VERSION_MINIMUM=3.5`` so a host CMake 4 installation
+cannot break older CFITSIO sources when a third-party recipe bypasses that
+tool requirement.
+
+The measured macOS package gate uses Homebrew Clang 21.1.4 and passes 13
+Tula, 5 kidscpp, and 6 Citlali tests plus every installed-package consumer.
+The Linux baseline independently passes the same chain with GCC 13.3.0 from
+a clean Conan home.
 
 The Tula package gate separately runs thirteen behavior executables. In addition
 to core, Eigen, nddata, and ECSV coverage, these verify ``FlatConfig`` typed
@@ -155,8 +168,8 @@ consumers compile against the packaged CMake target after ``conan create``;
 they catch missing installed headers, target metadata, and transitive public
 requirements that source-tree tests cannot detect. In particular, this gate
 verifies Tula's bundled CPM header closure, Kidscpp's installed raw-reader
-symbol and NetCDF system link libraries, and Citlali's public Ceres include
-path. The Citlali consumer also executes the packaged ``citlali --version``
+symbol and NetCDF system include/link metadata, and Citlali's public Ceres
+include path. The Citlali consumer also executes the packaged ``citlali --version``
 and ``citlali --dump_config`` commands through ``VirtualRunEnv``.
 
 If ``TOLTECA_TEST_DATA_ROOT`` points at the sibling ``tolteca_test_data``
@@ -166,5 +179,6 @@ tone-model labels, exact first-sample I/Q/time values, slice metadata, and
 invalid-stride rejection. Citlali uses the same fixture to compare its
 file/slice adapter with a direct Kidscpp reader/solver call, including
 metadata, axes, model inputs, solved arrays, and matching NaNs. The package
-test remains hermetic; these source-tree fixture cases are skipped when the
-external data checkout is unavailable.
+test remains hermetic. The workspace ``just kidscpp`` and ``just citlali``
+acceptance gates require the fixture and fail early when it is unavailable,
+so real-data coverage cannot silently skip there.

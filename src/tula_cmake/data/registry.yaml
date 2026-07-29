@@ -4,13 +4,13 @@ features:
   logging:
     modes: [conan, cpm, system]
     conan_requires:
-      - fmt/11.2.0
-      - spdlog/1.15.3
+      - fmt/12.1.0
+      - spdlog/1.17.0
     cmake_vars:
-      FMT_URL: https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz
-      FMT_SHA256: bc23066d87ab3168f27cef3e97d545fa63314f5c79df5ea444d41d56f962c6af
-      SPDLOG_URL: https://github.com/gabime/spdlog/archive/refs/tags/v1.15.3.tar.gz
-      SPDLOG_SHA256: 15a04e69c222eb6c01094b5c7ff8a249b36bb22788d72519646fb85feb267e67
+      FMT_URL: https://github.com/fmtlib/fmt/releases/download/12.1.0/fmt-12.1.0.zip
+      FMT_SHA256: 695fd197fa5aff8fc67b5f2bbc110490a875cdf7a41686ac8512fb480fa8ada7
+      SPDLOG_URL: https://github.com/gabime/spdlog/archive/v1.17.0.tar.gz
+      SPDLOG_SHA256: d8862955c6d74e5846b3f580b1605d2428b11d97a410d86e2fb13e857cd3a744
     options:
       logging_level:
         values: [trace, debug, info, warning, error, critical, "off"]
@@ -35,12 +35,14 @@ features:
     modes: [conan, system]
     conan_requires:
       - netcdf/4.8.1
-    system_libs: [netcdf]
+    system_link_command: [nc-config, --libs]
+    system_include_command: [nc-config, --includedir]
 
   netcdf_cxx4:
     modes: [cpm, system]
     dependencies: [netcdf_c]
-    system_libs: [netcdf_c++4]
+    system_link_command: [ncxx4-config, --libs]
+    system_include_command: [ncxx4-config, --includedir]
     cmake_vars:
       URL: https://github.com/Unidata/netcdf-cxx4/archive/refs/tags/v4.3.1.tar.gz
       SHA256: e3fe3d2ec06c1c2772555bf1208d220aab5fee186d04bd265219b0bc7a978edc
@@ -58,12 +60,10 @@ features:
       SHA256: d44aceebba0dff499c3757da9678292db4b462c539677c7fac27ab0c84082e3d
 
   clipp:
-    modes: [conan, cpm]
-    conan_requires:
-      - clipp/1.2.3
+    modes: [cpm]
     cmake_vars:
-      URL: https://github.com/muellan/clipp/archive/refs/tags/v1.2.3.tar.gz
-      SHA256: 73da8e3d354fececdea99f7deb79d0343647349563ace3eafb7f4cca6e86e90b
+      GITHUB_REPOSITORY: GerHobbelt/clipp
+      GIT_TAG: ddf69f70eaaefe318cc8aa0d018ff523111410bb
 
   perflibs:
     modes: [system]

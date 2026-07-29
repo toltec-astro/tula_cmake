@@ -35,10 +35,48 @@ function(_tula_perflibs_resolve_openmp OUT_TARGET OUT_FOUND)
         return()
     endif()
 
-    if(TULA_PERFLIBS_OPENMP STREQUAL "required")
-        find_package(OpenMP REQUIRED COMPONENTS CXX)
-    else()
-        find_package(OpenMP QUIET COMPONENTS CXX)
+    find_package(OpenMP QUIET COMPONENTS CXX)
+    if(NOT OpenMP_CXX_FOUND AND APPLE)
+        find_program(_brew_executable NAMES brew)
+        if(_brew_executable)
+            execute_process(
+                COMMAND "${_brew_executable}" --prefix libomp
+                OUTPUT_VARIABLE _libomp_prefix
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                RESULT_VARIABLE _libomp_prefix_result
+            )
+        endif()
+        set(_libomp_hints /opt/homebrew/opt/libomp /usr/local/opt/libomp)
+        if(_libomp_prefix_result EQUAL 0)
+            list(PREPEND _libomp_hints "${_libomp_prefix}")
+        endif()
+        find_path(
+            TULA_LIBOMP_INCLUDE_DIR
+            NAMES omp.h
+            HINTS ${_libomp_hints}
+            PATH_SUFFIXES include
+        )
+        find_library(
+            TULA_LIBOMP_LIBRARY
+            NAMES omp
+            HINTS ${_libomp_hints}
+            PATH_SUFFIXES lib
+        )
+        if(TULA_LIBOMP_INCLUDE_DIR AND TULA_LIBOMP_LIBRARY)
+            add_library(OpenMP::OpenMP_CXX INTERFACE IMPORTED)
+            set_target_properties(
+                OpenMP::OpenMP_CXX
+                PROPERTIES
+                    INTERFACE_COMPILE_OPTIONS "-Xpreprocessor;-fopenmp"
+                    INTERFACE_INCLUDE_DIRECTORIES "${TULA_LIBOMP_INCLUDE_DIR}"
+                    INTERFACE_LINK_LIBRARIES "${TULA_LIBOMP_LIBRARY}"
+            )
+            set(OpenMP_CXX_FOUND TRUE)
+        endif()
+    endif()
+    if(TULA_PERFLIBS_OPENMP STREQUAL "required" AND NOT OpenMP_CXX_FOUND)
+        message(FATAL_ERROR
+            "perflibs: OpenMP C++ support is required but unavailable")
     endif()
     if(OpenMP_CXX_FOUND)
         set("${OUT_TARGET}" OpenMP::OpenMP_CXX PARENT_SCOPE)

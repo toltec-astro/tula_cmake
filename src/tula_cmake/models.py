@@ -94,6 +94,20 @@ class FeatureSpec(BaseModel):
             "system provider is public."
         ),
     )
+    system_link_command: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Command whose stdout contains -L and -l flags for a public "
+            "system provider."
+        ),
+    )
+    system_include_command: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Command whose stdout is the include directory for a public "
+            "system provider."
+        ),
+    )
     cmake_vars: dict[CMakeVariable, CMakeValue] = Field(
         default_factory=dict,
         description="Feature constants forwarded to the CMake resolver.",
@@ -114,6 +128,10 @@ class FeatureSpec(BaseModel):
             raise ValueError("conan mode requires conan_requires")
         if self.system_libs and FeatureMode.SYSTEM not in self.modes:
             raise ValueError("system_libs requires the system mode")
+        if self.system_link_command and FeatureMode.SYSTEM not in self.modes:
+            raise ValueError("system_link_command requires the system mode")
+        if self.system_include_command and FeatureMode.SYSTEM not in self.modes:
+            raise ValueError("system_include_command requires the system mode")
         return self
 
     @property

@@ -96,10 +96,12 @@ Feature contracts
    and is not part of Tula's contract.
 
 ``clipp``
-   The production single-header command-line parser. Conan and CPM both use
-   release 1.2.3 and normalize the provider target as ``tula::clipp``. Tula's
-   builder test verifies flags, typed values, enum-backed choices, defaults,
-   positional arguments, and ``FlatConfig`` projection.
+   The production single-header command-line parser. CPM retrieves a pinned
+   maintained fork commit and normalizes it as ``tula::clipp``. ConanCenter's
+   1.2.3 source is not offered because it still uses removed
+   ``std::result_of``. Tula's builder test verifies flags, typed values,
+   enum-backed choices, defaults, positional arguments, and ``FlatConfig``
+   projection.
 
 Tula modules that need no new provider
 --------------------------------------
