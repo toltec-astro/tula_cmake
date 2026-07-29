@@ -44,6 +44,17 @@ Project graph models
    :model-show-json: true
    :model-show-field-summary: true
 
+.. autopydantic_model:: tula_cmake.models.ProjectCatalogEntry
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+
+.. autopydantic_model:: tula_cmake.models.ProjectCatalog
+   :members:
+   :model-show-json: true
+   :model-show-field-summary: true
+   :model-show-validator-summary: true
+
 .. autopydantic_model:: tula_cmake.models.ProjectDependency
    :members:
    :model-show-json: true

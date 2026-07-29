@@ -46,10 +46,15 @@ vertical-slice: sync
     run_root="$(mktemp -d /tmp/tula-vertical-slice.XXXXXX)"
     trap 'rm -rf "$run_root"' EXIT
     profile="$(uv run tula-cmake profile linux-gcc13-debug)"
+    catalog="$run_root/projects.yaml"
+    cp "$root/src/tula_cmake/data/projects.yaml" "$catalog"
+    sed -i "s#https://github.com/toltec-astro/tula_cmake.git#$root#" "$catalog"
 
     uv run tula-cmake build "$downstream" \
         --output "$run_root/conan" \
-        --profile "$profile"
+        --profile "$profile" \
+        --catalog "$catalog" \
+        --source-cache "$run_root/source-cache"
     conan_output="$("$run_root/conan/build/bin/tula_downstream")"
     printf '%s\n' "$conan_output"
     grep -F 'source-superbuild logging provider: conan' <<<"$conan_output"
@@ -58,16 +63,24 @@ vertical-slice: sync
     ! grep -F 'tula-boilerplate' "$run_root/conan/generated/conanfile.txt"
     grep -F 'TULA_PROJECT_tula_boilerplate_MODE "cpm"' \
         "$run_root/conan/generated/tula_projects.cmake"
+    grep -F 'kind: catalog' \
+        "$run_root/conan/generated/tula-project-lock.yaml"
+    grep -F 'git_revision: d27aa6e653b4f96fe3187f3cd8c2b4ae4feb6a73' \
+        "$run_root/conan/generated/tula-project-lock.yaml"
 
     uv run tula-cmake build "$downstream" \
         --output "$run_root/system" \
         --profile "$profile" \
-        --provider logging=system
+        --provider logging=system \
+        --catalog "$catalog" \
+        --project-source "tula_boilerplate=$root/examples/tula_boilerplate"
     system_output="$("$run_root/system/build/bin/tula_downstream")"
     printf '%s\n' "$system_output"
     grep -F 'source-superbuild logging provider: system' <<<"$system_output"
     ! grep -F 'fmt/' "$run_root/system/generated/conanfile.txt"
     ! grep -F 'spdlog/' "$run_root/system/generated/conanfile.txt"
+    grep -F 'kind: local' \
+        "$run_root/system/generated/tula-project-lock.yaml"
 
 cruft-check:
     uvx cruft check --checkout v2026

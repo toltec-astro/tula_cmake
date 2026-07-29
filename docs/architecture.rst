@@ -15,6 +15,7 @@ resources:
    ├── cli.py             # Typer command surface
    └── data/
        ├── registry.yaml
+       ├── projects.yaml
        ├── cmake/
        │   ├── infrastructure/
        │   └── resolvers/
@@ -36,9 +37,10 @@ The design deliberately separates:
 ``project dependencies``
    Owned CMake projects such as Tula, Kidscpp, and Citlali. Each repository
    declares its direct edges in ``tula-project.yaml``. The root recursively
-   resolves those manifests and composes the result through CPM. The current
-   vertical slice supports local paths; the accepted next slice adds a central
-   catalog of immutable Git coordinates and expected targets.
+   resolves those manifests and composes the result through CPM. The installed
+   project catalog supplies immutable Git coordinates, source subdirectories,
+   versions, and expected targets. Root overrides may replace any catalog
+   checkout with a local source directory.
 
 ``feature dependencies``
    External capabilities such as logging, yaml-cpp, or NetCDF. Their provider

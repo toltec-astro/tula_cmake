@@ -69,3 +69,29 @@ Conan installation explicitly before the final configure. Conan's
 configure-time CMake dependency provider is not the foundation because Conan
 documents that path as exceptional and less stable than its generated
 toolchain/preset workflow.
+
+## D009 — Prepare Git sources before CMake, then compose with CPM
+
+Accepted 2026-07-29.
+
+Python checks out each catalog project at an exact commit before it recursively
+loads manifests. CMake then receives those prepared paths through
+`CPMAddPackage(SOURCE_DIR ...)`. This uses CPM's normal target/deduplication
+semantics without delaying transitive feature discovery until configure time.
+
+## D010 — Catalog metadata and dependency policy have different owners
+
+Accepted 2026-07-29.
+
+`projects.yaml` owns Git coordinates, immutable revision, version, source
+subdirectory, and expected CMake target. Each project's `tula-project.yaml`
+owns only direct project names and external feature defaults. The catalog does
+not duplicate transitive policy.
+
+## D011 — Example projects have no Conan recipes
+
+Accepted 2026-07-29.
+
+`tula_boilerplate` and `tula_downstream` demonstrate the ordinary
+source-superbuild and therefore contain no alternate packaged workflow.
+Installed-package validation remains in the production repositories.

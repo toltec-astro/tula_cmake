@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tula-cmake"
 version = "3.1.0"
-description = "Typed Conan 2 and CMake superbuild infrastructure for TolTEC C++ packages"
+description = "Typed source-superbuild infrastructure for TolTEC C++ projects"
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
@@ -65,18 +65,13 @@ where = ["src"]
 tula_cmake = [
     "py.typed",
     "data/registry.yaml",
+    "data/projects.yaml",
     "data/cmake/infrastructure/*.cmake",
     "data/cmake/resolvers/*.cmake",
     "data/templates/*.in",
     "data/profiles/*",
     "data/recipes/*/*",
 ]
-
-[tool.uv.workspace]
-members = ["examples/tula_boilerplate"]
-
-[tool.uv.sources]
-tula-cmake = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "docs"]

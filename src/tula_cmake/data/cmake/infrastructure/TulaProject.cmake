@@ -23,9 +23,11 @@ function(tula_resolve_project_dependencies)
         set(_mode_variable "TULA_PROJECT_${_project}_MODE")
         set(_source_variable "TULA_PROJECT_${_project}_SOURCE_DIR")
         set(_target_variable "TULA_PROJECT_${_project}_TARGET")
+        set(_version_variable "TULA_PROJECT_${_project}_VERSION")
         set(_mode "${${_mode_variable}}")
         set(_source_dir "${${_source_variable}}")
         set(_target "${${_target_variable}}")
+        set(_version "${${_version_variable}}")
         if(NOT _mode STREQUAL "cpm")
             message(FATAL_ERROR
                 "${_project}: project provider ${_mode} is not implemented")
@@ -38,6 +40,7 @@ function(tula_resolve_project_dependencies)
         tula_load_cpm()
         CPMAddPackage(
             NAME "${_project}"
+            VERSION "${_version}"
             SOURCE_DIR "${_source_dir}"
             EXCLUDE_FROM_ALL YES
             SYSTEM NO

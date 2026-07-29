@@ -24,7 +24,7 @@ not required to own the first-party project graph.
 ```
 
 Released projects carry the same thin launcher. It obtains the pinned CLI from
-the `tula_cmake` GitHub tag with `uvx`, then:
+the `tula_cmake` GitHub tag with `uv tool run`, then:
 
 1. validates and recursively resolves `tula-project.yaml`;
 2. prepares only the external dependencies assigned to Conan;
@@ -49,10 +49,9 @@ This repository owns the complete minimal vertical slice:
 
 Tula, Kidscpp, and Citlali remain separate repositories. Each repository owns
 its direct dependencies in `tula-project.yaml`; a root project recursively
-composes that graph. A central owned-project catalog will provide default,
-immutable Git coordinates and expected CMake targets. Local path overrides
-use CPM's normal source override semantics and are implemented in the current
-slice.
+composes that graph. The installed `data/projects.yaml` catalog provides
+immutable Git coordinates and expected CMake targets. Local path overrides use
+CPM's normal source override semantics.
 
 In this context, making a project “available” means publishing catalog source
 metadata, not exporting it as a Conan package.
@@ -66,11 +65,9 @@ project:
   version: 3.1.0
 dependencies:
   projects:
-    - name: tula_boilerplate
-      provider: cpm
-      source:
-        path: ../tula_boilerplate
-      target: tula_boilerplate::headers
+    tula_boilerplate:
+      default_provider: cpm
+  features: {}
 ```
 
 ```cmake
@@ -79,10 +76,20 @@ tula_resolve_project_dependencies()
 tula_resolve_features()
 ```
 
-The first slice intentionally supports local project paths. Catalog-backed Git
-acquisition, immutable revision locking, and per-project local overrides are
-the next implementation slice; their accepted design is recorded in
-[`design/`](design/README.md).
+The catalog entry—not the downstream manifest—owns the repository URL,
+immutable commit, source subdirectory, version, and expected target. Every
+build writes the resolved source graph to
+`.tula/generated/tula-project-lock.yaml`.
+
+Joint development can replace a catalog checkout without changing YAML:
+
+```sh
+./build --project-source tula_boilerplate=../tula_boilerplate
+```
+
+`CPM_tula_boilerplate_SOURCE` provides the equivalent CPM-compatible
+environment override. `TULA_CMAKE_SOURCE_CACHE` or `--source-cache` selects a
+shared immutable Git checkout cache.
 
 The current registry contains:
 
@@ -120,6 +127,7 @@ src/tula_cmake/
 ├── py.typed
 └── data/
     ├── registry.yaml
+    ├── projects.yaml
     ├── cmake/
     │   ├── infrastructure/
     │   │   ├── TulaBootstrap.cmake
@@ -226,9 +234,10 @@ The source-superbuild acceptance is independent:
 just vertical-slice
 ```
 
-It builds `tula_downstream → tula_boilerplate` twice (Conan logging and system
-logging), runs the resulting binaries, and asserts that the generated Conan
-input contains external libraries but never the owned boilerplate project.
+It first acquires boilerplate from a pinned local Git URL and builds with Conan
+logging. It then repeats with a direct local-project override and system
+logging. Both binaries run, both source locks are inspected, and the generated
+Conan input never contains the owned boilerplate project.
 
 The Sphinx site explicitly renders every public Pydantic model, its field
 descriptions, validators, and JSON schema. It also generates the provider

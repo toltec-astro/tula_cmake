@@ -1,6 +1,6 @@
 # Boilerplate/downstream vertical slice
 
-Status: implementation acceptance specification, 2026-07-29.
+Status: implemented and verified, 2026-07-29.
 
 ## Purpose
 
@@ -26,18 +26,20 @@ From a fresh `tula_downstream` checkout:
 
 That command must:
 
-1. bootstrap the pinned `tula-cmake` tool;
-2. discover the boilerplate manifest transitively;
-3. install Conan-selected logging dependencies;
-4. add boilerplate from source through CPM;
-5. configure and build both projects as one CMake graph; and
-6. run a downstream executable that reports both project and feature-provider
+1. bootstrap the pinned `tula-cmake` tool with `uv tool run`;
+2. acquire the catalog-pinned boilerplate Git revision;
+3. discover the boilerplate manifest transitively;
+4. install Conan-selected logging dependencies;
+5. add boilerplate from the prepared source through CPM;
+6. configure and build both projects as one CMake graph; and
+7. run a downstream executable that reports both project and feature-provider
    identity.
 
 For development in this repository:
 
 ```sh
-TULA_CMAKE_DEV_PROJECT=../.. ./build
+TULA_CMAKE_DEV_PROJECT=../.. ./build \
+  --project-source tula_boilerplate=../tula_boilerplate
 ```
 
 No manual `conan export`, `conan create`, `conan install`, or CMake preset
@@ -54,6 +56,8 @@ Automated tests must prove:
 - generated Conan requirements contain fmt and spdlog but not
   `tula-boilerplate`;
 - generated CMake project metadata points at the boilerplate source tree;
+- the source lock records exact catalog Git provenance or the explicit local
+  override;
 - CMake reports `tula_boilerplate: cpm` and `logging: conan`;
 - the downstream binary links and runs;
 - a root `--provider logging=...` override changes the transitive selection or
@@ -61,7 +65,8 @@ Automated tests must prove:
 
 ## Completion boundary
 
-The slice is complete only after it passes from an isolated output directory
-inside the GCC 13 development container and the design, Sphinx documentation,
-and current-state slide deck describe the implemented behavior rather than
-the superseded package-first workflow.
+The completed gate clones the pinned commit from a local Git URL, builds it
+with Conan logging, repeats with a direct local source override and system
+logging, and passes from isolated output directories inside the GCC 13
+development container. Design, Sphinx documentation, and the current-state
+deck describe the measured behavior.

@@ -1,6 +1,6 @@
 # Recursive source-superbuild architecture
 
-Status: accepted for vertical-slice implementation, 2026-07-29.
+Status: boilerplate/downstream slice implemented and verified, 2026-07-29.
 
 ## Problem
 
@@ -67,13 +67,21 @@ dependencies:
   projects:
     tula_boilerplate:
       default_provider: cpm
-      # Local source overrides are used by the vertical slice. Released owned
-      # projects normally obtain their pinned source from the central catalog.
-      source:
-        path: ../tula_boilerplate
-      # Required by the local-path slice; the catalog will own this default.
-      cmake_target: tula_boilerplate::headers
   features: {}
+```
+
+The distributed catalog owns acquisition and target identity:
+
+```yaml
+projects:
+  tula_boilerplate:
+    name: tula_boilerplate
+    version: 3.1.0
+    source:
+      git_repository: https://github.com/toltec-astro/tula_cmake.git
+      git_revision: <immutable-commit>
+      source_subdir: examples/tula_boilerplate
+    cmake_target: tula_boilerplate::headers
 ```
 
 A library declares only direct dependencies. Transitive dependencies are
@@ -107,7 +115,7 @@ configuration errors; they are never resolved by traversal order.
 ### 1. Bootstrap
 
 The checked-in `build` launcher is the stable user entry point. It locates or
-installs the pinned `tula-cmake` Python distribution with `uvx`, then delegates
+installs the pinned `tula-cmake` Python distribution with `uv tool run`, then delegates
 all remaining phases. A developer can point it at a local checkout with
 `TULA_CMAKE_DEV_PROJECT`.
 
@@ -121,10 +129,11 @@ overrides, walks transitive manifests,
 rejects cycles and duplicate project identities, and computes the required
 feature set.
 
-The first slice implements `cpm` projects backed by a local path. The next
-slice adds catalog-backed immutable Git sources, source caching, locking, and
-the standard CPM local-source override behavior. Conan and installed project
-providers remain staged extensions of the same model.
+The boilerplate slice implements catalog-backed immutable Git sources, an
+explicit checkout cache, generated source locks, `--project-source` root
+overrides, and the standard `CPM_<name>_SOURCE` environment override.
+Conan and installed project providers remain staged extensions of the same
+model.
 
 ### 3. Provider selection
 
@@ -183,7 +192,6 @@ explicit provider choice; it must not be an architectural prerequisite.
 ## Non-goals for the first slice
 
 - Porting Tula, Kidscpp, or Citlali to the new manifest.
-- Implementing remote Git acquisition.
 - Publishing Tula, Kidscpp, or Citlali in the owned-project catalog before
   each repository has a validated manifest.
 - Implementing `system` or `conan` providers for project dependencies.

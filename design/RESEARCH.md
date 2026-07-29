@@ -95,6 +95,8 @@ catalog + root overrides
   -> CPM adds the already-resolved source directories
 ```
 
-The first vertical slice uses local source overrides and therefore tests the
-graph without prematurely designing remote source-cache mechanics. Remote
-catalog acquisition and source locking are the next infrastructure slice.
+The completed vertical slice uses the same immutable catalog mechanism against
+a local Git URL. It verifies exact checkout acquisition without requiring
+remote publication. A second case selects the surrounding boilerplate checkout
+through `--project-source`, matching CPM's documented local-source semantics.
+Both cases emit an inspectable source lock.

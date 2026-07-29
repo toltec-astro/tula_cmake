@@ -14,7 +14,7 @@ from .workflow import BuildWorkflow, conan_command, run_command
 
 app = typer.Typer(
     name="tula-cmake",
-    help="Bootstrap Conan and build TolTEC C++ packages through generated presets.",
+    help="Resolve TolTEC source projects and build with selected providers.",
     no_args_is_help=True,
 )
 
@@ -45,11 +45,11 @@ def bootstrap() -> None:
 def build(
     source: Annotated[
         Path,
-        typer.Argument(help="Conan/CMake source directory."),
+        typer.Argument(help="Root project source directory."),
     ] = Path.cwd(),
     output: Annotated[
         Path,
-        typer.Option(help="Conan output root."),
+        typer.Option(help="Generated superbuild output root."),
     ] = Path(".tula"),
     profiles: Annotated[
         list[str] | None,
@@ -70,6 +70,26 @@ def build(
             help="Root feature provider as NAME=conan|cpm|system; repeatable.",
         ),
     ] = None,
+    project_sources: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--project-source",
+            help="Local owned-project override as NAME=PATH; repeatable.",
+        ),
+    ] = None,
+    catalog: Annotated[
+        Path | None,
+        typer.Option(
+            help="Override the bundled owned-project catalog.",
+        ),
+    ] = None,
+    source_cache: Annotated[
+        Path | None,
+        typer.Option(
+            help="Cache for immutable owned-project Git checkouts.",
+            envvar="TULA_CMAKE_SOURCE_CACHE",
+        ),
+    ] = None,
     config_source: Annotated[
         str | None,
         typer.Option(
@@ -86,13 +106,16 @@ def build(
         typer.Option(help="Value passed to Conan's --build option."),
     ] = "missing",
 ) -> None:
-    """Run Conan install, CMake configure, and CMake build."""
+    """Resolve projects, prepare external providers, and build with CMake."""
     request = BuildRequest(
         source=source,
         output=output,
         profiles=tuple(profiles or ()),
         options=tuple(options or ()),
         providers=tuple(providers or ()),
+        project_sources=tuple(project_sources or ()),
+        catalog=catalog,
+        source_cache=source_cache,
         config_source=config_source,
         preset=preset,
         build_policy=build_policy,

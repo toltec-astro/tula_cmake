@@ -11,12 +11,15 @@ Source-superbuild acceptance
 ``just vertical-slice`` validates the graph boundary end to end. In isolated
 build trees it:
 
+#. clones an exact boilerplate commit through a local Git catalog URL;
 #. resolves ``tula_downstream → tula_boilerplate`` from the two manifests;
 #. builds and runs the executable with the default Conan logging provider;
 #. verifies that the virtual Conan recipe contains ``fmt`` and ``spdlog`` but
    never ``tula_boilerplate``;
-#. repeats the build with ``--provider logging=system``;
-#. verifies that the system case has no Conan requirements.
+#. verifies the catalog source lock contains the exact Git revision;
+#. repeats with a direct local-project override and system logging;
+#. verifies that the system case has no Conan requirements and records a local
+   source in its lock.
 
 The gate therefore catches graph inversion: an owned project accidentally
 placed in Conan fails even if the C++ executable itself still compiles.

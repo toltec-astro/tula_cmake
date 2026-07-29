@@ -72,6 +72,12 @@ def test_build_constructs_and_executes_workflow(
             "perflibs_openmp=required",
             "--provider",
             "logging=system",
+            "--project-source",
+            "tula_boilerplate=../tula_boilerplate",
+            "--catalog",
+            "projects.yaml",
+            "--source-cache",
+            "sources",
         ],
     )
     assert result.exit_code == 0
@@ -81,6 +87,9 @@ def test_build_constructs_and_executes_workflow(
         "perflibs_openmp=required",
     )
     assert requests[0].providers == ("logging=system",)
+    assert requests[0].project_sources == ("tula_boilerplate=../tula_boilerplate",)
+    assert str(requests[0].catalog) == "projects.yaml"
+    assert str(requests[0].source_cache) == "sources"
 
 
 def test_build_reads_config_source_from_environment(

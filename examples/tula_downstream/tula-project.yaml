@@ -8,7 +8,4 @@ dependencies:
   projects:
     tula_boilerplate:
       default_provider: cpm
-      source:
-        path: ../tula_boilerplate
-      cmake_target: tula_boilerplate::headers
   features: {}

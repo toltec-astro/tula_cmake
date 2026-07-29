@@ -61,6 +61,11 @@ def registry_path() -> Path:
     return data_path("registry.yaml")
 
 
+def project_catalog_path() -> Path:
+    """Return the owned-project source catalog path."""
+    return data_path("projects.yaml")
+
+
 def template_path(name: str) -> Path:
     """Return one bundled code-generation template."""
     return data_path("templates", name)

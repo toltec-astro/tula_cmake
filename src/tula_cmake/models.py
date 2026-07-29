@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from pathlib import Path
-from typing import Annotated
+from pathlib import Path, PurePosixPath
+from typing import Annotated, Literal
 
 from pydantic import (
     BaseModel,
@@ -12,6 +12,7 @@ from pydantic import (
     Field,
     RootModel,
     StringConstraints,
+    field_validator,
     model_validator,
 )
 
@@ -24,6 +25,14 @@ OptionAssignment = Annotated[
 ProviderAssignment = Annotated[
     str,
     StringConstraints(pattern=r"^[a-z][a-z0-9_]*=(conan|cpm|system)$"),
+]
+ProjectSourceAssignment = Annotated[
+    str,
+    StringConstraints(pattern=r"^[a-z][a-z0-9_]*=.+$"),
+]
+GitRevision = Annotated[
+    str,
+    StringConstraints(pattern=r"^[0-9a-f]{40}$"),
 ]
 CMakeScalar = str | int | float | bool
 CMakeValue = CMakeScalar | tuple[CMakeScalar, ...]
@@ -60,11 +69,50 @@ class ProjectIdentity(BaseModel):
 
 
 class ProjectSource(BaseModel):
-    """Source coordinates for a project dependency."""
+    """Immutable Git coordinates supplied by the owned-project catalog."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    path: Path
+    git_repository: str = Field(min_length=1)
+    git_revision: GitRevision
+    source_subdir: str = ""
+
+    @field_validator("source_subdir")
+    @classmethod
+    def source_subdir_must_stay_inside_checkout(cls, value: str) -> str:
+        """Reject absolute or parent-traversing catalog subdirectories."""
+        path = PurePosixPath(value)
+        if path.is_absolute() or ".." in path.parts:
+            raise ValueError("source_subdir must resolve inside the Git checkout")
+        return value
+
+
+class ProjectCatalogEntry(BaseModel):
+    """Acquisition metadata for one TolTEC-owned source project."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: Identifier
+    version: str = Field(min_length=1)
+    source: ProjectSource
+    cmake_target: str = Field(min_length=1)
+
+
+class ProjectCatalog(BaseModel):
+    """Validated catalog distributed by :mod:`tula_cmake`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: int = Field(ge=1)
+    projects: dict[Identifier, ProjectCatalogEntry] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def keys_must_match_entry_names(self) -> ProjectCatalog:
+        """Reject aliases that make project identity ambiguous."""
+        for name, entry in self.projects.items():
+            if entry.name != name:
+                raise ValueError(f"project key {name!r} does not match {entry.name!r}")
+        return self
 
 
 class ProjectDependency(BaseModel):
@@ -73,8 +121,6 @@ class ProjectDependency(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     default_provider: ProjectMode
-    source: ProjectSource
-    cmake_target: str = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_vertical_slice_provider(self) -> ProjectDependency:
@@ -128,6 +174,20 @@ class ResolvedProject(BaseModel):
     provider: ProjectMode
     source_dir: Path
     cmake_target: str
+    source_kind: Literal["catalog", "local"]
+    git_repository: str | None = None
+    git_revision: GitRevision | None = None
+    source_subdir: str = ""
+
+    @model_validator(mode="after")
+    def catalog_source_has_git_identity(self) -> ResolvedProject:
+        """Require immutable Git identity for catalog-resolved projects."""
+        has_git = self.git_repository is not None and self.git_revision is not None
+        if self.source_kind == "catalog" and not has_git:
+            raise ValueError("catalog source requires repository and revision")
+        if self.source_kind == "local" and has_git:
+            raise ValueError("local source cannot carry catalog Git identity")
+        return self
 
 
 class ResolvedSuperbuild(BaseModel):
@@ -337,6 +397,18 @@ class BuildRequest(BaseModel):
     providers: tuple[ProviderAssignment, ...] = Field(
         default=(),
         description="Root-owned feature-provider overrides as NAME=PROVIDER.",
+    )
+    project_sources: tuple[ProjectSourceAssignment, ...] = Field(
+        default=(),
+        description="Root-owned project source overrides as NAME=PATH.",
+    )
+    catalog: Path | None = Field(
+        default=None,
+        description="Optional owned-project catalog replacing the bundled catalog.",
+    )
+    source_cache: Path | None = Field(
+        default=None,
+        description="Directory containing immutable owned-project checkouts.",
     )
     config_source: str | None = Field(
         default=None,

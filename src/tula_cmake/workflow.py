@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -15,8 +16,11 @@ from .resources import infrastructure_dir, profiles_dir
 from .superbuild import (
     PROJECT_MANIFEST_NAME,
     ProjectGraphResolver,
+    load_project_catalog,
+    parse_project_source_overrides,
     parse_provider_overrides,
     render_conanfile,
+    render_project_lock,
     render_project_manifest,
 )
 
@@ -107,8 +111,24 @@ class BuildWorkflow:
         """Resolve and build one recursive source-superbuild graph."""
         registry = load_registry()
         overrides = parse_provider_overrides(self.request.providers)
+        project_sources = parse_project_source_overrides(self.request.project_sources)
+        source_cache = self.request.source_cache
+        if source_cache is None:
+            configured_cache = os.environ.get(
+                "TULA_CMAKE_SOURCE_CACHE",
+                os.environ.get("CPM_SOURCE_CACHE", ""),
+            )
+            source_cache = (
+                Path(configured_cache) if configured_cache else output / "sources"
+            )
         self._phase("graph: resolve recursive project manifests and providers")
-        graph = ProjectGraphResolver(registry).resolve(source, overrides)
+        graph = ProjectGraphResolver(registry).resolve(
+            source,
+            overrides,
+            catalog=load_project_catalog(self.request.catalog),
+            project_sources=project_sources,
+            source_cache=source_cache,
+        )
 
         generated = output / "generated"
         generators = output / "generators"
@@ -116,9 +136,11 @@ class BuildWorkflow:
         generators.mkdir(parents=True, exist_ok=True)
         feature_manifest = generated / "tula_features.cmake"
         project_manifest = generated / "tula_projects.cmake"
+        project_lock = generated / "tula-project-lock.yaml"
         conanfile = generated / "conanfile.txt"
         feature_manifest.write_text(render_manifest(registry, graph.providers))
         project_manifest.write_text(render_project_manifest(graph))
+        project_lock.write_text(render_project_lock(graph))
         conanfile.write_text(render_conanfile(graph.conan_requires))
 
         profiles = self.request.profiles or (str(self._default_profile()),)

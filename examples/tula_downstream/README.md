@@ -14,9 +14,11 @@ Build from a released package environment with:
 ./build
 ```
 
-That one command bootstraps the pinned `tula-cmake` Python tool with `uvx`,
-loads both `tula-project.yaml` manifests, runs Conan only for logging, and
-configures both CMake projects in one source graph.
+That one command bootstraps the pinned `tula-cmake` Python tool with
+`uv tool run`,
+retrieves the catalog-pinned boilerplate Git revision, loads both
+`tula-project.yaml` manifests, runs Conan only for logging, and configures both
+CMake projects in one source graph.
 
 An organization may pass shared Conan configuration through:
 
@@ -27,9 +29,14 @@ An organization may pass shared Conan configuration through:
 For development in this workspace:
 
 ```sh
-TULA_CMAKE_DEV_PROJECT=../.. ./build
+TULA_CMAKE_DEV_PROJECT=../.. ./build \
+  --project-source tula_boilerplate=../tula_boilerplate
 ```
 
 The downstream does not require a prebuilt `tula-boilerplate` Conan package.
 It uses the `tula_cmake` superbuild directly and owns the final provider
 selection for the complete transitive graph.
+
+The resolved project provenance is written to
+`.tula/generated/tula-project-lock.yaml`. A shared immutable checkout cache can
+be selected with `TULA_CMAKE_SOURCE_CACHE`.
