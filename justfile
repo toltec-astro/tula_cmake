@@ -1,113 +1,54 @@
-# Development tasks for tula-cmake.
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+root := justfile_directory()
+build_root := root / "build"
+spack_root := root / "examples/spack"
 
 default:
     @just --list
 
-sync:
-    uv sync --all-groups
+# Configure, build, and test the installed TulaCMake consumer fixture.
+unit:
+    cmake -S "{{ root }}" -B "{{ build_root }}/unit" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Debug
+    cmake --build "{{ build_root }}/unit" --parallel
+    ctest --test-dir "{{ build_root }}/unit" --output-on-failure
 
-format:
-    uv run ruff format .
-    uv run ruff check --fix .
-
-qa:
-    uv run ruff format --check .
-    uv run ruff check .
-    uv run ty check
-    uv run coverage run -m pytest
-    uv run coverage report
-
-test:
-    uv run pytest
-
-matrix:
-    uv run conan export .
-    uv run pytest -m "feature_matrix and not network" -vv
-
-matrix-all:
-    uv run conan export .
-    uv run pytest -m feature_matrix -vv
-
-matrix-list:
-    uv run pytest -m feature_matrix --collect-only -q
-
-build:
-    uv build
-
-docs:
-    uv run --group docs sphinx-build -M html docs docs/_build -T -W
-
-# Prove root-owned provider selection across a transitive CPM source project.
-vertical-slice: sync
-    #!/usr/bin/env bash
-    set -euo pipefail
-    root="$(pwd)"
-    downstream="$root/examples/tula_downstream"
-    run_root="$(mktemp -d /tmp/tula-vertical-slice.XXXXXX)"
-    trap 'rm -rf "$run_root"' EXIT
-    profile="$(uv run tula-cmake profile linux-gcc13-debug)"
-    catalog="$run_root/projects.yaml"
-    cp "$root/src/tula_cmake/data/projects.yaml" "$catalog"
-    sed -i "s#https://github.com/toltec-astro/tula_cmake.git#$root#" "$catalog"
-
-    uv run tula-cmake build "$downstream" \
-        --output "$run_root/conan" \
-        --profile "$profile" \
-        --catalog "$catalog" \
-        --source-cache "$run_root/source-cache"
-    conan_output="$("$run_root/conan/build/bin/tula_downstream")"
-    printf '%s\n' "$conan_output"
-    grep -F 'source-superbuild logging provider: conan' <<<"$conan_output"
-    grep -F 'fmt/12.1.0' "$run_root/conan/generated/conanfile.txt"
-    grep -F 'spdlog/1.17.0' "$run_root/conan/generated/conanfile.txt"
-    ! grep -F 'tula-boilerplate' "$run_root/conan/generated/conanfile.txt"
-    grep -F 'TULA_PROJECT_tula_boilerplate_MODE "cpm"' \
-        "$run_root/conan/generated/tula_projects.cmake"
-    grep -F 'kind: catalog' \
-        "$run_root/conan/generated/tula-project-lock.yaml"
-    grep -F 'git_revision: 6071444782d913f6294685552bc6a8913c2a121d' \
-        "$run_root/conan/generated/tula-project-lock.yaml"
-
-    uv run tula-cmake build "$downstream" \
-        --output "$run_root/system" \
-        --profile "$profile" \
-        --provider logging=system \
-        --catalog "$catalog" \
-        --project-source "tula_boilerplate=$root/examples/tula_boilerplate"
-    system_output="$("$run_root/system/build/bin/tula_downstream")"
-    printf '%s\n' "$system_output"
-    grep -F 'source-superbuild logging provider: system' <<<"$system_output"
-    ! grep -F 'fmt/' "$run_root/system/generated/conanfile.txt"
-    ! grep -F 'spdlog/' "$run_root/system/generated/conanfile.txt"
-    grep -F 'kind: local' \
-        "$run_root/system/generated/tula-project-lock.yaml"
-
-# Validate the experimental graph using native Spack commands and UX.
-spack-vertical-slice spack="spack":
+# Concretize, test, install, and run both GCC 13 vertical-slice environments.
+spack-matrix spack="spack":
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
-    root="$(pwd)/examples/spack"
-    common=(-C "$root/config" -C "$root/config/devcontainer")
+    common=(-C "{{ spack_root }}/config" -C "{{ spack_root }}/config/devcontainer")
 
-    "$spack_cmd" "${common[@]}" -e "$root/environments/default" concretize --force
-    "$spack_cmd" "${common[@]}" -e "$root/environments/default" install
-    "$spack_cmd" "${common[@]}" -e "$root/environments/default" find -clv
-    default_output="$("$root/environments/default/.spack-view/bin/tula_downstream" 2>&1)"
-    printf '%s\n' "$default_output"
-    grep -F 'libA=vanilla perflibs.openmp=enabled libB=fast' \
-        <<<"$default_output"
+    run_environment() {
+        local name="$1"
+        local expected="$2"
+        local environment="{{ spack_root }}/environments/$name"
 
-    "$spack_cmd" "${common[@]}" -e "$root/environments/alternate" concretize --force
-    "$spack_cmd" "${common[@]}" -e "$root/environments/alternate" install
-    "$spack_cmd" "${common[@]}" -e "$root/environments/alternate" find -clv
-    alternate_output="$("$root/environments/alternate/.spack-view/bin/tula_downstream" 2>&1)"
-    printf '%s\n' "$alternate_output"
-    grep -F 'libA=chocolate perflibs.openmp=disabled libB=safe' \
-        <<<"$alternate_output"
+        "$spack_cmd" "${common[@]}" -e "$environment" concretize --force
+        # Develop specs keep a stable DAG hash while their source changes.
+        # Overwrite ensures this acceptance test exercises the current checkout.
+        "$spack_cmd" "${common[@]}" -e "$environment" install \
+            --yes-to-all \
+            --test=all \
+            --overwrite \
+            --show-log-on-error
+        "$spack_cmd" "${common[@]}" -e "$environment" find -clv
 
-cruft-check:
-    uv tool run cruft check --checkout v2026
+        local output
+        output="$("$environment/.spack-view/bin/tula_downstream" 2>&1)"
+        printf '%s\n' "$output"
+        grep -F "$expected" <<<"$output"
+    }
 
-cruft-update:
-    uv tool run cruft update --checkout v2026
+    run_environment \
+        default \
+        "libA=vanilla perflibs.openmp=enabled libB=fast"
+    run_environment \
+        alternate \
+        "libA=chocolate perflibs.openmp=disabled libB=safe"
+
+# Run the complete CMake and Spack acceptance surface.
+check spack="spack": unit
+    just spack-matrix "{{ spack }}"

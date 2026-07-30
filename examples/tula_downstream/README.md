@@ -1,42 +1,30 @@
-# tula_downstream
+# TulaDownstream
 
-This project is the minimal recursive source-superbuild acceptance case:
+TulaDownstream is the minimal executable consuming the installed
+TulaBoilerplate package.
 
 ```text
-tula_downstream
-└── tula_boilerplate                 cpm source project
-    └── logging (fmt + spdlog)       Conan external feature
+tula-downstream
+├── tula-boilerplate
+│   ├── tula-lib-a
+│   ├── tula-logging
+│   └── tula-perflibs
+└── tula-lib-b
 ```
 
-Build from a released package environment with:
+The downstream recipe declares only its direct dependency edges. A root Spack
+spec can still constrain libA and perflibs through the complete reachable
+graph. TulaBoilerplate does not forward or duplicate those options.
 
-```sh
-./build
+The downstream executable prints all three observable selections:
+
+```text
+tula_downstream libA=vanilla perflibs.openmp=enabled libB=fast
 ```
 
-That one command bootstraps the pinned `tula-cmake` Python tool with
-`uv tool run`,
-retrieves the catalog-pinned boilerplate Git revision, loads both
-`tula-project.yaml` manifests, runs Conan only for logging, and configures both
-CMake projects in one source graph.
+Run both supported fixture graphs:
 
-An organization may pass shared Conan configuration through:
-
-```sh
-./build --config-source <git-directory-file-or-url>
+```console
+cd ../..
+just spack-matrix
 ```
-
-For development in this workspace:
-
-```sh
-TULA_CMAKE_DEV_PROJECT=../.. ./build \
-  --project-source tula_boilerplate=../tula_boilerplate
-```
-
-The downstream does not require a prebuilt `tula-boilerplate` Conan package.
-It uses the `tula_cmake` superbuild directly and owns the final provider
-selection for the complete transitive graph.
-
-The resolved project provenance is written to
-`.tula/generated/tula-project-lock.yaml`. A shared immutable checkout cache can
-be selected with `TULA_CMAKE_SOURCE_CACHE`.

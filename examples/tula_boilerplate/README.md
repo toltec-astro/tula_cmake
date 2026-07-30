@@ -1,31 +1,36 @@
-# tula_boilerplate
+# TulaBoilerplate
 
-This is the minimal project-author example for `tula_cmake`. Its manifest
-declares one external meta-feature:
+TulaBoilerplate is the minimal installed library package using TulaCMake and
+the TolTEC Spack conventions. It is intentionally independent of the Tula C++
+library.
 
-```yaml
-dependencies:
-  projects: {}
-  features:
-    logging:
-      default_provider: conan
+Its Spack recipe declares:
+
+- `tula-cmake` as a build dependency;
+- `tula-logging` as the fmt/spdlog bundle;
+- `tula-lib-a` as an observable transitive value variant; and
+- `tula-perflibs` as an observable transitive OpenMP capability.
+
+Its CMake project uses ordinary package discovery:
+
+```cmake
+find_package(TulaCMake CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+find_package(TulaLibA CONFIG REQUIRED)
+find_package(TulaPerflibs CONFIG REQUIRED)
 ```
 
-Its CMake target links only the normalized `tula::logging` contract; it does
-not branch on fmt, spdlog, Conan, CPM, or system acquisition.
+The installed target is:
 
-Build it directly with:
-
-```sh
-./build
+```text
+tula_boilerplate::tula_boilerplate
 ```
 
-For development against the surrounding checkout:
+Use the parent repository's Spack environments rather than configuring this
+source directory against ad hoc dependency prefixes:
 
-```sh
-TULA_CMAKE_DEV_PROJECT=../.. ./build
+```console
+cd ../..
+just spack-matrix
 ```
-
-The executable prints the project version and effective logging provider.
-`tula_downstream` demonstrates acquiring this project transitively through the
-owned-project catalog.

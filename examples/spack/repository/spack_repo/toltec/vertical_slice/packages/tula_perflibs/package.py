@@ -19,6 +19,7 @@ class TulaPerflibs(CMakePackage):
 
     depends_on("cmake@3.25:", type="build")
     depends_on("cxx", type="build")
+    depends_on("tula-cmake@3.2.0", type="build")
 
     def cmake_args(self) -> list[str]:
         """Translate the native Spack option into the CMake package."""

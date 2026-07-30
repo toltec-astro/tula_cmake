@@ -1,15 +1,12 @@
 #include <tula_boilerplate/boilerplate.h>
 
-#include <fmt/format.h>
 #include <iostream>
+
+#include <tula_lib_b/config.h>
 
 int main()
 {
-    std::cout << fmt::format(
-        "tula_downstream -> tula_boilerplate {}",
-        tula_boilerplate::version
-    ) << '\n';
-    std::cout << "source-superbuild logging provider: "
-              << tula_boilerplate::logging_provider << '\n';
-    return 0;
+    tula_boilerplate::log_summary();
+    std::cout << "tula_downstream " << tula_boilerplate::summary()
+              << " libB=" << tula_lib_b::flavor << '\n';
 }

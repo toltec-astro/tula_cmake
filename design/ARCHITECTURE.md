@@ -1,199 +1,236 @@
-# Recursive source-superbuild architecture
+# Architecture
 
-Status: boilerplate/downstream slice implemented and verified, 2026-07-29.
+## 1. System boundary
 
-## Problem
-
-The first Conan 2 implementation made the TolTEC projects themselves an
-exclusive Conan package chain:
+The TolTEC C++ build system has three layers:
 
 ```text
-citlali Conan package
-└── kidscpp Conan package
-    └── tula Conan package
+Spack
+  resolves versions, variants, compilers, sources, patches, externals,
+  binary caches, environments, and the complete dependency DAG
+
+TulaCMake
+  supplies reusable target-scoped CMake implementation conventions
+
+Projects
+  define C++ targets, public feature contracts, tests, and package recipes
 ```
 
-That arrangement correctly exports binary package metadata, but it removes an
-important property of the production v1 build. In v1, the top-level project
-assembled Tula and Kidscpp from source and selected the acquisition mode of
-each external dependency. A Citlali developer could therefore use Tula from
-source, CCfits from Conan, and another dependency from the system in one
-coherent configure operation.
+Spack is the environment and graph manager. TulaCMake is not a graph manager.
+A project remains a normal CMake project whose dependencies are already
+available through Spack's prefix and compiler environment.
 
-The architecture must restore that flexibility without losing the one-command
-v3 user experience.
+## 2. Repository ownership
 
-## Governing model
-
-`tula_cmake` owns one recursive build graph. The graph contains two different
-kinds of nodes:
-
-1. **Project dependencies** are TolTEC CMake projects such as Tula, Kidscpp,
-   and the vertical-slice boilerplate. They support source (`cpm`), installed
-   (`system`), and packaged (`conan`) acquisition where implemented.
-2. **Feature dependencies** are external capabilities such as logging,
-   NetCDF, CCfits, and Ceres. Each feature advertises only its implemented
-   providers and resolves to one normalized CMake target.
-
-These categories must not be collapsed. Conan is one provider in the graph;
-it is not the graph itself.
+Every production source repository owns the recipe that describes how that
+source participates in Spack:
 
 ```text
-tula-cmake build <root>
-├── load root project manifest
-├── acquire and load transitive project manifests
-├── validate one root-owned provider selection
-├── conan install: only Conan-selected external/project nodes
-├── CMake/CPM: source-selected project/feature nodes
-├── find_package: system-selected project/feature nodes
-└── configure and build one CMake graph
+tula_cmake
+├── TulaCMake CMake modules
+├── tula-logging bundle recipe
+├── tula-perflibs source and recipe
+├── tula-boilerplate example and recipe
+└── tula-downstream example and recipe
+
+tula
+├── Tula header library
+└── Tula recipe and variants
+
+kidscpp
+├── Kidscpp library
+└── Kidscpp recipe and variants
+
+citlali
+├── Citlali library and executable
+└── Citlali recipe and variants
 ```
 
-## Project manifest
+The current measured slice keeps its recipes in the isolated
+`toltec.vertical_slice` repository while production recipes are migrated. The
+final repository namespaces are decentralized and composed by the root Spack
+environment.
 
-Every participating project contains `tula-project.yaml`. The manifest is
-declarative and contains no executable Python or CMake. TolTEC-owned project
-source coordinates and expected targets live in a separate catalog distributed
-by `tula_cmake`; downstream manifests refer to catalog names rather than
-repeating organization-owned Git URLs.
+## 3. Dependency topology
+
+Build and link dependencies are different edges:
+
+```text
+                              build
+                ┌────────────────────────────────┐
+                ▼                                │
+           tula-cmake                            │
+                ▲                                │
+                ├──────── tula                   │
+                ├──────── tula-boilerplate       │
+                ├──────── kidscpp                │
+                └──────── citlali ───────────────┘
+
+link/runtime:
+
+citlali ──> kidscpp ──> tula
+
+tula-downstream ──> tula-boilerplate
+```
+
+TulaCMake is not linked and does not become a transitive runtime dependency.
+Every project that calls its functions declares its own build dependency.
+
+## 4. Vertical-slice graph
+
+The acceptance graph intentionally contains both direct and transitive user
+choices:
+
+```text
+tula-downstream
+├── tula-boilerplate
+│   ├── tula-lib-a       transitive value variant
+│   ├── tula-perflibs    transitive boolean variant
+│   └── tula-logging     no-code bundle
+│       ├── fmt          system external in the dev container
+│       └── spdlog       system external in the dev container
+├── tula-lib-b           direct value variant
+└── tula-cmake           build-only package
+```
+
+The root environment may constrain any reachable node:
 
 ```yaml
-schema_version: 1
-project:
-  name: tula_downstream
-  version: 3.1.0
-
-dependencies:
-  projects:
-    tula_boilerplate:
-      default_provider: cpm
-  features: {}
+specs:
+  - >-
+    tula-downstream@0.1.0
+    ^tula-lib-a flavor=chocolate
+    ^tula-lib-b flavor=safe
+    ^tula-perflibs~openmp
 ```
 
-The distributed catalog owns acquisition and target identity:
+No intermediate package forwards those options. The concretizer merges root
+constraints with recipe-owned edges before any package is built.
 
-```yaml
-projects:
-  tula_boilerplate:
-    name: tula_boilerplate
-    version: 3.1.0
-    source:
-      git_repository: https://github.com/toltec-astro/tula_cmake.git
-      git_revision: <immutable-commit>
-      source_subdir: examples/tula_boilerplate
-    cmake_target: tula_boilerplate::headers
+## 5. TulaCMake code structure
+
+### `TulaCMake.cmake`
+
+Stable aggregator included by `TulaCMakeConfig.cmake`. Consumers do not append
+an installed directory to `CMAKE_MODULE_PATH`.
+
+### `TulaCMakeLog.cmake`
+
+Provides `tula_cmake_log()`, a thin validation and project-context layer over
+CMake's native `message()` levels. Visibility is controlled by native
+`--log-level` and `--log-context` options.
+
+### `TulaCMakeInspectTarget.cmake`
+
+Provides opt-in target diagnostics. It resolves aliases, prints a curated or
+caller-selected property set, distinguishes unset properties, and never
+changes the target.
+
+### `TulaCMakeTargetDefaults.cmake`
+
+Applies C++ standard requirements and warnings to one target. It detects
+interface targets, propagates their language-level requirement without
+exporting a warning policy to consumers, avoids directory-global flags, and
+never enables warnings-as-errors.
+
+### `TulaCMakeConfigHeader.cmake`
+
+Configures a caller-owned template and attaches correct build/install include
+interfaces to a target. The caller owns feature meanings and values.
+
+### `TulaCMakeGitVersion.cmake`
+
+Generates a header containing a semantic project version and immutable source
+revision. A package recipe supplies the revision for reproducible builds; Git
+detection is a local-development fallback.
+
+### `TulaCMakeInstallPackage.cmake`
+
+Installs named targets, exports namespaced targets, and generates relocatable
+package and version files with `CMakePackageConfigHelpers`. Project dependency
+discovery remains visible in the project's config template.
+
+## 6. Public CMake contract
+
+All public functions use the `tula_cmake_` prefix because CMake functions
+occupy a global namespace.
+
+Functions are:
+
+- explicit rather than implicit;
+- target-scoped rather than directory-global;
+- independent of a specific dependency catalog;
+- usable outside the Tula library; and
+- tested through an installed producer and a separate consumer.
+
+## 7. Project CMake contract
+
+An ordinary project:
+
+1. calls `find_package(TulaCMake CONFIG REQUIRED)`;
+2. calls `find_package()` for its resolved dependencies;
+3. defines and links normal CMake targets;
+4. maps package features to generated headers where appropriate;
+5. exports a relocatable CMake config; and
+6. owns behavior tests for its software.
+
+Normalized targets such as `tula::headers` belong to Tula. TulaCMake does not
+create aliases for arbitrary dependencies.
+
+## 8. Spack recipe contract
+
+A recipe owns:
+
+- versions and source identity;
+- patches required by that upstream version;
+- variants exposed to users;
+- conditional dependency edges;
+- mapping variants to ordinary CMake cache variables;
+- build, link, run, and test dependency types; and
+- package-specific build or install exceptions.
+
+Organization policy is represented by ordinary packages where appropriate.
+For example, `tula-logging` is a `BundlePackage` that selects a compatible
+fmt/spdlog set without installing code.
+
+## 9. Artifact lifecycle
+
+```text
+spack.yaml
+   │ abstract root specs, develop paths, configuration scopes
+   ▼
+spack concretize
+   │
+   └──> spack.lock
+        exact DAG, versions, variants, compilers, externals, hashes
+             │
+             ▼
+        spack install
+             │ one isolated configure/build/test/install per package
+             ├──> package prefixes
+             ├──> CMake package configs and exported targets
+             └──> build logs
+                       │
+                       ▼
+                 environment view
+                       │
+                       └──> runnable root executable
 ```
 
-A library declares only direct dependencies. Transitive dependencies are
-discovered from the acquired project's own manifest:
+The lock file and view are environment-local. Installed prefixes and download
+caches are user-level Spack state. No system installation is modified.
 
-```yaml
-schema_version: 1
-project:
-  name: tula_boilerplate
-  version: 3.1.0
+## 10. Explicit exclusions
 
-dependencies:
-  projects: {}
-  features:
-    logging:
-      default_provider: conan
-```
+The architecture does not contain:
 
-The root may override a transitive provider from the command line:
+- a TulaCMake dependency YAML registry;
+- provider modes named Conan, CPM, or system;
+- generated Conan files;
+- a bootstrap CLI that hides Spack;
+- source inclusion through `add_subdirectory()` across production packages;
+- global dependency-target rewriting; or
+- feature-provider macros in C++ headers.
 
-```sh
-./build --provider logging=system
-```
-
-Defaults make each project independently buildable. Root overrides own the
-final graph. Conflicting transitive defaults without a root override are
-configuration errors; they are never resolved by traversal order.
-
-## Resolution phases
-
-### 1. Bootstrap
-
-The checked-in `build` launcher is the stable user entry point. It locates or
-installs the pinned `tula-cmake` Python distribution with `uv tool run`, then delegates
-all remaining phases. A developer can point it at a local checkout with
-`TULA_CMAKE_DEV_PROJECT`.
-
-Bootstrap is intentionally thin and contains no dependency policy.
-
-### 2. Project graph discovery
-
-The Python layer validates the root manifest and owned-project catalog with
-typed Pydantic models, prepares catalog sources or local development
-overrides, walks transitive manifests,
-rejects cycles and duplicate project identities, and computes the required
-feature set.
-
-The boilerplate slice implements catalog-backed immutable Git sources, an
-explicit checkout cache, generated source locks, `--project-source` root
-overrides, and the standard `CPM_<name>_SOURCE` environment override.
-Conan and installed project providers remain staged extensions of the same
-model.
-
-### 3. Provider selection
-
-The root selection is computed once. Every required feature receives exactly
-one provider. Registry dependencies are expanded before validation. Disabled
-features are omitted unless required by another enabled feature.
-
-Provider selection is graph state, not state stored independently in every
-Conan package recipe.
-
-### 4. Conan materialization
-
-Python computes the union of requirements for nodes selected as `conan` and
-runs one Conan install at the root. Conan generates the toolchain and CMake
-package metadata for those external dependencies.
-
-Source projects are not converted to Conan packages merely to participate in
-the development build.
-
-### 5. CMake materialization
-
-Python generates immutable CMake manifests containing:
-
-- selected feature providers and resolver modules;
-- resolved project source locations and providers;
-- feature-owned cache variables.
-
-`TulaProject.cmake` reads those manifests. CPM adds source projects to the same
-CMake graph. Feature resolvers create normalized `tula::<feature>` targets.
-Global guards guarantee that a transitive feature is resolved once.
-
-### 6. Build
-
-The workflow configures and builds through the Conan-generated toolchain. The
-phase names remain visible in logs, while the user still invokes one command.
-
-## Packaging is orthogonal
-
-Tula, Kidscpp, and Citlali may still be exported as Conan packages for release
-distribution. That workflow requires complete exported dependency metadata
-and can use the project-owned NetCDF C++ recipe.
-
-It is not the mandatory development graph. Selecting `tula=conan` is an
-explicit provider choice; it must not be an architectural prerequisite.
-
-## Ownership boundaries
-
-- `tula_cmake` owns graph discovery, provider validation, generated inputs,
-  bootstrap, and orchestration.
-- Each project owns its direct dependency declaration and CMake targets.
-- The root invocation owns final provider choices.
-- Conan owns artifacts selected as `conan`.
-- CPM/CMake owns source nodes selected as `cpm`.
-- The operating environment owns nodes selected as `system`.
-
-## Non-goals for the first slice
-
-- Porting Tula, Kidscpp, or Citlali to the new manifest.
-- Publishing Tula, Kidscpp, or Citlali in the owned-project catalog before
-  each repository has a validated manifest.
-- Implementing `system` or `conan` providers for project dependencies.
-- Removing the existing Conan packaging mixin before the replacement passes.
-- Expanding the external package matrix beyond logging.
+Acquisition origin is not a C++ capability. Generated headers record only
+capabilities that can change software behavior or compilation.

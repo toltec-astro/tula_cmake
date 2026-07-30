@@ -1,277 +1,285 @@
-# tula_cmake 3.1
+# TulaCMake
 
-The authoritative architecture and implementation decisions live in
-[`design/`](design/README.md). Sphinx documentation under `docs/` describes
-the currently validated user interface.
+TulaCMake is the shared, CMake-only build convention package for TolTEC C++
+projects. Spack owns dependency resolution, variants, source acquisition,
+patches, environments, binary caches, and the concrete dependency graph.
+TulaCMake owns reusable target-scoped CMake mechanics.
 
-`tula_cmake` is the typed source-superbuild infrastructure for TolTEC C++
-projects. It separates two graphs:
+There is no TulaCMake command-line wrapper, Python package, provider registry,
+or second dependency language.
 
-- the project graph (Tula, Kidscpp, Citlali, and other owned source projects)
-  is composed recursively with CMake/CPM;
-- the external dependency graph uses the provider selected for each feature:
-  Conan, CPM, system, or disabled.
+## Current status
 
-The Python wheel contains the `tula-cmake` CLI, Pydantic models, graph
-resolver, feature registry, and installed CMake resources. Conan recipes
-remain available for package production and regression testing, but Conan is
-not required to own the first-party project graph.
+The `v3.x_spack` branch contains a complete vertical slice:
 
-## Downstream command
-
-```sh
-./build
+```text
+tula-downstream
+├── tula-boilerplate
+│   ├── tula-logging
+│   │   ├── fmt
+│   │   └── spdlog
+│   ├── tula-lib-a
+│   └── tula-perflibs
+├── tula-lib-b
+└── tula-cmake (build dependency)
 ```
 
-Released projects carry the same thin launcher. It obtains the pinned CLI from
-the `tula_cmake` GitHub tag with `uv tool run`, then:
+Two GCC 13 environments are tested:
 
-1. validates and recursively resolves `tula-project.yaml`;
-2. prepares only the external dependencies assigned to Conan;
-3. writes inspectable CMake project and feature manifests;
-4. composes owned projects through CPM and builds with the generated preset.
+| Environment | Transitive libA | Direct libB | Perflibs |
+| --- | --- | --- | --- |
+| `default` | `flavor=vanilla` | `flavor=fast` | `+openmp` |
+| `alternate` | `flavor=chocolate` | `flavor=safe` | `~openmp` |
 
-CMake does not invoke Conan.
+Both environments concretize, build, install, run CTest package hooks, create
+an environment view, and execute the installed downstream application.
 
-`TULA_CMAKE_DEV_PROJECT=/path/to/tula_cmake` selects a local checkout.
-`TULA_CONAN_CONFIG_SOURCE` may point at an organization `conan config install`
-source. Once the TolTEC Conan remote is deployed, that shared configuration
-will define the remote and profiles without requiring package-specific setup.
+The production Tula, Kidscpp, and Citlali repositories have corresponding
+`v3.x_spack` branches. Their dependency recipes are deliberately migrated only
+after this vertical slice is accepted.
 
-## Repository ownership
+## Responsibilities
 
-This repository owns the complete minimal vertical slice:
+TulaCMake provides:
 
-- `examples/tula_boilerplate`: the minimal logging and generated-header
-  package;
-- `examples/tula_downstream`: a source-superbuild consumer that acquires
-  boilerplate with CPM.
+- native CMake logging with project message context;
+- opt-in target inspection;
+- target-scoped C++ standard and warning defaults;
+- configured-header generation;
+- reproducible version and Git-revision headers;
+- relocatable install/export/package-config generation; and
+- installed-producer/consumer fixture tests.
 
-Tula, Kidscpp, and Citlali remain separate repositories. Each repository owns
-its direct dependencies in `tula-project.yaml`; a root project recursively
-composes that graph. The installed `data/projects.yaml` catalog provides
-immutable Git coordinates and expected CMake targets. Local path overrides use
-CPM's normal source override semantics.
+TulaCMake does not provide:
 
-In this context, making a project “available” means publishing catalog source
-metadata, not exporting it as a Conan package.
-
-## Project integration
-
-```yaml
-# tula-project.yaml
-project:
-  name: tula_downstream
-  version: 3.1.0
-dependencies:
-  projects:
-    tula_boilerplate:
-      default_provider: cpm
-  features: {}
-```
-
-```cmake
-include(TulaProject)
-tula_resolve_project_dependencies()
-tula_resolve_features()
-```
-
-The catalog entry—not the downstream manifest—owns the repository URL,
-immutable commit, source subdirectory, version, and expected target. Every
-build writes the resolved source graph to
-`.tula/generated/tula-project-lock.yaml`.
-
-Joint development can replace a catalog checkout without changing YAML:
-
-```sh
-./build --project-source tula_boilerplate=../tula_boilerplate
-```
-
-`CPM_tula_boilerplate_SOURCE` provides the equivalent CPM-compatible
-environment override. `TULA_CMAKE_SOURCE_CACHE` or `--source-cache` selects a
-shared immutable Git checkout cache.
-
-The current registry contains:
-
-- `logging`: one meta-feature providing a compatible fmt + spdlog pair through
-  disabled, system, Conan, or CPM acquisition;
-- `yaml_cpp`: yaml-cpp 0.9.0 through Conan or CPM, with a system-provider path
-  for distribution packages;
-- `csv_parser`: the production Jerry-Ma fork pinned by commit and checksum,
-  acquired as a header-only CPM source and normalized as `tula::csv_parser`;
-- `netcdf_c`: NetCDF C 4.8.1 through Conan or the system NetCDF config target;
-- `netcdf_cxx4`: NetCDF C++ 4.3.1 through a project-owned Conan recipe or the
-  system pkg-config interface, layered on `netcdf_c`;
-- `bitmask`: the production header-only bitmask implementation, pinned by
-  commit and checksum and normalized as `tula::bitmask`;
-- `meta_enum`: the production compile-time enum parser, pinned by commit and
-  checksum and normalized as `tula::meta_enum`;
-- `clipp`: clipp 1.2.3 through Conan Center or a checksummed CPM archive,
-  normalized as `tula::clipp`;
-- `perflibs`: a system feature centralizing Threads, optional OpenMP, optional
-  oneMKL, runtime validation, and capability definitions;
-- `eigen`: Eigen 3.4.1 through Conan or CPM, or a system package, with explicit
-  multithreading state and a dependency on `perflibs`.
-
-## Native Spack experiment
-
-`examples/spack/` contains an isolated, passing Spack 1.2.2 vertical slice. It
-uses an API v2 package repository, native environments, variants, transitive
-spec constraints, a logging `BundlePackage`, package externals, develop specs,
-and views directly—without the `tula-cmake` CLI.
-
-The downstream root independently selects a transitive libA flavor, a direct
-libB flavor, and the transitive perflibs OpenMP variant. Both GCC 13
-configurations build and run from installed CMake package boundaries. See
-[`design/SPACK_EXPERIMENT.md`](design/SPACK_EXPERIMENT.md) for measured results
-and the remaining decision gates.
+- dependency versions or provider choices;
+- Spack variants or concretization policy;
+- `find_package()` calls for project dependencies;
+- CPM, FetchContent, Conan, or system-package dispatch;
+- Tula feature definitions; or
+- runtime C++ targets.
 
 ## Source layout
 
 ```text
-src/tula_cmake/
-├── models.py
-├── registry.py
-├── superbuild.py
-├── recipe.py
-├── workflow.py
-├── cli.py
-├── resources.py
-├── py.typed
-└── data/
-    ├── registry.yaml
-    ├── projects.yaml
-    ├── cmake/
-    │   ├── infrastructure/
-    │   │   ├── TulaBootstrap.cmake
-    │   │   ├── TulaProject.cmake
-    │   │   ├── TulaConfigHeader.cmake
-    │   │   └── TulaCPM.cmake
-    │   └── resolvers/
-    │       ├── bitmask.cmake
-    │       ├── clipp.cmake
-    │       ├── csv_parser.cmake
-    │       ├── eigen.cmake
-    │       ├── logging.cmake
-    │       ├── meta_enum.cmake
-    │       ├── netcdf_c.cmake
-    │       ├── netcdf_cxx4.cmake
-    │       ├── perflibs.cmake
-    │       └── yaml_cpp.cmake
-    ├── templates/
-    ├── profiles/
-    └── recipes/
-        └── netcdf-cxx4/
+tula_cmake/
+├── CMakeLists.txt
+├── cmake/
+│   ├── TulaCMake.cmake
+│   ├── TulaCMakeConfigHeader.cmake
+│   ├── TulaCMakeGitVersion.cmake
+│   ├── TulaCMakeInspectTarget.cmake
+│   ├── TulaCMakeInstallPackage.cmake
+│   ├── TulaCMakeLog.cmake
+│   └── TulaCMakeTargetDefaults.cmake
+├── examples/
+│   ├── tula_boilerplate/
+│   ├── tula_downstream/
+│   └── spack/
+│       ├── config/
+│       ├── environments/
+│       └── repository/
+├── packages/
+│   └── tula_perflibs/
+├── tests/
+│   ├── cmake/
+│   └── fixtures/spack/
+├── design/
+└── justfile
 ```
 
-The repository also contains `examples/tula_boilerplate` and
-`examples/tula_downstream`; feature-matrix fixtures remain under `tests`.
+`tula_boilerplate` and `tula_downstream` are independent CMake projects and
+independent Spack packages. They live here because together they are the
+acceptance test for the public build conventions.
 
-Pydantic models validate YAML and generated preset JSON boundaries. Package
-data remains below the installed Python package so both wheels and Conan
-exports resolve the same resources reliably.
+## Fresh dev-container setup
 
-Resolver wiring follows one convention instead of repeating Python/CMake
-symbols in YAML. A registry feature named `logging` maps to
-`cmake/resolvers/logging.cmake`. The driver selects one provider entry point:
-`tula_resolve_logging_conan()`, `tula_resolve_logging_cpm()`, or
-`tula_resolve_logging_system()`. Resolver modules contain no provider-mode
-switch.
+Rebuild the workspace dev container. Its post-create script installs:
 
-## User configuration
+- GCC 13 and GCC 14;
+- LLVM/Clang 20;
+- CMake, Ninja, and Just;
+- the system development packages used by the small offline slice; and
+- Spack 1.2.2 at `/opt/spack`.
 
-Project acquisition and feature acquisition are deliberately distinct.
-Project dependencies are declared in `tula-project.yaml`; root provider
-overrides select feature acquisition without editing downstream CMake:
+Inside the container:
 
-```sh
-./build --provider logging=system
-```
-
-The default downstream slice selects Conan for the `logging` meta-feature, so
-the generated virtual Conan recipe contains only `fmt` and `spdlog`.
-`tula_boilerplate` itself never enters that Conan graph.
-
-Existing Conan recipe options remain supported by the optional package-build
-path while production projects migrate to the root-owned source graph.
-
-## Feature matrix tests
-
-Feature/provider validation does not use `tula_boilerplate`. The package keeps
-one internal generated-project fixture under `tests/feature_matrix/` and executes
-each case as an individually selectable Pytest item:
-
-```sh
-just matrix
-just matrix-all
-just gcc14
-just clang20
-just compilers
-uv run pytest -m feature_matrix -k logging
-```
-
-The compiler gates select the bundled GCC 14 or Clang 20 Conan profile, run
-the applicable 61-case matrix, and then build the installed
-Tula → kidscpp → Citlali package chain. GCC 13 remains the default baseline.
-The dev container installs the versioned compiler executables, matching
-OpenMP runtimes, and `clang-tools-20` (needed by CMake for
-`clang-scan-deps`).
-
-Provider cases are derived from `registry.yaml`. The matrix metadata defines
-one option axis per feature-owned option, and the runner derives one case for
-every allowed value. A fast catalog test fails when a registry feature,
-provider, or option value lacks coverage.
-
-Each executable case:
-
-1. copies the minimal matrix project to a Pytest temporary directory;
-2. supplies root-scoped Conan options without creating an overlay profile;
-3. runs the normal `BuildWorkflow`;
-4. checks enabled options in Conan's generated preset;
-5. verifies normalized-target presence or absence;
-6. compiles a feature-specific C++ probe and runs it with CTest.
-
-Cases requiring unavailable system facilities are capability-gated, not
-removed. Set `TULA_TEST_CAPABILITIES` to a comma-separated list in an image
-that provides those facilities. Runtime-specific cases additionally require
-`TULA_TEST_INTEL_PROFILE` or `TULA_TEST_LLVM_PROFILE`, preventing a runtime
-label from passing under the wrong compiler. Conan and CPM provider cases
-carry the `network` marker so the fast local tier can exclude them.
-
-`tula_boilerplate` is consequently only a minimal usage example. It has no
-feature-matrix profiles.
-
-The source-superbuild acceptance is independent:
-
-```sh
-just vertical-slice
-```
-
-It first acquires boilerplate from a pinned local Git URL and builds with Conan
-logging. It then repeats with a direct local-project override and system
-logging. Both binaries run, both source locks are inspected, and the generated
-Conan input never contains the owned boilerplate project.
-
-The Sphinx site explicitly renders every public Pydantic model, its field
-descriptions, validators, and JSON schema. It also generates the provider
-support and package-option reference directly from `registry.yaml`.
-Documentation warnings fail the build.
-
-## Development
-
-The project is linked to
-[`Jerry-Ma/cookiecutter-pypackage`](https://github.com/Jerry-Ma/cookiecutter-pypackage)
-at the `v2026` checkout through Cruft.
-
-```sh
-just qa
-just docs
-just build
-just cruft-check
-```
-
-The repository-level container acceptance remains:
-
-```sh
+```console
+cd /workspaces/cpp
 just all
 ```
+
+The first Spack invocation may bootstrap its solver. Subsequent runs reuse the
+user-level Spack cache and installed package prefixes.
+
+## Native local CMake workflow
+
+TulaCMake itself is a normal installable CMake package:
+
+```console
+cmake -S . -B build/unit -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/unit --parallel
+ctest --test-dir build/unit --output-on-failure
+cmake --install build/unit --prefix /tmp/tula-cmake-prefix
+```
+
+A consumer uses:
+
+```cmake
+find_package(TulaCMake 3 CONFIG REQUIRED)
+
+add_library(example src/example.cpp)
+tula_cmake_target_defaults(TARGET example WARNINGS)
+```
+
+The installed `TulaCMakeConfig.cmake` includes modules by their installed
+location. It does not modify the consumer's global `CMAKE_MODULE_PATH`.
+
+## Native Spack workflow
+
+The validation automation sequences ordinary Spack commands; it is not a
+replacement interface:
+
+```console
+spack \
+  -C examples/spack/config \
+  -C examples/spack/config/devcontainer \
+  -e examples/spack/environments/default \
+  concretize --force
+
+spack \
+  -C examples/spack/config \
+  -C examples/spack/config/devcontainer \
+  -e examples/spack/environments/default \
+  install --test=all
+
+examples/spack/environments/default/.spack-view/bin/tula_downstream
+```
+
+Or run both matrix entries:
+
+```console
+just spack-matrix
+```
+
+The root spec controls reachable transitive variants directly:
+
+```yaml
+specs:
+  - >-
+    tula-downstream@0.1.0
+    ^tula-lib-a flavor=vanilla
+    ^tula-lib-b flavor=fast
+    ^tula-perflibs+openmp
+```
+
+There is no option forwarding through `tula-boilerplate`. Spack merges the
+root constraints with package-owned dependency edges and records the complete
+result in `spack.lock`.
+
+## CMake API
+
+### Target defaults
+
+```cmake
+tula_cmake_target_defaults(
+    TARGET my_library
+    CXX_STANDARD 23
+    WARNINGS
+)
+```
+
+The function changes only the named target. It never enables warnings as
+directory-global compiler flags and never enables warnings-as-errors.
+
+### Configured header
+
+```cmake
+set(MY_PACKAGE_HAS_FEATURE 1)
+tula_cmake_generate_config_header(
+    TARGET my_library
+    INPUT "${CMAKE_CURRENT_SOURCE_DIR}/include/my_package/config.h.in"
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/my_package/config.h"
+    BUILD_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+```
+
+The caller owns the variables and their meaning. TulaCMake owns only the
+generation and target include-interface mechanics.
+
+### Version header
+
+```cmake
+tula_cmake_generate_version_header(
+    TARGET my_library
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/my_package/version.h"
+    BUILD_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated"
+    NAMESPACE my_package
+    VERSION "${PROJECT_VERSION}"
+    REVISION "${MY_PACKAGE_GIT_REVISION}"
+)
+```
+
+Package recipes should pass an immutable revision. Local developer builds may
+omit `REVISION`, in which case TulaCMake detects the current Git commit.
+
+### Installable package
+
+```cmake
+tula_cmake_install_package(
+    PACKAGE MyPackage
+    EXPORT MyPackageTargets
+    NAMESPACE my_package::
+    VERSION "${PROJECT_VERSION}"
+    TARGETS my_library
+    CONFIG_TEMPLATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/MyPackageConfig.cmake.in"
+)
+```
+
+The helper uses `CMakePackageConfigHelpers`, exports relocatable targets, and
+generates a same-major version file. Dependency discovery remains explicit in
+the project's config template.
+
+### Diagnostics
+
+```cmake
+tula_cmake_log(VERBOSE "Configured optional feature X")
+tula_cmake_inspect_target(
+    TARGET my_package::dependency
+    LEVEL DEBUG
+)
+```
+
+Use native CMake controls:
+
+```console
+cmake --preset dev --log-level=DEBUG --log-context
+cmake --preset dev --debug-find
+cmake --build --preset dev --verbose
+```
+
+## Documentation
+
+The design is maintained as Markdown so it is easy to review in Git, render on
+GitHub, search locally, and supply directly to development tools and language
+models:
+
+- [`design/ARCHITECTURE.md`](design/ARCHITECTURE.md)
+- [`design/WORKFLOW.md`](design/WORKFLOW.md)
+- [`design/TESTING.md`](design/TESTING.md)
+- [`design/DECISIONS.md`](design/DECISIONS.md)
+- [`design/MIGRATION.md`](design/MIGRATION.md)
+- [`design/tula-spack-system.html`](design/tula-spack-system.html)
+
+## Historical baseline
+
+The last Conan 2 implementation remains on `v3.x_conan2`. A self-contained
+copy is also stored at:
+
+```text
+../archive/v3-conan2-baseline-2026-07-30/
+```
+
+The earlier provider-matrix workspace archive and the read-only production
+references remain separate evidence. They are not inputs to the Spack build.

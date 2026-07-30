@@ -1,26 +1,22 @@
-# Tula superbuild design
+# TulaCMake Spack architecture
 
-This directory is the authoritative design record for `tula_cmake`.
+These documents are the source of truth for the `v3.x_spack` design.
 
-The Sphinx pages under `docs/` explain the released implementation to users.
-Files here record architectural intent, decisions, boundaries, acceptance
-criteria, and the staged implementation plan. When implementation and design
-disagree, the discrepancy is a defect to resolve rather than an undocumented
-compatibility behavior.
+| Document | Purpose |
+| --- | --- |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Responsibilities, package boundaries, graphs, and code structure |
+| [WORKFLOW.md](WORKFLOW.md) | Fresh-machine, user, developer, and release workflows |
+| [TESTING.md](TESTING.md) | Unit fixtures, Spack matrix, evidence, and expansion rules |
+| [DECISIONS.md](DECISIONS.md) | Accepted architectural decisions and their consequences |
+| [MIGRATION.md](MIGRATION.md) | Baseline preservation and production-repository migration order |
+| [tula-spack-system.html](tula-spack-system.html) | Technical review deck generated from the implemented system |
 
-## Current documents
+## Documentation policy
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) defines the recursive source-superbuild
-  architecture and its package/provider boundaries.
-- [VERTICAL_SLICE.md](VERTICAL_SLICE.md) defines the first executable
-  acceptance slice using `tula_boilerplate` and `tula_downstream`.
-- [DECISIONS.md](DECISIONS.md) records the decisions that must remain stable
-  while the slice is implemented.
-- [RESEARCH.md](RESEARCH.md) records the upstream mechanisms and terminology
-  used for owned source projects.
-- [SPACK_EXPERIMENT.md](SPACK_EXPERIMENT.md) defines the isolated native-Spack
-  acceptance graph and the decision boundary for evaluating a simpler backend.
-
-The historical design deck remains in the separate `tula/design/` directory
-until the architecture is proven and the deck can be rewritten from validated
-results. It is not the authority for this redesign.
+- Markdown records the complete design. The HTML deck summarizes it.
+- Statements are marked implemented, measured, or planned.
+- A package is marked implemented only after its installed package boundary
+  has been exercised.
+- `refs/` and `archive/` are evidence, never build inputs.
+- When implementation changes, update the relevant Markdown documents and
+  deck in the same commit.

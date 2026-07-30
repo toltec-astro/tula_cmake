@@ -1,110 +1,96 @@
-# Architecture decisions
+# Decisions
 
-## D001 — `tula_cmake/design` is authoritative
+## D001 — Spack owns the dependency graph
 
-Accepted 2026-07-29.
+Accepted 2026-07-30.
 
-`tula_cmake` is now an independent repository, so its design record belongs
-under `tula_cmake/design/`. User documentation remains under `docs/`.
+Spack owns versions, variants, compilers, sources, patches, externals, caches,
+environments, and concretization. TulaCMake does not maintain another package
+or provider model.
 
-## D002 — Conan is a provider, not the project graph
+## D002 — Keep native Spack UX
 
-Accepted 2026-07-29.
+Accepted 2026-07-30.
 
-The default development workflow must not require Tula, Kidscpp, or Citlali to
-be materialized as Conan packages. Conan remains available for external
-dependencies and explicit packaged-project consumption.
+No TulaCMake CLI wraps `spack concretize`, `spack install`, environments, specs,
+or variants. Just recipes may sequence native commands for regression tests.
 
-## D003 — Root-owned recursive manifests
+## D003 — TulaCMake is CMake-only
 
-Accepted 2026-07-29.
+Accepted 2026-07-30.
 
-Every project declares direct dependencies in `tula-project.yaml`.
-`tula_cmake` recursively loads those manifests and computes one graph. The root
-owns overrides; transitive packages do not copy downstream option tables.
+The former Python project, Pydantic models, Conan Python-require, provider
+registry, bootstrap command, and Sphinx API documentation are removed.
+TulaCMake installs only `.cmake` files and package metadata.
 
-## D004 — Preserve one-command UX
+## D004 — Tula is a peer project
 
-Accepted 2026-07-29.
+Accepted 2026-07-30.
 
-The checked-in `./build` launcher remains the only required user command. It
-may print bootstrap, Conan, CMake, build, and test phases, but users do not
-invoke those phases separately.
+Tula follows the same CMake and Spack package conventions as Kidscpp, Citlali,
+and the boilerplate. It does not own or control the build system.
 
-## D005 — Prove local CPM projects before remote acquisition
+## D005 — Boilerplate and downstream are acceptance packages
 
-Accepted 2026-07-29.
+Accepted 2026-07-30.
 
-The first slice uses a local source path with the `cpm` provider. This proves
-graph semantics deterministically. Git URLs, tags, source caches, and local
-override precedence will be added only after the basic contract passes.
+`tula_boilerplate` is the smallest installed library using TulaCMake.
+`tula_downstream` is the smallest installed application consuming it. They are
+kept in the TulaCMake repository but remain independent projects and Spack
+packages.
 
-## D006 — Keep packaging until replacement gates pass
+## D006 — Recipes are decentralized
 
-Accepted 2026-07-29.
+Accepted 2026-07-30.
 
-Existing Conan recipes and package tests remain during the redesign. Removal
-or simplification happens only after the source-superbuild path covers the
-real project chain.
+Each production source repository owns the recipe describing its source. A
+root environment composes repositories. Integrator-only overrides may live in
+an organization overlay without taking ownership away from the project.
 
-## D007 — Catalog owned projects; do not Conan-export them
+## D007 — Logging is a bundle package
 
-Accepted 2026-07-29.
+Accepted 2026-07-30.
 
-`tula_cmake` publishes acquisition coordinates and expected CMake targets for
-TolTEC-owned projects in a typed catalog. Each source repository owns its
-direct dependency manifest. Catalog entries use immutable revisions, support
-CPM-compatible local overrides, and are added only after their source-build
-gate passes.
+`tula-logging` represents the supported fmt/spdlog combination as a real
+no-code graph node. C++ consumers link fmt and spdlog targets normally.
 
-In this design, “exporting Tula through `tula_cmake`” means adding Tula to this
-source-project catalog. It never means requiring `conan export`.
+## D008 — Perflibs is an installed interface package
 
-## D008 — Keep explicit Conan materialization behind the launcher
+Accepted 2026-07-30.
 
-Accepted 2026-07-29.
+Perflibs is orthogonal platform capability policy. It exports
+`tula::perflibs`, propagates Threads and optional OpenMP, and installs a
+capability header. Its options are Spack variants.
 
-The checked-in launcher retains one-command UX, but `tula_cmake` performs
-Conan installation explicitly before the final configure. Conan's
-configure-time CMake dependency provider is not the foundation because Conan
-documents that path as exceptional and less stable than its generated
-toolchain/preset workflow.
+## D009 — Build utilities are target-scoped
 
-## D009 — Prepare Git sources before CMake, then compose with CPM
+Accepted 2026-07-30.
 
-Accepted 2026-07-29.
+Public functions require explicit targets and use the `tula_cmake_` prefix.
+They do not modify global compiler flags, package registries, module paths, or
+dependency targets.
 
-Python checks out each catalog project at an exact commit before it recursively
-loads manifests. CMake then receives those prepared paths through
-`CPMAddPackage(SOURCE_DIR ...)`. This uses CPM's normal target/deduplication
-semantics without delaying transitive feature discovery until configure time.
+## D010 — Provider origin is not a C++ feature
 
-## D010 — Catalog metadata and dependency policy have different owners
+Accepted 2026-07-30.
 
-Accepted 2026-07-29.
+Generated headers record capabilities such as OpenMP availability. They do not
+record whether a dependency came from a system external, source build, or
+binary cache.
 
-`projects.yaml` owns Git coordinates, immutable revision, version, source
-subdirectory, and expected CMake target. Each project's `tula-project.yaml`
-owns only direct project names and external feature defaults. The catalog does
-not duplicate transitive policy.
+## D011 — Markdown is canonical documentation
 
-## D011 — Example projects have no Conan recipes
+Accepted 2026-07-30.
 
-Accepted 2026-07-29.
+Markdown is the searchable, reviewable, LLM-friendly source of truth. A
+self-contained technical HTML deck is maintained for architecture reviews.
+Sphinx is not used because there is no Python API.
 
-`tula_boilerplate` and `tula_downstream` demonstrate the ordinary
-source-superbuild and therefore contain no alternate packaged workflow.
-Installed-package validation remains in the production repositories.
+## D012 — Preserve the Conan baseline before migration
 
-## D012 — Evaluate Spack through its native interface
+Accepted 2026-07-30.
 
-Accepted for experiment 2026-07-29.
-
-The Spack vertical slice uses Spack package recipes, environments, variants,
-transitive spec constraints, externals, develop specs, and views directly.
-There is no new `tula-cmake` user-facing abstraction over those concepts.
-Repository automation may sequence native commands for regression testing but
-must not be presented as a replacement package-management language.
-
-The experiment remains isolated until its complete acceptance graph passes.
-It does not supersede D002–D011 or authorize removal of the Conan/CPM path.
+The current state is committed on the existing Conan branches and copied as
+self-contained Git clones under
+`archive/v3-conan2-baseline-2026-07-30`. Active development proceeds on
+`v3.x_spack` without rewriting the baseline.

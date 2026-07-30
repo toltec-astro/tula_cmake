@@ -13,5 +13,6 @@ class TulaDownstream(CMakePackage):
 
     depends_on("cmake@3.25:", type="build")
     depends_on("cxx", type="build")
+    depends_on("tula-cmake@3.2.0", type="build")
     depends_on("tula-boilerplate@0.1.0", type=("build", "link"))
     depends_on("tula-lib-b@0.1.0", type=("build", "link"))

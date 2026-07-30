@@ -1,22 +1,25 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(tula_downstream
-    VERSION 3.1.0
-    DESCRIPTION "Minimal downstream consumer of a Tula-built package"
+project(
+    TulaDownstream
+    VERSION 0.1.0
+    DESCRIPTION "Minimal installed consumer of TulaBoilerplate"
     LANGUAGES CXX
 )
 
-include(TulaProject)
-tula_resolve_project_dependencies()
-tula_resolve_features()
+include(GNUInstallDirs)
+
+find_package(TulaCMake 3 CONFIG REQUIRED)
+find_package(TulaBoilerplate CONFIG REQUIRED)
+find_package(TulaLibB CONFIG REQUIRED)
 
 add_executable(tula_downstream src/main.cpp)
+tula_cmake_target_defaults(TARGET tula_downstream WARNINGS)
 target_link_libraries(
     tula_downstream
-    PRIVATE tula_boilerplate::headers
+    PRIVATE
+        tula_boilerplate::tula_boilerplate
+        tula::lib_b
 )
-target_compile_features(tula_downstream PRIVATE cxx_std_23)
-set_target_properties(
-    tula_downstream
-    PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
+
+install(TARGETS tula_downstream RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
