@@ -100,3 +100,39 @@ a local Git URL. It verifies exact checkout acquisition without requiring
 remote publication. A second case selects the surrounding boilerplate checkout
 through `--project-source`, matching CPM's documented local-source semantics.
 Both cases emit an inspectable source lock.
+
+## Spack 1.2 evaluation
+
+Research date: 2026-07-29.
+
+Spack 1.2.2 is the current stable release:
+
+<https://github.com/spack/spack/releases/tag/v1.2.2>
+
+The following established mechanisms directly match requirements that the
+current implementation models itself:
+
+- environments concretize roots and their complete transitive DAG into
+  `spack.lock`;
+- `^package` spec constraints configure reachable transitive dependencies;
+- package variants define typed build choices and map them to CMake arguments;
+- `BundlePackage` represents a no-code compatibility set;
+- custom API v2 repositories carry organization-owned recipes;
+- `develop` specs build package nodes from local source trees;
+- externals and `buildable: false` select approved system installations;
+- build caches materialize the same concrete spec without changing the graph;
+  and
+- views expose selected environment artifacts without installing system-wide.
+
+Primary references:
+
+- <https://spack.readthedocs.io/en/latest/environments.html>
+- <https://spack.readthedocs.io/en/latest/spec_syntax.html>
+- <https://spack.readthedocs.io/en/latest/repositories.html>
+- <https://spack.readthedocs.io/en/latest/packages_yaml.html>
+- <https://spack.readthedocs.io/en/latest/build_systems/bundlepackage.html>
+
+Spack source builds remain separate configure/build/install operations. They
+do not reproduce CPM/FetchContent's same-CMake-graph composition. The native
+vertical slice therefore tests whether same-graph composition is actually
+required rather than assuming it is.

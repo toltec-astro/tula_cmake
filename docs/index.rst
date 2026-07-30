@@ -11,6 +11,7 @@ installed CMake modules, and one-command downstream workflow.
    :maxdepth: 2
 
    architecture
+   spack_experiment
    workflow
    distribution
    features

@@ -1,0 +1,10 @@
+#pragma once
+
+#include <string_view>
+
+namespace tula_lib_a {
+
+inline constexpr std::string_view flavor = "@TULA_LIB_A_FLAVOR@";
+
+}  // namespace tula_lib_a
+

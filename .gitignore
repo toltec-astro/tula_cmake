@@ -15,3 +15,6 @@ deactivate_conan*.sh
 CMakeUserPresets.json
 .tula/
 .tula-*/
+examples/spack/environments/*/spack.lock
+examples/spack/environments/*/.spack-env/
+examples/spack/environments/*/.spack-view

@@ -95,3 +95,16 @@ Accepted 2026-07-29.
 `tula_boilerplate` and `tula_downstream` demonstrate the ordinary
 source-superbuild and therefore contain no alternate packaged workflow.
 Installed-package validation remains in the production repositories.
+
+## D012 — Evaluate Spack through its native interface
+
+Accepted for experiment 2026-07-29.
+
+The Spack vertical slice uses Spack package recipes, environments, variants,
+transitive spec constraints, externals, develop specs, and views directly.
+There is no new `tula-cmake` user-facing abstraction over those concepts.
+Repository automation may sequence native commands for regression testing but
+must not be presented as a replacement package-management language.
+
+The experiment remains isolated until its complete acceptance graph passes.
+It does not supersede D002–D011 or authorize removal of the Conan/CPM path.

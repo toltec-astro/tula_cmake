@@ -1,0 +1,51 @@
+spack:
+  specs:
+  - tula-downstream@0.1.0 ^tula-lib-a flavor=chocolate ^tula-lib-b flavor=safe ^tula-perflibs~openmp
+  concretizer:
+    unify: true
+
+  view:
+    default:
+      root: .spack-view
+      link: roots
+
+  develop:
+    tula-lib-a:
+      spec: tula-lib-a@0.1.0
+      path: ../../sources/tula-lib-a
+    tula-lib-b:
+      spec: tula-lib-b@0.1.0
+      path: ../../sources/tula-lib-b
+    tula-perflibs:
+      spec: tula-perflibs@0.1.0
+      path: ../../sources/tula-perflibs
+    tula-boilerplate:
+      spec: tula-boilerplate@0.1.0
+      path: ../../sources/tula-boilerplate
+    tula-downstream:
+      spec: tula-downstream@0.1.0
+      path: ../../sources/tula-downstream
+
+  packages:
+    llvm:
+      externals:
+      - spec: llvm@20.1.2+clang~flang~lld~lldb
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/clang-20
+            cxx: /usr/bin/clang++-20
+    gcc:
+      externals:
+      - spec: gcc@13.3.0 languages:='c,c++'
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/gcc
+            cxx: /usr/bin/g++
+      - spec: gcc@14.2.0 languages:='c,c++'
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/gcc-14
+            cxx: /usr/bin/g++-14

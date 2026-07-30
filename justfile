@@ -82,6 +82,30 @@ vertical-slice: sync
     grep -F 'kind: local' \
         "$run_root/system/generated/tula-project-lock.yaml"
 
+# Validate the experimental graph using native Spack commands and UX.
+spack-vertical-slice spack="spack":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    spack_cmd="{{ spack }}"
+    root="$(pwd)/examples/spack"
+    common=(-C "$root/config" -C "$root/config/devcontainer")
+
+    "$spack_cmd" "${common[@]}" -e "$root/environments/default" concretize --force
+    "$spack_cmd" "${common[@]}" -e "$root/environments/default" install
+    "$spack_cmd" "${common[@]}" -e "$root/environments/default" find -clv
+    default_output="$("$root/environments/default/.spack-view/bin/tula_downstream" 2>&1)"
+    printf '%s\n' "$default_output"
+    grep -F 'libA=vanilla perflibs.openmp=enabled libB=fast' \
+        <<<"$default_output"
+
+    "$spack_cmd" "${common[@]}" -e "$root/environments/alternate" concretize --force
+    "$spack_cmd" "${common[@]}" -e "$root/environments/alternate" install
+    "$spack_cmd" "${common[@]}" -e "$root/environments/alternate" find -clv
+    alternate_output="$("$root/environments/alternate/.spack-view/bin/tula_downstream" 2>&1)"
+    printf '%s\n' "$alternate_output"
+    grep -F 'libA=chocolate perflibs.openmp=disabled libB=safe' \
+        <<<"$alternate_output"
+
 cruft-check:
     uv tool run cruft check --checkout v2026
 

@@ -18,6 +18,8 @@ compatibility behavior.
   while the slice is implemented.
 - [RESEARCH.md](RESEARCH.md) records the upstream mechanisms and terminology
   used for owned source projects.
+- [SPACK_EXPERIMENT.md](SPACK_EXPERIMENT.md) defines the isolated native-Spack
+  acceptance graph and the decision boundary for evaluating a simpler backend.
 
 The historical design deck remains in the separate `tula/design/` directory
 until the architecture is proven and the deck can be rewritten from validated

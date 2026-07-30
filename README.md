@@ -113,6 +113,19 @@ The current registry contains:
 - `eigen`: Eigen 3.4.1 through Conan or CPM, or a system package, with explicit
   multithreading state and a dependency on `perflibs`.
 
+## Native Spack experiment
+
+`examples/spack/` contains an isolated, passing Spack 1.2.2 vertical slice. It
+uses an API v2 package repository, native environments, variants, transitive
+spec constraints, a logging `BundlePackage`, package externals, develop specs,
+and views directly—without the `tula-cmake` CLI.
+
+The downstream root independently selects a transitive libA flavor, a direct
+libB flavor, and the transitive perflibs OpenMP variant. Both GCC 13
+configurations build and run from installed CMake package boundaries. See
+[`design/SPACK_EXPERIMENT.md`](design/SPACK_EXPERIMENT.md) for measured results
+and the remaining decision gates.
+
 ## Source layout
 
 ```text

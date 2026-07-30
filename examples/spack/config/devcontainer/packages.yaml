@@ -1,0 +1,23 @@
+packages:
+  cmake:
+    externals:
+      - spec: cmake@3.28.3
+        prefix: /usr
+    buildable: false
+  cxx:
+    require: gcc@13.3.0
+  fmt:
+    externals:
+      - spec: fmt@9.1.0
+        prefix: /usr
+    buildable: false
+  gmake:
+    externals:
+      - spec: gmake@4.3
+        prefix: /usr
+    buildable: false
+  spdlog:
+    externals:
+      - spec: spdlog@1.12.0
+        prefix: /usr
+    buildable: false
