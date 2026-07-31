@@ -70,6 +70,11 @@ installed consumers and the installed CLI pass. A GCC 14 observation-level
 run processes all 123 scans in the supplied 149101 fixture and writes raw and
 filtered FITS products for all three arrays.
 
+The narrow Tlaloc integration is also measured in both lanes. It builds the
+full `tlaloc_clip` executable with only `tula::ecsv`, keeps NetCDF/FFTW/
+MariaDB/KATCP as Tlaloc-owned dependencies, excludes Kidscpp and Ceres, and
+loads a required observation 149101 tune report in its package test.
+
 ## Responsibilities
 
 TulaCMake provides:
@@ -114,6 +119,7 @@ tula_cmake/
 ├── packages/
 │   ├── tula_eigen3/
 │   ├── tula_logging/
+│   ├── tula_netcdf_cxx4/
 │   ├── tula_perflibs/
 │   └── tula_yaml_cpp/
 ├── spack_repo/
@@ -122,6 +128,7 @@ tula_cmake/
 │       ├── tula_csv_parser/
 │       ├── tula_eigen3/
 │       ├── tula_logging/
+│       ├── tula_netcdf_cxx4/
 │       ├── tula_perflibs/
 │       └── tula_yaml_cpp/
 ├── tests/
@@ -226,12 +233,14 @@ just tula-enum-cli-matrix
 just tula-netcdf-matrix
 just tula-grppi-matrix
 just tula-fitting-matrix
+just tlaloc-matrix
 ```
 
 These component commands concretize and install Tula under GCC 14 and LLVM
 20, run package CTests, validate minimal dependency graphs, and build
 independent installed consumers. `production-matrix` remains the separate
-Tula → Kidscpp → Citlali gate.
+Tula → Kidscpp → Citlali gate. `tlaloc-matrix` is the independent readout
+controller gate.
 
 The root spec controls reachable transitive variants directly:
 

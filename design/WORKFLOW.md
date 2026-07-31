@@ -122,6 +122,14 @@ tula_cmake/environments/integration/tula_ecsv/
     └── .spack-view/
 ```
 
+Tlaloc uses the same two-lane integration layout:
+
+```text
+tula_cmake/environments/integration/tlaloc/
+├── gcc14/spack.yaml
+└── llvm20/spack.yaml
+```
+
 The YAML manifests, repository configuration, recipes, and patches are
 versioned. Development locks and views remain local because develop specs
 contain absolute checkout paths and the views link to machine-local prefixes.
@@ -177,8 +185,7 @@ Spack hashes recipes, variants, dependency edges, and source identity. The
 explicit overwrite is required while iterating on a `develop` checkout because
 the checkout path retains its concrete DAG hash.
 
-The following Tlaloc commands are reserved for its pending acceptance work and
-are not part of `just all`:
+The accepted Tlaloc matrix is also part of `just all`:
 
 ```console
 just tlaloc
@@ -257,8 +264,9 @@ target_link_libraries(tlaloc_clip PRIVATE tula::ecsv)
 
 Packaging the external application as a Spack root is preferred once its
 integration is accepted, because the concretizer can then verify its complete
-graph. Tlaloc migration is currently pending; the rejected broad attempt is
-not the model to follow.
+graph. Tlaloc now follows that model: its repository owns the recipe, the root
+environment selects the compiler and local checkout, and CMake requests only
+the Tula ECSV component it uses.
 
 ## 8. Release workflow
 

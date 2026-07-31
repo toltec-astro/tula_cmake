@@ -128,14 +128,14 @@
       <div>
         <div class="section">TolTEC C++ build system · technical reference · 2026-07-31</div>
         <h1>Spack graph,<br>explicit CMake components</h1>
-        <p class="lead">The verified TulaCMake, Tula, Kidscpp, and Citlali
+        <p class="lead">The verified TulaCMake, Tula, Kidscpp, Citlali, and Tlaloc
           system: target namespaces, package ownership, minimal dependency
           closures, installed discovery, behavior tests, and the complete
           observation runtime.</p>
         <div class="callout">Measured under GCC 14 and LLVM 20 in C++23 mode,
           including OpenMP-enabled and disabled component graphs, installed
-          production consumers, and the Citlali CLI. Observation 149101 also
-          completes under GCC 14; Tlaloc remains the next boundary.</div>
+          production consumers, the Citlali CLI, and the narrow Tlaloc ECSV
+          integration. Observation 149101 also completes under GCC 14.</div>
       </div>
       <div class="toc">
         <div><span>01</span><span>responsibility and namespace boundary</span></div>
@@ -189,7 +189,7 @@ target_link_libraries(app PRIVATE
 ├── tula/             base C++ library + recipe
 ├── kidscpp/          next downstream boundary
 ├── citlali/          final production boundary
-├── tlaloc/           external app; restart pending
+├── tlaloc/           readout app + owned Spack recipe
 └── tolteca_test_data/ real fixtures</pre>
       <pre>tula_cmake/
 ├── cmake/            installed helper modules
@@ -197,6 +197,7 @@ target_link_libraries(app PRIVATE
 │   ├── tula_logging/
 │   ├── tula_yaml_cpp/
 │   ├── tula_eigen3/
+│   ├── tula_netcdf_cxx4/
 │   └── tula_perflibs/
 ├── spack_repo/.../packages/
 │   └── tula_csv_parser/
@@ -609,20 +610,94 @@ result
 ├── a1100 raw + filtered FITS
 ├── a1400 raw + filtered FITS
 ├── a2000 raw + filtered FITS
-└── exit 0 in 2m45s</pre>
+└── exit 0 in 2m53s</pre>
     </div>
     <div class="callout"><code>just citlali-real-workdir</code> reproduces the
       invocation, records the full log, and asserts the three filtered output
       products. Science data is runtime input, never a package/build input.</div>
   </section>
 
-  <section class="slide" data-title="Next integration order">
-    <div class="slide-head"><span class="section">07 · next boundary</span><h2>The production loop is closed; Tlaloc can restart from the accepted ECSV slice</h2></div>
+  <section class="slide" data-title="Tlaloc dependency closure">
+    <div class="slide-head"><span class="section">07 · Tlaloc graph</span><h2>Tlaloc consumes one Tula component and owns its remaining dependencies</h2></div>
     <div class="cols-2">
-      <div class="panel"><h3>Accepted production system</h3><ol><li>all Tula components have focused matrices</li><li>Kidscpp requests its exact Tula closure</li><li>Citlali package and installed CLI pass</li><li>real observation reduction completes</li></ol></div>
-      <div class="panel"><h3>Next controlled change</h3><ol><li>reset Tlaloc to its clean integration baseline</li><li>request only <code>tula COMPONENTS ecsv</code></li><li>remove KID model/Rx evaluation</li><li>test real tune.txt loading through Tula ECSV</li></ol></div>
+      <pre>tlaloc
+├── tula+ecsv
+│   ├── tula-logging
+│   ├── tula-yaml-cpp
+│   ├── tula-csv-parser
+│   └── tula-eigen3
+├── tula-netcdf-cxx4
+├── tlaloc-katcp
+├── fftw
+└── mariadb-c-client</pre>
+      <div class="panel"><h3>Graph assertions</h3><ul><li>all unrelated Tula variants are disabled</li><li>Kidscpp is absent</li><li>Ceres is absent</li><li>KATCP source is pinned to a commit</li><li>the full readout executable is installed</li></ul></div>
     </div>
-    <div class="callout">Current canonical detail:
+    <div class="callout">This is a separate application root, not an extension
+      of the Citlali graph. Spack composes it from the project-owned
+      <code>toltec.tlaloc</code>, <code>toltec.tula</code>, and
+      <code>toltec.tula_cmake</code> repositories.</div>
+  </section>
+
+  <section class="slide" data-title="Tlaloc CMake boundary">
+    <div class="slide-head"><span class="section">07 · code contract</span><h2>The CMake boundary states exactly which layer supplies each target</h2></div>
+    <div class="cols-2">
+      <pre>find_package(tula 3.1 CONFIG REQUIRED
+  COMPONENTS ecsv)
+find_package(TulaNetcdfCxx4 4.3
+  CONFIG REQUIRED)
+
+target_link_libraries(tlaloc_clip PRIVATE
+  tula::ecsv
+  tula_deps::netcdf_cxx4
+  tlaloc_katcp
+  PkgConfig::FFTW
+  PkgConfig::MariaDB)</pre>
+      <pre># package.py
+depends_on("tula@3.1.0+ecsv")
+depends_on("tula-netcdf-cxx4@4.3.1")
+depends_on("tlaloc-katcp@2018.07.30")
+depends_on("fftw@3.3.10")
+depends_on("mariadb-c-client@3.3:")
+
+def cmake_args(self):
+    return [self.define(
+      "TLALOC_BUILD_TESTS", self.run_tests)]</pre>
+    </div>
+    <div class="callout">Tula provides tune-report semantics. Tlaloc retains
+      NetCDF writing, FFTW processing, database access, KATCP control, and all
+      remaining readout behavior. The old Kidscpp IQ/Rx model path is removed.</div>
+  </section>
+
+  <section class="slide" data-title="Tune report artifact flow">
+    <div class="slide-head"><span class="section">07 · data path</span><h2>A real tune report crosses the same public API used by downstream code</h2></div>
+    <div class="flow">
+      <div class="node"><strong>tune.txt</strong><small>ECSV header + 14 data columns</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>ECSVHeader</strong><small>delimiter, schema, YAML metadata</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>csv-parser</strong><small>stream data rows</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>ECSVTable</strong><small>typed column storage</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>Tlaloc</strong><small>row-major values + Obs/SubObs/Scan</small></div>
+    </div>
+    <div class="cols-2">
+      <pre>auto header = ECSVHeader::read(input);
+auto rows = CsvParser(input)
+  .delimiter(header.delimiter());
+auto table = ECSVTable(std::move(header));
+table.load_rows(rows);</pre>
+      <div class="panel"><h3>Lifetime correction</h3><p><code>header_view()</code>, <code>header()</code>, <code>loader()</code>, and the loader reference index now return const references to table-owned state. Lazy column views no longer retain references into a destroyed temporary.</p></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Accepted system and release boundary">
+    <div class="slide-head"><span class="section">08 · measured state</span><h2>All current integration roots pass; publication is the remaining boundary</h2></div>
+    <div class="cols-2">
+      <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali production graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
+      <div class="panel"><h3>Release work</h3><ol><li>tag immutable project sources</li><li>replace development branch recipes</li><li>compose portable release environments</li><li>run the same gates from release archives</li><li>optionally publish signed buildcache artifacts</li></ol></div>
+    </div>
+    <div class="callout">Canonical detail:
       <code>tula/design/COMPONENTS.md</code>,
       <code>design/ARCHITECTURE.md</code>,
       <code>design/SUPPORT_MATRIX.md</code>, and

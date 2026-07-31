@@ -1,4 +1,5 @@
 repos:
+  toltec.tlaloc: ../../../../tlaloc/spack_repo/toltec/tlaloc
   toltec.citlali: ../../../../citlali/spack_repo/toltec/citlali
   toltec.kidscpp: ../../../../kidscpp/spack_repo/toltec/kidscpp
   toltec.tula: ../../../../tula/spack_repo/toltec/tula

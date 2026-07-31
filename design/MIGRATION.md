@@ -8,10 +8,12 @@
 | Tula | `v3.x` | `08ae265` | `v3.x_spack` |
 | Kidscpp | `v3.x` | `2ae77e9` | `v3.x_spack` |
 | Citlali | `v4.x_conan2` | `bfb9378` | `v3.x_spack` |
+| Tlaloc | `main` | `e967166` | `tula_ecsv_with_spack` |
 
-Self-contained clones are stored in
-`archive/v3-conan2-baseline-2026-07-30`. Read-only `refs/` repositories remain
-behavioral evidence and are never build inputs.
+Self-contained clones of the four Conan-era repositories are stored in
+`archive/v3-conan2-baseline-2026-07-30`. Tlaloc's clean Git commit is its
+baseline. Read-only `refs/` repositories remain behavioral evidence and are
+never build inputs.
 
 The old Conan design files formerly under `tula/design/` are additionally
 indexed under `tula/design/archive/conan2/`.
@@ -77,14 +79,23 @@ The production chain through Citlali is complete:
 4. the installed GCC 14 Citlali CLI completes observation 149101, processes
    all 123 scans, and writes raw and filtered products for all three arrays.
 
-The next package migration is Tlaloc. It must restart from its clean branch,
-request only the accepted Tula ECSV component, remove only the Kidscpp IQ/Rx
-model path, and validate real tune-report loading without unrelated behavior
-changes. Tlaloc is deliberately excluded from the accepted `just all` gate
-until that work passes its two-compiler matrix.
+The narrow Tlaloc migration is accepted from its clean `main` baseline on
+`tula_ecsv_with_spack`:
 
-The rejected broad Tlaloc attempt is preserved in its Git stash. It is not
-part of the current support claim.
+- Tlaloc requests only `tula COMPONENTS ecsv` and links `tula::ecsv`;
+- its own NetCDF C++4, FFTW, MariaDB, and pinned KATCP dependencies remain
+  direct package edges;
+- the obsolete Kidscpp IQ-to-Rx/Rx-to-IQ model path and duplicated ECSV parser
+  are removed without changing the remaining readout-controller behavior;
+- the complete `tlaloc_clip` executable builds in both compiler lanes; and
+- a required package test loads the observation 149101 tune report and checks
+  all fourteen columns plus observation metadata.
+
+The Tlaloc graph is now asserted to exclude Kidscpp and Ceres and is included
+in the accepted `just all` gate.
+
+The rejected broad Tlaloc attempt remains historical evidence only; the active
+branch was restarted from clean commit `e967166`.
 
 ## 6. Compiler policy
 

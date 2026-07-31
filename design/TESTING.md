@@ -24,6 +24,7 @@ fixtures and Spack environments.
 | Fitting component matrix | Minimal Ceres closure and installed fitting consumer | `just tula-fitting-matrix` |
 | Production package matrix | Tula, Kidscpp, Citlali package tests, installed consumers, installed CLI | `just production-matrix` |
 | Citlali observation gate | Full 149101 input set through the installed CLI and FITS output | `just citlali-real-workdir` |
+| Tlaloc integration matrix | Minimal ECSV closure, full executable, required real tune report, excluded Kidscpp/Ceres | `just tlaloc-matrix` |
 
 ## 3. TulaCMake fixture
 
@@ -237,12 +238,41 @@ The measured 2026-07-31 run:
 - processed all 123 scans with OpenMP;
 - produced raw FITS maps for a1100, a1400, and a2000;
 - produced filtered FITS maps and PSD/histogram/index products; and
-- exited successfully in 2m45s.
+- exited successfully in 2m53s after the rebuilt container bootstrap.
 
 The complete console record is retained at
 `tula_cmake/build/citlali-real-workdir/gcc14.log` by the repeatable recipe.
 
-## 14. Adding the next component
+## 14. Tlaloc integration matrix
+
+The GCC 14 and LLVM 20 roots build the complete `tlaloc_clip` executable from
+the clean Tlaloc baseline. The gate asserts this graph before installation:
+
+```text
+tlaloc
+├── tula+ecsv
+│   ├── tula-logging
+│   ├── tula-yaml-cpp
+│   ├── tula-csv-parser
+│   └── tula-eigen3
+├── tula-netcdf-cxx4
+├── tlaloc-katcp
+├── fftw
+└── mariadb-c-client
+```
+
+All unrelated Tula variants are disabled; Kidscpp and Ceres are rejected from
+the DAG. The package test is enabled by `spack install --test=all` and requires
+the real observation 149101 tune report. It exercises the public Tula ECSV
+reader, typed column storage, and observation metadata.
+
+This integration exposed a real lifetime defect: `ECSVTable::header_view()`
+returned a temporary while its lazy column range retained references into it.
+Tula now returns stable const references from table, loader, header, and view
+accessors. Both the focused ECSV matrix and the complete production matrix pass
+after the correction.
+
+## 15. Adding the next component
 
 For each new Tula component:
 
@@ -255,5 +285,5 @@ For each new Tula component:
 7. run GCC 14 and LLVM 20; and
 8. update the component contract, support matrix, and technical deck.
 
-Kidscpp and Citlali are now measured production boundaries. Tlaloc integration
-resumes from its clean baseline using only the accepted ECSV component.
+Kidscpp, Citlali, and the narrow Tlaloc ECSV integration are now measured
+boundaries.

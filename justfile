@@ -584,6 +584,37 @@ tlaloc-matrix spack="spack":
     for compiler in gcc14 llvm20; do
         environment="${environments}/${compiler}"
         "$spack_cmd" -e "$environment" concretize --force
+
+        concrete="$("$spack_cmd" -e "$environment" find -c \
+            --format '{name}{@version}{variants}' tula)"
+        printf '%s\n' "$concrete"
+        for enabled in logging yaml ecsv eigen; do
+            grep -F "+${enabled}" <<<"$concrete"
+        done
+        for disabled in netcdf enum cli perflibs openmp grppi fitting; do
+            grep -F "~${disabled}" <<<"$concrete"
+        done
+
+        dag="$("$spack_cmd" -e "$environment" find -cd)"
+        for required in \
+            tlaloc \
+            tula-logging \
+            tula-yaml-cpp \
+            tula-csv-parser \
+            tula-eigen3 \
+            tula-netcdf-cxx4 \
+            tlaloc-katcp \
+            fftw \
+            mariadb-c-client; do
+            grep -F "$required" <<<"$dag"
+        done
+        for excluded in kidscpp ceres-solver; do
+            if grep -F "$excluded" <<<"$dag"; then
+                echo "Tlaloc graph unexpectedly contains ${excluded}" >&2
+                exit 1
+            fi
+        done
+
         "$spack_cmd" -e "$environment" install \
             --yes-to-all \
             --test=all \

@@ -47,14 +47,14 @@ citlali
 
 tlaloc
 ├── Tlaloc readout executable and hardware utilities
-└── next boundary: minimal Tula ECSV recipe and pinned KATCP adapter
+└── minimal Tula ECSV recipe and pinned KATCP adapter
 ```
 
 The example packages use the isolated `toltec.vertical_slice` repository.
 Production recipes are decentralized under `toltec.tula_cmake`,
-`toltec.tula`, `toltec.kidscpp`, and `toltec.citlali`. Tlaloc's decentralized
-recipe remains a pending integration boundary. Root environments compose only
-the accepted repositories needed by their selected application.
+`toltec.tula`, `toltec.kidscpp`, `toltec.citlali`, and `toltec.tlaloc`. Root
+environments compose only the accepted repositories needed by their selected
+application.
 
 The development checkout keeps the independent Git repositories as siblings:
 
@@ -132,11 +132,17 @@ citlali ──> kidscpp ──> tula
 
 tula-downstream ──> tula-boilerplate
 
-tlaloc ──> tula+yaml
+tlaloc ──> tula+ecsv
+       ├─> tula-netcdf-cxx4
+       ├─> fftw
+       ├─> mariadb-c-client
+       └─> tlaloc-katcp
 ```
 
 TulaCMake is not linked and does not become a transitive runtime dependency.
 Every project that calls its functions declares its own build dependency.
+Tlaloc deliberately does not depend on Kidscpp: Tula ECSV parses tune reports,
+while Tlaloc continues to own its readout controller and hardware behavior.
 
 ## 4. Vertical-slice graph
 
@@ -240,6 +246,7 @@ tula_cmake/
 ├── packages/
 │   ├── tula_eigen3/
 │   ├── tula_logging/
+│   ├── tula_netcdf_cxx4/
 │   ├── tula_perflibs/
 │   └── tula_yaml_cpp/
 ├── examples/

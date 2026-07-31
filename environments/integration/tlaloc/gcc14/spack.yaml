@@ -25,6 +25,18 @@ spack:
     tula:
       spec: tula@3.1.0
       path: ../../../../../tula
+    tula-logging:
+      spec: tula-logging@1.0.0
+      path: ../../../../packages/tula_logging
+    tula-yaml-cpp:
+      spec: tula-yaml-cpp@0.8.0
+      path: ../../../../packages/tula_yaml_cpp
+    tula-eigen3:
+      spec: tula-eigen3@3.4.0
+      path: ../../../../packages/tula_eigen3
+    tula-netcdf-cxx4:
+      spec: tula-netcdf-cxx4@4.3.1
+      path: ../../../../packages/tula_netcdf_cxx4
 
   packages:
     gcc:

@@ -32,6 +32,8 @@ not claim it.
 | Citlali package | 6/6 | 6/6 |
 | Installed Tula/Kidscpp/Citlali consumers | 3/3 | 3/3 |
 | Installed Citlali CLI | pass | pass |
+| Tlaloc package and real tune-reader test | pass | pass |
+| Installed Tlaloc executable present | pass | pass |
 
 Native macOS is not a measured compiler lane. The macOS design requires
 Homebrew LLVM 20 rather than AppleClang.
@@ -50,7 +52,7 @@ Homebrew LLVM 20 rather than AppleClang.
 | Tula fitting slice | Minimal logging/Eigen/Ceres closure and installed consumer | `just tula-fitting-matrix` | Measured with GCC 14 and LLVM 20 |
 | Tula → Kidscpp → Citlali | Exact non-skipped package-test totals, installed consumers, and installed CLI | `just production-matrix` | Measured with GCC 14 and LLVM 20 |
 | Citlali observation 149101 | Eleven TolTEC streams, telescope stream, APT, 123 scans, raw/filtered FITS output | `just citlali-real-workdir` | Measured with GCC 14 |
-| Tlaloc | External ECSV consumer after Tula contract acceptance | `just tlaloc-matrix` | Redesign pending |
+| Tlaloc | Minimal Tula ECSV closure, full CLI build, real tune-report reader, no Kidscpp/Ceres | `just tlaloc-matrix` | Measured with GCC 14 and LLVM 20 |
 
 ## 3. Dependency adapter packages
 
@@ -66,9 +68,9 @@ They may be consumed without finding Tula.
 | `tula-perflibs@0.1.0` | `TulaPerflibs` | `tula_deps::perflibs` | Threads and optional compiler OpenMP | Measured with OpenMP enabled and disabled |
 | `tula-netcdf-cxx4@4.3.1` | `TulaNetcdfCxx4` | `tula_deps::netcdf_cxx4` | NetCDF C++4 4.3.1 | Measured |
 
-The first, second, and fourth packages build small relocatable interface
-packages from `tula_cmake/packages/`. csv-parser's generic Spack recipe installs
-its pinned headers and config file directly.
+Logging, YAML, Eigen, perflibs, and NetCDF build small relocatable packages
+from `tula_cmake/packages/`. csv-parser's generic Spack recipe installs its
+pinned headers and config file directly.
 
 ## 4. Tula component matrix
 
@@ -127,6 +129,12 @@ It validates:
 The dev-container gate currently loads eleven regular reports under
 `tolteca_test_data/data_lmt/toltec/reduced`. Valid work-directory report
 symlinks are preferred when their external targets are mounted.
+
+The Tlaloc package test independently reads the observation 149101 tune file
+from `tolteca_test_data/tolteca_workdir/data`. It checks a nonempty table, the
+fourteen-column schema, finite endpoint values, and ObsNum/SubObsNum/ScanNum
+metadata. The fixture is required: its absence fails configuration rather than
+silently skipping the test.
 
 The observation-level Citlali gate uses the work-directory fixture at
 `tolteca_test_data/tolteca_workdir/redu/citlali_o149101_0_2_c1.yaml`.

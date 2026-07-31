@@ -134,3 +134,22 @@ infrastructure targets.
 There are no compatibility aliases. Direct dependency consumers may use a
 `Tula*` adapter config without finding Tula. Tula consumers request explicit
 components, and no umbrella target hides component mismatches.
+
+## D017 — Keep Tlaloc outside the Kidscpp model boundary
+
+Accepted 2026-07-31.
+
+Tlaloc consumes only `tula::ecsv` for tune-report parsing. Its former
+Kidscpp-based IQ/Rx model-evaluation path is removed, while NetCDF C++4, FFTW,
+MariaDB, and KATCP remain Tlaloc-owned direct dependencies. The full executable
+and required real tune-report test pass under GCC 14 and LLVM 20.
+
+## D018 — ECSV views borrow stable table state
+
+Accepted 2026-07-31.
+
+`ECSVTable` and `ECSVDataLoader` accessors return const references for owned
+headers, views, reference indices, and loaders. Returning copies allowed lazy
+ranges to reference a destroyed temporary. The reference-returning API matches
+the ownership model and is validated by Tula, Tlaloc, Kidscpp, and Citlali
+tests.
