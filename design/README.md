@@ -5,6 +5,7 @@ These documents are the source of truth for the `v3.x_spack` design.
 | Document | Purpose |
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Responsibilities, package boundaries, graphs, and code structure |
+| [SUPPORT_MATRIX.md](SUPPORT_MATRIX.md) | Supported compiler lanes, packages, variants, CMake targets, and executables |
 | [WORKFLOW.md](WORKFLOW.md) | Fresh-machine, user, developer, and release workflows |
 | [TESTING.md](TESTING.md) | Unit fixtures, Spack matrix, evidence, and expansion rules |
 | [DECISIONS.md](DECISIONS.md) | Accepted architectural decisions and their consequences |

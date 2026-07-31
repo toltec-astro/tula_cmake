@@ -1,8 +1,8 @@
-# Migration
+# Migration status
 
 ## 1. Preserved baseline
 
-| Repository | Baseline branch | Archived commit | Active branch |
+| Repository | Preserved branch | Archived commit | Active branch |
 | --- | --- | --- | --- |
 | TulaCMake | `v3.x_conan2` | `0745f99` | `v3.x_spack` |
 | Tula | `v3.x` | `08ae265` | `v3.x_spack` |
@@ -10,60 +10,95 @@
 | Citlali | `v4.x_conan2` | `bfb9378` | `v3.x_spack` |
 
 Self-contained clones are stored in
-`archive/v3-conan2-baseline-2026-07-30`.
+`archive/v3-conan2-baseline-2026-07-30`. Read-only `refs/` repositories remain
+behavioral evidence and are never build inputs.
 
-## 2. Completed in TulaCMake
+The old Conan design files formerly under `tula/design/` are additionally
+indexed under `tula/design/archive/conan2/`.
 
-- CMake-only installable package.
-- Python and Conan infrastructure removed.
-- Public target-scoped utility modules implemented.
-- Installed producer/consumer fixture passing.
-- Logging bundle represented in Spack.
-- Perflibs OpenMP variant represented in Spack.
-- Boilerplate/downstream installed vertical slice passing.
-- Direct and transitive variant matrix passing on GCC 13.
-- Dev-container bootstrap changed to pinned Spack.
-- Native Just validation surface established.
+## 2. Accepted infrastructure slice
 
-## 3. Production migration order
+- TulaCMake is an installed CMake-only package.
+- Spack owns dependency resolution, source acquisition, variants, and the
+  concrete graph.
+- The boilerplate/downstream fixture proves root control of direct and
+  transitive variants.
+- TulaCMake utilities are target-scoped and pass an installed
+  producer/consumer test.
+- Export helpers preserve target-owned include contracts and do not inject a
+  synthetic include directory.
 
-### Phase A — Tula
+## 3. Accepted Tula ECSV slice
 
-1. Create Tula-owned Spack repository and recipe.
-2. Model current header capabilities as variants.
-3. Add recipes for upstream header projects missing from the builtin index.
-4. Replace resolver-generated aliases with explicit `find_package()` targets.
-5. Retain `tula::headers` and behavior-compatible generated capability macros.
-6. Run all existing Tula behavior tests and an installed consumer.
+- Third-party adapters use the provider-faithful `tula_deps::*` namespace.
+- Tula's higher-level components use `tula::*`.
+- `tula+ecsv` concretizes only logging, YAML, Eigen, csv-parser, and the ECSV
+  component.
+- Direct adapter-only consumers do not find Tula.
+- Tula consumers require explicit CMake components.
+- Missing required components fail at configure time.
+- Ten package tests, including real TolTEC tune reports, pass under GCC 14 and
+  LLVM 20 in C++23 mode.
 
-### Phase B — Kidscpp
+## 4. Accepted Tula perflibs slice
 
-1. Create Kidscpp-owned recipe.
-2. Depend on Tula through Spack.
-3. Keep raw TolTEC NetCDF ingestion in Kidscpp.
-4. Preserve solver and metadata behavior.
-5. Run synthetic solver tests and required real-data reader tests.
-6. Validate installed `kids::kids`.
+- `tula_deps::perflibs` is the provider-faithful Threads/OpenMP adapter.
+- `tula::perflibs` is the explicit higher-level Tula component.
+- `+openmp` is optional and remains orthogonal to `+perflibs`.
+- Tula and adapter capability macros have distinct ownership.
+- Four minimal roots—GCC 14 and LLVM 20, each `+openmp` and `~openmp`—pass
+  package tests and installed-component consumers.
+- The concrete graphs contain no unrelated Tula component or heavy dependency.
 
-### Phase C — Citlali
+## 5. Production migration status
 
-1. Create Citlali-owned recipe.
-2. Depend on Kidscpp and Citlali-specific packages.
-3. Keep the Citlali CLI and RTC behavior unchanged.
-4. Map OpenMP and numerical-library requirements to recipe variants.
-5. Run library, CLI, installed-consumer, and real-data integration tests.
+The enum and CLI slices are now accepted independently:
 
-### Phase D — supported environments
+- `+enum` brings only logging, bitmask, and meta-enum;
+- `+cli` adds Clipp and requires enum;
+- focused package tests and installed consumers pass under GCC 14 and LLVM 20.
+- NetCDF C++ discovery is normalized by `tula_deps::netcdf_cxx4`; the focused
+  component and installed file-I/O consumer pass in both lanes.
+- GrPPI's adapter no longer carries Tula-specific dependencies; its four-case
+  OpenMP matrix passes in both compiler lanes.
+- The fitting slice contains only logging, Eigen, and canonical
+  `Ceres::ceres`; package and installed-consumer tests pass in both lanes.
 
-1. GCC 13 development baseline.
-2. GCC 14.
-3. LLVM 20 on Linux.
-4. Homebrew LLVM 20 on macOS.
-5. Optional oneAPI/MKL environment after a suitable platform is available.
+The production chain through Citlali is complete:
 
-## 4. Removal rule
+1. every Tula component required by Kidscpp and Citlali has a focused package
+   and installed-consumer gate;
+2. Kidscpp requests its exact Tula component closure and passes seven tests,
+   including real NetCDF metadata and slice ingestion, under GCC 14 and LLVM
+   20;
+3. Citlali retains the Kidscpp reader/solver ownership boundary, passes six
+   package tests and its installed consumer/CLI gates in both compiler lanes;
+   and
+4. the installed GCC 14 Citlali CLI completes observation 149101, processes
+   all 123 scans, and writes raw and filtered products for all three arrays.
 
-Conan-specific files are removed from a production repository only when the
-corresponding Spack recipe and installed-package tests pass. Creating the
-`v3.x_spack` branch does not by itself claim that the production package has
-been migrated.
+The next package migration is Tlaloc. It must restart from its clean branch,
+request only the accepted Tula ECSV component, remove only the Kidscpp IQ/Rx
+model path, and validate real tune-report loading without unrelated behavior
+changes. Tlaloc is deliberately excluded from the accepted `just all` gate
+until that work passes its two-compiler matrix.
+
+The rejected broad Tlaloc attempt is preserved in its Git stash. It is not
+part of the current support claim.
+
+## 6. Compiler policy
+
+The supported container lanes are GCC 14.2 and LLVM/Clang 20.1.2, both C++23.
+GCC 13 is intentionally omitted. oneAPI/MKL remains outside current scope.
+A future macOS lane must select and validate Homebrew LLVM major version 20;
+native AppleClang is not that lane.
+
+## 7. Release work
+
+Local development uses Spack `develop` paths. Publishing later requires:
+
+1. immutable source URLs and checksums for released TolTEC packages;
+2. stable composition of the decentralized recipe repositories;
+3. portable release lock files without local paths;
+4. the same compiler/component gates against release archives; and
+5. optional signed buildcache configuration.

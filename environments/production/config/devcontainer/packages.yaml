@@ -1,0 +1,117 @@
+packages:
+  boost:
+    externals:
+      - spec: boost@1.83.0
+        prefix: /usr
+    buildable: false
+  ccfits:
+    externals:
+      - spec: ccfits@2.6
+        prefix: /usr
+    buildable: false
+  ceres-solver:
+    externals:
+      - spec: ceres-solver@2.2.0~suitesparse+shared
+        prefix: /usr
+    buildable: false
+  cfitsio:
+    externals:
+      - spec: cfitsio@4.3.1+bzip2~fortran+shared
+        prefix: /usr
+    buildable: false
+  cmake:
+    externals:
+      - spec: cmake@3.28.3
+        prefix: /usr
+    buildable: false
+  eigen:
+    externals:
+      - spec: eigen@3.4.0
+        prefix: /usr
+    buildable: false
+  fmt:
+    externals:
+      - spec: fmt@9.1.0
+        prefix: /usr
+    buildable: false
+  fftw:
+    externals:
+      - spec: fftw@3.3.10~mpi~openmp precision=double
+        prefix: /usr
+    buildable: false
+  gcc:
+    externals:
+      - spec: gcc@14.2.0 languages:='c,c++'
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/gcc-14
+            cxx: /usr/bin/g++-14
+  gmake:
+    externals:
+      - spec: gmake@4.3
+        prefix: /usr
+    buildable: false
+  gflags:
+    externals:
+      - spec: gflags@2.2.2
+        prefix: /usr
+    buildable: false
+  glog:
+    externals:
+      - spec: glog@0.6.0
+        prefix: /usr
+    buildable: false
+  googletest:
+    externals:
+      - spec: googletest@1.14.0~absl+gmock+pthreads~shared
+        prefix: /usr
+    buildable: false
+  llvm:
+    externals:
+      - spec: llvm@20.1.2+clang~flang~lld~lldb
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/clang-20
+            cxx: /usr/bin/clang++-20
+  mariadb-c-client:
+    externals:
+      - spec: mariadb-c-client@3.3.17
+        prefix: /usr
+    buildable: false
+  netcdf-c:
+    externals:
+      - spec: netcdf-c@4.9.2~dap~hdf4~jna~mpi+netcdf4+pic+shared
+        prefix: /usr
+    buildable: false
+  netcdf-cxx4:
+    externals:
+      - spec: netcdf-cxx4@4.3.1+pic+shared
+        prefix: /usr
+    buildable: false
+  netlib-lapack:
+    externals:
+      - spec: netlib-lapack@3.12.0~external-blas~lapacke+pic+shared~xblas
+        prefix: /usr
+    buildable: false
+  pkgconf:
+    externals:
+      - spec: pkgconf@1.8.1
+        prefix: /usr
+    buildable: false
+  spdlog:
+    externals:
+      - spec: spdlog@1.12.0
+        prefix: /usr
+    buildable: false
+  spectra:
+    externals:
+      - spec: spectra@1.0.1
+        prefix: /usr
+    buildable: false
+  yaml-cpp:
+    externals:
+      - spec: yaml-cpp@0.8.0
+        prefix: /usr
+    buildable: false

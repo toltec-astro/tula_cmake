@@ -64,7 +64,6 @@ function(tula_cmake_install_package)
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     )
     install(
         EXPORT "${package_EXPORT}"

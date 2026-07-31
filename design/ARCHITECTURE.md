@@ -44,12 +44,72 @@ kidscpp
 citlali
 ├── Citlali library and executable
 └── Citlali recipe and variants
+
+tlaloc
+├── Tlaloc readout executable and hardware utilities
+└── next boundary: minimal Tula ECSV recipe and pinned KATCP adapter
 ```
 
-The current measured slice keeps its recipes in the isolated
-`toltec.vertical_slice` repository while production recipes are migrated. The
-final repository namespaces are decentralized and composed by the root Spack
-environment.
+The example packages use the isolated `toltec.vertical_slice` repository.
+Production recipes are decentralized under `toltec.tula_cmake`,
+`toltec.tula`, `toltec.kidscpp`, and `toltec.citlali`. Tlaloc's decentralized
+recipe remains a pending integration boundary. Root environments compose only
+the accepted repositories needed by their selected application.
+
+The development checkout keeps the independent Git repositories as siblings:
+
+```text
+/workspaces/cpp/
+├── tula_cmake/          infrastructure, examples, and root environments
+│   ├── cmake/
+│   ├── environments/
+│   ├── examples/
+│   ├── packages/
+│   └── spack_repo/
+├── tula/                common C++ base library
+│   ├── include/tula/
+│   ├── tests/
+│   └── spack_repo/
+├── kidscpp/             TolTEC reader and timestream solver
+│   ├── include/kids/
+│   ├── src/kids/
+│   ├── tests/
+│   └── spack_repo/
+├── citlali/             reduction library and CLI
+│   ├── include/citlali/
+│   ├── src/citlali/
+│   ├── tests/
+│   └── spack_repo/
+├── tlaloc/              readout controller; external Tula-ECSV consumer
+│   ├── src/
+│   ├── tests/
+│   └── spack_repo/
+├── tolteca_test_data/   real NetCDF integration fixtures
+├── .devcontainer/
+└── justfile             workspace validation entrypoint
+```
+
+Sibling placement is a development convenience, not a CMake composition
+mechanism. The production environments bind specs to these checkouts with
+`develop:` entries. Spack still builds and installs every package separately.
+
+Each project-owned package repository follows Spack package API v2 layout:
+
+```text
+<project>/spack_repo/
+└── toltec/
+    └── <namespace>/
+        ├── repo.yaml
+        └── packages/
+            └── <package_name>/
+                ├── package.py
+                └── <package-owned patches or resources>
+```
+
+For example, Tula owns `tula`, `tula-bitmask`, `tula-clipp`,
+`tula-csv-parser`, `tula-grppi`, and `tula-meta-enum` recipes beneath
+`tula/spack_repo/toltec/tula/packages/`. The environment references the inner
+directory containing `repo.yaml` and `packages/`.
 
 ## 3. Dependency topology
 
@@ -71,6 +131,8 @@ link/runtime:
 citlali ──> kidscpp ──> tula
 
 tula-downstream ──> tula-boilerplate
+
+tlaloc ──> tula+yaml
 ```
 
 TulaCMake is not linked and does not become a transitive runtime dependency.
@@ -107,7 +169,90 @@ specs:
 No intermediate package forwards those options. The concretizer merges root
 constraints with recipe-owned edges before any package is built.
 
-## 5. TulaCMake code structure
+## 5. Dependency adapters and Tula components
+
+The target namespace identifies the abstraction level:
+
+| Layer | Example | Meaning |
+| --- | --- | --- |
+| TulaCMake functions | `tula_cmake_install_package()` | Build and packaging mechanics |
+| dependency adapters | `tula_deps::yaml_cpp` | Provider-faithful normalized CMake target |
+| Tula components | `tula::yaml` | Higher-level Tula C++ API and headers |
+
+The adapter layer does not pretend that different libraries implement a common
+semantic API. It retains names close to the concrete dependency:
+
+```text
+tula_deps::logging
+tula_deps::yaml_cpp
+tula_deps::csv_parser
+tula_deps::eigen3
+tula_deps::perflibs
+tula_deps::netcdf_cxx4
+```
+
+The first measured Tula component closure is:
+
+```text
+tula::ecsv
+├── tula::logging ──> tula_deps::logging ──> fmt + spdlog
+├── tula::yaml ─────> tula_deps::yaml_cpp ─> yaml-cpp
+├── tula::eigen ────> tula_deps::eigen3 ───> Eigen
+└───────────────────> tula_deps::csv_parser
+
+tula::perflibs ─────> tula_deps::perflibs ──> Threads [+ OpenMP]
+tula::netcdf ───────> tula::eigen + tula_deps::netcdf_cxx4
+```
+
+The adapter header reports provider/platform facts. Tula's generated config
+reports only Tula capabilities:
+
+| Layer | Header | Macros |
+| --- | --- | --- |
+| adapter | `<tula_perflibs/config.h>` | `TULA_PERFLIBS_HAS_THREADS`, `TULA_PERFLIBS_HAS_OPENMP` |
+| Tula | `<tula/config.h>` | `TULA_HAS_PERFLIBS`, `TULA_HAS_OPENMP` |
+
+Spack owns the package edges and uses `requires()` for Tula component edges.
+CMake exports only the selected `tula::*` component targets and verifies
+consumer requests with `check_required_components(tula)`.
+
+There is no `tula::headers` umbrella and no compatibility alias. A consumer
+either links a concrete dependency adapter directly or requests a higher-level
+Tula component.
+
+The complete measured inventory is maintained in
+[SUPPORT_MATRIX.md](SUPPORT_MATRIX.md). The detailed Tula contract is
+[`../../tula/design/COMPONENTS.md`](../../tula/design/COMPONENTS.md).
+
+## 6. TulaCMake code structure
+
+```text
+tula_cmake/
+├── CMakeLists.txt
+├── cmake/
+│   ├── TulaCMake.cmake
+│   ├── TulaCMakeLog.cmake
+│   ├── TulaCMakeInspectTarget.cmake
+│   ├── TulaCMakeTargetDefaults.cmake
+│   ├── TulaCMakeConfigHeader.cmake
+│   ├── TulaCMakeGitVersion.cmake
+│   └── TulaCMakeInstallPackage.cmake
+├── packages/
+│   ├── tula_eigen3/
+│   ├── tula_logging/
+│   ├── tula_perflibs/
+│   └── tula_yaml_cpp/
+├── examples/
+│   ├── tula_boilerplate/
+│   ├── tula_downstream/
+│   └── spack/
+├── tests/
+├── environments/
+│   └── production/
+├── spack_repo/
+│   └── toltec/tula_cmake/
+└── design/
+```
 
 ### `TulaCMake.cmake`
 
@@ -150,7 +295,7 @@ Installs named targets, exports namespaced targets, and generates relocatable
 package and version files with `CMakePackageConfigHelpers`. Project dependency
 discovery remains visible in the project's config template.
 
-## 6. Public CMake contract
+## 7. Public CMake contract
 
 All public functions use the `tula_cmake_` prefix because CMake functions
 occupy a global namespace.
@@ -163,7 +308,7 @@ Functions are:
 - usable outside the Tula library; and
 - tested through an installed producer and a separate consumer.
 
-## 7. Project CMake contract
+## 8. Project CMake contract
 
 An ordinary project:
 
@@ -174,10 +319,10 @@ An ordinary project:
 5. exports a relocatable CMake config; and
 6. owns behavior tests for its software.
 
-Normalized targets such as `tula::headers` belong to Tula. TulaCMake does not
-create aliases for arbitrary dependencies.
+Dependency adapter packages export `tula_deps::*`; Tula components export
+`tula::*`. TulaCMake does not create aliases implicitly.
 
-## 8. Spack recipe contract
+## 9. Spack recipe contract
 
 A recipe owns:
 
@@ -190,10 +335,10 @@ A recipe owns:
 - package-specific build or install exceptions.
 
 Organization policy is represented by ordinary packages where appropriate.
-For example, `tula-logging` is a `BundlePackage` that selects a compatible
-fmt/spdlog set without installing code.
+For example, `tula-logging` installs a relocatable interface target backed by
+a compatible fmt/spdlog set.
 
-## 9. Artifact lifecycle
+## 10. Artifact lifecycle
 
 ```text
 spack.yaml
@@ -220,7 +365,19 @@ spack concretize
 The lock file and view are environment-local. Installed prefixes and download
 caches are user-level Spack state. No system installation is modified.
 
-## 10. Explicit exclusions
+## 11. Compiler contract
+
+The supported development matrix is intentionally small:
+
+| Lane | Exact compiler | Language | OpenMP |
+| --- | --- | --- | --- |
+| GNU | GCC 14.2 | C++23 | GNU libgomp |
+| LLVM | Clang 20.1.2 | C++23 | LLVM libomp |
+
+GCC 13 is not a supported lane. Native AppleClang is not a substitute for the
+LLVM 20 lane. A macOS environment must select and validate Homebrew LLVM 20.
+
+## 12. Explicit exclusions
 
 The architecture does not contain:
 
@@ -234,3 +391,27 @@ The architecture does not contain:
 
 Acquisition origin is not a C++ capability. Generated headers record only
 capabilities that can change software behavior or compilation.
+
+## 13. Production boundary
+
+Tula, Kidscpp, and Citlali remain separate installed packages:
+
+```text
+citlali::citlali
+├── kids::kids
+│   └── exact Tula component closure
+├── exact Tula component closure
+└── Citlali-owned Ceres/Boost/Spectra/FFTW/FITS dependencies
+```
+
+Kidscpp owns TolTEC NetCDF metadata, slicing, PSD construction, and
+timestream solving. Citlali owns observation orchestration, mapmaking, and
+the user-facing reduction CLI. The production gate verifies package tests,
+three independent installed consumers, and the installed executable under
+GCC 14 and LLVM 20.
+
+The observation-level gate adds a distinct runtime boundary. Source and
+installed dependency prefixes remain inside the devcontainer/Spack scope;
+the 6.1 GB raw-data tree is mounted read-only; generated FITS products are
+written to `/tmp`. This validates the complete executable without making
+science data a build dependency or duplicating it into the workspace.

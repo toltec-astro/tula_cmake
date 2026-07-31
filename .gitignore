@@ -8,5 +8,11 @@ __pycache__/
 CMakeUserPresets.json
 compile_commands.json
 examples/spack/environments/*/spack.lock
+environments/production/*/spack.lock
 examples/spack/environments/*/.spack-env/
 examples/spack/environments/*/.spack-view
+environments/production/*/.spack-view
+environments/production/*/.spack-env
+environments/**/spack.lock
+environments/**/.spack-env/
+environments/**/.spack-view

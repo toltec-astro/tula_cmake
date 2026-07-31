@@ -58,9 +58,10 @@ no-code graph node. C++ consumers link fmt and spdlog targets normally.
 
 Accepted 2026-07-30.
 
-Perflibs is orthogonal platform capability policy. It exports
-`tula::perflibs`, propagates Threads and optional OpenMP, and installs a
-capability header. Its options are Spack variants.
+Perflibs is orthogonal platform capability policy. Its adapter package exports
+`tula_deps::perflibs`, propagates Threads and optional OpenMP, and installs a
+capability header. Tula may wrap it as the higher-level `tula::perflibs`
+component. Its options are Spack variants.
 
 ## D009 — Build utilities are target-scoped
 
@@ -94,3 +95,42 @@ The current state is committed on the existing Conan branches and copied as
 self-contained Git clones under
 `archive/v3-conan2-baseline-2026-07-30`. Active development proceeds on
 `v3.x_spack` without rewriting the baseline.
+
+## D013 — Support GCC 14 and LLVM 20
+
+Accepted 2026-07-30.
+
+The measured compiler matrix is GCC 14.2 and LLVM/Clang 20.1.2, both using
+C++23 and their matching OpenMP runtimes. GCC 13 is removed because it
+duplicates the GNU lane. Native AppleClang does not satisfy the LLVM 20 lane.
+
+## D014 — Generate local develop lock files
+
+Accepted 2026-07-30.
+
+Production-development `spack.yaml` files are versioned; their generated
+`spack.lock` files are ignored because `develop` specs embed absolute workspace
+paths and platform-specific external prefixes. Release environments will
+replace local develop paths with immutable source archives and commit their
+portable locks.
+
+## D015 — Broad Tlaloc migration attempt
+
+Rejected 2026-07-30.
+
+The attempt changed more Tlaloc behavior than the approved build-system and
+ECSV integration boundary. It is preserved in Git stash as evidence and is
+not part of the active implementation.
+
+## D016 — Separate dependency adapters from Tula components
+
+Accepted 2026-07-31.
+
+Provider-faithful normalized targets use `tula_deps::*`, for example
+`tula_deps::yaml_cpp`. Higher-level Tula behavior uses `tula::*`, for example
+`tula::yaml` and `tula::ecsv`. `tula_cmake::*` remains reserved for CMake
+infrastructure targets.
+
+There are no compatibility aliases. Direct dependency consumers may use a
+`Tula*` adapter config without finding Tula. Tula consumers request explicit
+components, and no umbrella target hides component mismatches.

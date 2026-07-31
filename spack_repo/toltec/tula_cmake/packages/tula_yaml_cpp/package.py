@@ -1,0 +1,17 @@
+"""Normalized yaml-cpp target adapter used by TolTEC projects."""
+
+from spack.package import depends_on, version
+from spack_repo.builtin.build_systems.cmake import CMakePackage
+
+
+class TulaYamlCpp(CMakePackage):
+    """Install ``tula_deps::yaml_cpp`` backed by yaml-cpp."""
+
+    homepage = "https://github.com/toltec-astro/tula_cmake"
+
+    version("0.8.0")
+
+    depends_on("cmake@3.25:", type="build")
+    depends_on("cxx", type="build")
+    depends_on("tula-cmake@3.2.0", type="build")
+    depends_on("yaml-cpp@0.8.0", type=("build", "link"))

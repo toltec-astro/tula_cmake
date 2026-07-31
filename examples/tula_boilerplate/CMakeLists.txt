@@ -57,7 +57,7 @@ target_link_libraries(
         fmt::fmt
         spdlog::spdlog
         tula::lib_a
-        tula::perflibs
+        tula_deps::perflibs
 )
 
 if(BUILD_TESTING)

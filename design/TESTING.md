@@ -1,133 +1,259 @@
-# Testing
+# Testing strategy
 
-## 1. Objectives
+## 1. Rule
 
-Every infrastructure feature must be independently observable and exercised
-through the same installed boundaries used by production packages.
-
-The examples are documentation and minimal packages. Test-only variation lives
-in explicit fixtures and Spack environments, not as a collection of manual
-profiles inside `tula_boilerplate`.
+Every feature is tested at the boundary it creates. Examples remain readable
+usage examples; feature combinations and negative cases live in dedicated
+fixtures and Spack environments.
 
 ## 2. Test layers
 
-| Layer | Command | What it proves |
+| Layer | Boundary exercised | Current command |
 | --- | --- | --- |
-| CMake package fixture | `just unit` | TulaCMake installs and can configure a producer |
-| Installed consumer | part of `just unit` | Exported target/config/header contracts survive installation |
-| Default Spack graph | `just spack-matrix` | Default direct and transitive variants build and run |
-| Alternate Spack graph | `just spack-matrix` | Independent variant changes produce a distinct concrete graph |
-| Package CTests | `spack install --test=all` | Native Spack invokes package-owned CTest targets |
-| Runtime assertion | matrix output check | The installed executable observes selected variants |
+| TulaCMake unit fixture | Installed helper modules, producer export, separate consumer | `just unit` |
+| Spack vertical slice | Variants, transitive root constraints, develop sources, package tests, environment view | `just spack-matrix` |
+| Adapter consumer | Four `tula_deps::*` configs and targets, no Tula discovery or headers | part of `just tula-component-matrix` |
+| Tula package tests | Enabled component headers and behavior in the package build | `spack install --test=all` |
+| Installed component consumer | `find_package(tula COMPONENTS ecsv)` and `tula::ecsv` | part of `just tula-component-matrix` |
+| Negative component fixture | Required absent component sets `tula_FOUND` false | part of `just tula-component-matrix` |
+| Real ECSV fixture | Actual TolTEC tune reports through Tula ECSV + csv-parser | part of `just tula-component-matrix` |
+| Perflibs component matrix | Minimal Threads/OpenMP graph and installed Tula consumer | `just tula-perflibs-matrix` |
+| Enum/CLI component matrix | Independent enum and CLI closures and installed consumers | `just tula-enum-cli-matrix` |
+| NetCDF component matrix | Normalized adapter, exact closure, real file I/O, installed consumer | `just tula-netcdf-matrix` |
+| GrPPI component matrix | Adapter boundary and execution behavior with/without OpenMP | `just tula-grppi-matrix` |
+| Fitting component matrix | Minimal Ceres closure and installed fitting consumer | `just tula-fitting-matrix` |
+| Production package matrix | Tula, Kidscpp, Citlali package tests, installed consumers, installed CLI | `just production-matrix` |
+| Citlali observation gate | Full 149101 input set through the installed CLI and FITS output | `just citlali-real-workdir` |
 
-## 3. CMake fixture coverage
+## 3. TulaCMake fixture
 
-`tests/cmake/fixture` uses all public TulaCMake modules:
+`tests/cmake/fixture` installs and exercises:
 
-- `find_package(TulaCMake CONFIG REQUIRED)`;
-- target-scoped C++23 and warnings;
-- configured capability header;
-- explicit version/revision header;
-- target alias inspection;
-- relocatable target export; and
-- package config/version generation.
+- `tula_cmake_log`;
+- `tula_cmake_inspect_target`;
+- `tula_cmake_target_defaults`;
+- configured capability headers;
+- Git/version headers; and
+- relocatable package export.
 
-The test script then:
+The installed-consumer test ensures the fixture never succeeds merely because
+modules are available in the source tree.
 
-1. installs TulaCMake to a temporary prefix;
-2. configures and builds the producer from that prefix;
-3. runs its CTest;
-4. installs the producer;
-5. configures a separate consumer from the same prefix;
-6. builds the consumer; and
-7. runs the consumer.
+`tula_cmake_install_package()` does not invent include directories. A target
+that owns headers declares its own build and install interfaces. This behavior
+is covered by the installed fixture and by pure interface adapter consumers.
 
-The fixture never includes modules from the source tree.
+## 4. Tula ECSV matrix
 
-## 4. Spack matrix coverage
-
-The default environment proves:
-
-```text
-libA=vanilla
-libB=fast
-perflibs.openmp=enabled
-```
-
-The alternate environment proves:
+The two environments are:
 
 ```text
-libA=chocolate
-libB=safe
-perflibs.openmp=disabled
+environments/integration/tula_ecsv/
+├── gcc14/spack.yaml
+└── llvm20/spack.yaml
 ```
 
-This covers:
+Each root requests only:
 
-- value variants;
-- boolean variants;
-- root constraints on a transitive dependency;
-- root constraints on a direct dependency;
-- a no-code logging bundle;
-- dependency-provided system externals;
-- compiler selection;
-- local `develop` sources;
-- package-isolated configure/build/install;
-- CMake package discovery through prefixes;
-- environment lock files and views; and
-- the runnable installed root artifact.
+```text
+tula@3.1.0+ecsv
+```
 
-## 5. Measured platform
+The Tula recipe's `requires()` directives produce:
 
-Measured on 2026-07-30:
+```text
++logging +yaml +eigen +ecsv
+~netcdf ~enum ~cli ~perflibs ~openmp ~grppi ~fitting
+```
 
-| Item | Value |
-| --- | --- |
-| Container | Ubuntu 24.04 arm64 |
-| Compiler | GCC 13.3 |
-| C++ language level | C++23 |
-| CMake | 3.28.3 |
-| Spack | 1.2.2 |
-| Default environment | pass |
-| Alternate environment | pass |
-| TulaCMake installed consumer | pass |
+The test fails unless the concrete DAG contains `tula-logging`,
+`tula-yaml-cpp`, `tula-csv-parser`, and `tula-eigen3`. It separately rejects
+any graph containing Ceres.
 
-## 6. Adding a feature
+The package build currently runs ten tests:
 
-A new infrastructure feature is accepted in this order:
+1. core/config header smoke;
+2. ECSV header;
+3. ECSV typed table;
+4. ECSV csv-parser streaming;
+5. real tune reports;
+6. YAML configuration;
+7. flat configuration;
+8. filename utilities;
+9. Eigen utilities and formatting; and
+10. Eigen-backed nddata.
 
-1. Add or extend one focused CMake fixture.
-2. Make the behavior observable in a generated header, exported target, or
-   executable output.
-3. Add one Spack variant or dependency edge to the responsible package recipe.
-4. Add the smallest environment matrix entry that changes that choice.
-5. Run the native package tests.
-6. Update the design documents and deck.
+## 5. Real data
 
-Do not add variant combinations to `tula_boilerplate` itself merely to create a
-test matrix. The recipe/environment matrix owns package configuration; the
-boilerplate stays a readable example.
+The reader uses the public ECSV sequence:
 
-## 7. Production migration gates
+```cpp
+auto header = tula::ecsv::ECSVHeader::read(input);
+auto rows = aria::csv::CsvParser(input).delimiter(header.delimiter());
+auto table = tula::ecsv::ECSVTable(std::move(header));
+table.load_rows(rows);
+```
 
-For Tula:
+Astropy ECSV metadata uses the YAML ordered-map tag, so observation values are
+read through Tula's existing `meta_to_map` API rather than plain YAML-map
+indexing.
 
-- all current header behavior tests pass;
-- every enabled variant maps to explicit dependencies;
-- generated `TULA_HAS_*` capability macros match the concrete graph;
-- exported `tula::headers` works in a separate consumer.
+The fixture first selects valid `*_tune.txt` links under
+`tolteca_test_data/tolteca_workdir/data`. In the dev container those symlinks
+may point to a host path outside the mount, so it falls back to eleven regular
+reports under `tolteca_test_data/data_lmt/toltec/reduced`.
 
-For Kidscpp:
+## 6. Measured result
 
-- solver tests pass;
-- real TolTEC NetCDF reader fixture passes;
-- exported `kids::kids` works in a separate consumer.
+Measured on 2026-07-31:
 
-For Citlali:
+| Lane | Component closure | Package tests | Adapter consumer | ECSV consumer | Missing component |
+| --- | --- | --- | --- | --- | --- |
+| GCC 14.2 / C++23 | correct | 10/10 | pass | pass | rejected |
+| LLVM 20.1.2 / C++23 | correct | 10/10 | pass | pass | rejected |
 
-- library tests pass;
-- the installed CLI passes `--help`, `--version`, and config tests;
-- the real-data RTC integration fixture passes when supplied;
-- the complete package is consumed from an installed prefix.
+TulaCMake's native installed fixture also passes.
 
-No production package is marked migrated based only on CMake configuration.
+## 7. Tula perflibs matrix
+
+The four independent roots are:
+
+```text
+environments/integration/tula_perflibs/
+├── gcc14_openmp/spack.yaml
+├── gcc14_no_openmp/spack.yaml
+├── llvm20_openmp/spack.yaml
+└── llvm20_no_openmp/spack.yaml
+```
+
+Each requests only `tula+perflibs` and the intended `+openmp` or `~openmp`
+state. The gate rejects every unrelated Tula component and dependency,
+including logging, YAML, csv-parser, Eigen, Ceres, and NetCDF.
+
+For every case, Spack runs Tula's header smoke and focused perflibs test. A
+separate installed consumer then requests:
+
+```cmake
+find_package(tula 3.1 CONFIG REQUIRED COMPONENTS perflibs)
+target_link_libraries(app PRIVATE tula::perflibs)
+```
+
+The consumer verifies the high-level `TULA_HAS_OPENMP` value against the
+adapter's `TULA_PERFLIBS_HAS_OPENMP`; enabled cases also compile with
+`_OPENMP` and call `omp_get_max_threads()`.
+
+Measured on 2026-07-31:
+
+| Compiler | `+openmp` package/consumer | `~openmp` package/consumer |
+| --- | --- | --- |
+| GCC 14.2 / C++23 | pass / pass | pass / pass |
+| LLVM 20.1.2 / C++23 | pass / pass | pass / pass |
+
+## 8. Tula enum and CLI matrix
+
+Four environments cover GCC 14 and LLVM 20 for each root:
+
+```text
+tula+enum -> +logging + bitmask + meta-enum
+tula+cli  -> +logging +enum + Clipp
+```
+
+The gate asserts every enabled and disabled Tula variant, checks the adapter
+DAG, runs package tests, and builds installed consumers of `tula::enum` and
+`tula::cli`. The enum graph explicitly rejects Clipp, proving CLI remains an
+optional layer.
+
+| Root | GCC 14 package/consumer | LLVM 20 package/consumer |
+| --- | --- | --- |
+| `tula+enum` | pass / pass | pass / pass |
+| `tula+cli` | pass / pass | pass / pass |
+
+## 9. Tula NetCDF matrix
+
+`tula+netcdf` is tested under GCC 14 and LLVM 20. It requires only logging,
+Eigen, `tula-netcdf-cxx4`, NetCDF C++4, and the C library below it. The adapter
+exports `tula_deps::netcdf_cxx4`; Tula and downstream projects no longer
+repeat a `pkg-config` target name.
+
+Both package tests and an installed consumer perform real NetCDF file I/O.
+Every unrelated Tula component and Ceres is rejected from the graph.
+
+| Root | GCC 14 package/consumer | LLVM 20 package/consumer |
+| --- | --- | --- |
+| `tula+netcdf` | pass / pass | pass / pass |
+
+## 10. Tula GrPPI matrix
+
+Four roots cover GCC 14 and LLVM 20 with OpenMP enabled and disabled.
+`+grppi` requires logging, enum, and perflibs at the Tula layer; the
+`tula-grppi` adapter contains only upstream GrPPI headers.
+
+The package test executes sequential mapping in every case, executes an
+OpenMP mapping when enabled, and requires the `omp` mode to be absent when
+disabled. The installed consumer independently checks the exported execution
+mode list.
+
+| Compiler | `+openmp` package/consumer | `~openmp` package/consumer |
+| --- | --- | --- |
+| GCC 14.2 / C++23 | pass / pass | pass / pass |
+| LLVM 20.1.2 / C++23 | pass / pass | pass / pass |
+
+## 11. Tula fitting matrix
+
+`tula+fitting` enables logging and Eigen and adds Ceres. It excludes YAML,
+ECSV, NetCDF, enum, CLI, perflibs, and GrPPI. Ceres' upstream
+`Ceres::ceres` target is already canonical, so Tula links it directly.
+
+The focused package test and installed consumer validate the public
+`ParamSetting` API under GCC 14 and LLVM 20.
+
+## 12. Production package matrix
+
+The production roots request Citlali and therefore concretize the complete
+Tula → Kidscpp → Citlali graph. Both GCC 14 and LLVM 20 lanes run:
+
+| Package | Package tests | Behavior covered |
+| --- | --- | --- |
+| Tula | 16/16 | all eleven components, real ECSV, NetCDF, OpenMP, fitting |
+| Kidscpp | 7/7 | real metadata/slice ingestion, rejection cases, PSD, solver |
+| Citlali | 6/6 | Gaussian models, reader/solver boundary, CLI contract |
+
+Each lane then builds an independent consumer from each installed CMake
+package and runs the installed `citlali --version`. No consumer uses a source
+or build-tree package config. The gate reads each installed package-test log,
+requires the exact 16/7/6 totals and named real-data cases, and fails if any
+case is reported as skipped.
+
+## 13. Citlali observation gate
+
+`just citlali-real-workdir` runs the installed GCC 14 CLI against observation
+149101. The input set contains eleven TolTEC NetCDF timestreams, the recomputed
+telescope stream, and the APT ECSV table. The raw data remains outside the
+workspace and is mounted read-only; output is isolated under `/tmp`.
+
+The measured 2026-07-31 run:
+
+- loaded all input interfaces and 5,270 detector records;
+- processed all 123 scans with OpenMP;
+- produced raw FITS maps for a1100, a1400, and a2000;
+- produced filtered FITS maps and PSD/histogram/index products; and
+- exited successfully in 2m45s.
+
+The complete console record is retained at
+`tula_cmake/build/citlali-real-workdir/gcc14.log` by the repeatable recipe.
+
+## 14. Adding the next component
+
+For each new Tula component:
+
+1. identify the exact headers and direct dependency targets it uses;
+2. add provider-faithful `tula_deps::*` adapters only where needed;
+3. add the Tula component target and Spack variant edges;
+4. add a focused behavior test linked only to that component;
+5. assert the minimal concrete graph and excluded heavy dependencies;
+6. exercise an installed component consumer;
+7. run GCC 14 and LLVM 20; and
+8. update the component contract, support matrix, and technical deck.
+
+Kidscpp and Citlali are now measured production boundaries. Tlaloc integration
+resumes from its clean baseline using only the accepted ECSV component.

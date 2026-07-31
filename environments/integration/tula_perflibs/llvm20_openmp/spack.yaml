@@ -1,0 +1,31 @@
+spack:
+  include:
+    - ../../../production/config/repos.yaml
+    - ../../../production/config/devcontainer/packages.yaml
+
+  specs:
+    - tula@3.1.0+perflibs+openmp %cxx=llvm@20.1.2
+
+  concretizer:
+    unify: true
+    reuse: false
+
+  view:
+    default:
+      root: .spack-view
+      link: roots
+
+  develop:
+    tula-cmake:
+      spec: tula-cmake@3.2.0
+      path: ../../../..
+    tula:
+      spec: tula@3.1.0
+      path: ../../../../../tula
+    tula-perflibs:
+      spec: tula-perflibs@0.1.0
+      path: ../../../../packages/tula_perflibs
+
+  packages:
+    cxx:
+      require: llvm@20.1.2

@@ -12,7 +12,7 @@ class TulaLogging(BundlePackage):
     version("1.0.0")
 
     # spdlog 1.12 declares this fmt compatibility range. Keeping the exact pair
-    # here makes logging policy visible as one graph node and lets the GCC 13
+    # here makes logging policy visible as one graph node and lets the GCC 14
     # dev container reuse its matching distro installations as externals.
     depends_on("fmt@9.1.0", type=("build", "link"))
     depends_on("spdlog@1.12.0", type=("build", "link"))

@@ -20,7 +20,7 @@ else()
 endif()
 
 add_library(tula_perflibs INTERFACE)
-add_library(tula::perflibs ALIAS tula_perflibs)
+add_library(tula_deps::perflibs ALIAS tula_perflibs)
 set_target_properties(tula_perflibs PROPERTIES EXPORT_NAME perflibs)
 tula_cmake_target_defaults(TARGET tula_perflibs WARNINGS)
 target_link_libraries(tula_perflibs INTERFACE Threads::Threads)
@@ -41,7 +41,7 @@ install(
 tula_cmake_install_package(
     PACKAGE TulaPerflibs
     EXPORT TulaPerflibsTargets
-    NAMESPACE tula::
+    NAMESPACE tula_deps::
     TARGETS tula_perflibs
     CONFIG_TEMPLATE
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/TulaPerflibsConfig.cmake.in"

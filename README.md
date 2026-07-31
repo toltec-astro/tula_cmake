@@ -24,7 +24,7 @@ tula-downstream
 └── tula-cmake (build dependency)
 ```
 
-Two GCC 13 environments are tested:
+Two GCC 14 feature environments are tested:
 
 | Environment | Transitive libA | Direct libB | Perflibs |
 | --- | --- | --- | --- |
@@ -34,9 +34,41 @@ Two GCC 13 environments are tested:
 Both environments concretize, build, install, run CTest package hooks, create
 an environment view, and execute the installed downstream application.
 
-The production Tula, Kidscpp, and Citlali repositories have corresponding
-`v3.x_spack` branches. Their dependency recipes are deliberately migrated only
-after this vertical slice is accepted.
+The next verified slice separates provider-faithful dependency adapters from
+higher-level Tula components:
+
+```text
+tula_deps::logging    -> tula::logging
+tula_deps::yaml_cpp   -> tula::yaml
+tula_deps::eigen3     -> tula::eigen
+tula_deps::csv_parser -> tula::ecsv
+tula_deps::perflibs   -> tula::perflibs
+tula_deps::netcdf_cxx4 -> tula::netcdf
+```
+
+`tula+ecsv` builds only that closure. `just tula-component-matrix` has passed
+under GCC 14.2 and LLVM/Clang 20.1.2 in C++23 mode, including real TolTEC tune
+reports, direct adapter-only consumption, installed Tula component discovery,
+and required-component rejection.
+
+`tula::perflibs` is also measured independently in four cases: GCC 14 and
+LLVM 20, each with OpenMP enabled and disabled. Its graph contains only the
+perflibs adapter and platform threading requirements.
+
+The enum and CLI components are independently measured in both compiler lanes.
+The enum closure contains logging, bitmask, and meta-enum; CLI adds only Clipp.
+NetCDF C++ discovery is normalized by its own relocatable adapter and verified
+with real file I/O.
+GrPPI is measured with OpenMP present and absent; its low-level adapter remains
+independent from Tula logging, enum, and perflibs policy.
+Fitting is measured as a minimal logging/Eigen/Ceres closure.
+
+The complete production graph is also measured under both compilers: Tula
+passes 16 tests, Kidscpp passes seven including real NetCDF ingestion, Citlali
+passes six including the reader/solver ownership boundary, and independent
+installed consumers and the installed CLI pass. A GCC 14 observation-level
+run processes all 123 scans in the supplied 149101 fixture and writes raw and
+filtered FITS products for all three arrays.
 
 ## Responsibilities
 
@@ -80,9 +112,21 @@ tula_cmake/
 │       ├── environments/
 │       └── repository/
 ├── packages/
-│   └── tula_perflibs/
+│   ├── tula_eigen3/
+│   ├── tula_logging/
+│   ├── tula_perflibs/
+│   └── tula_yaml_cpp/
+├── spack_repo/
+│   └── toltec/tula_cmake/packages/
+│       ├── tula_cmake/
+│       ├── tula_csv_parser/
+│       ├── tula_eigen3/
+│       ├── tula_logging/
+│       ├── tula_perflibs/
+│       └── tula_yaml_cpp/
 ├── tests/
 │   ├── cmake/
+│   ├── deps_consumer/
 │   └── fixtures/spack/
 ├── design/
 └── justfile
@@ -96,7 +140,7 @@ acceptance test for the public build conventions.
 
 Rebuild the workspace dev container. Its post-create script installs:
 
-- GCC 13 and GCC 14;
+- GCC 14;
 - LLVM/Clang 20;
 - CMake, Ninja, and Just;
 - the system development packages used by the small offline slice; and
@@ -161,6 +205,33 @@ Or run both matrix entries:
 ```console
 just spack-matrix
 ```
+
+Run the production compiler matrix:
+
+```console
+just production-matrix
+```
+
+Run the verified Tula ECSV component slice:
+
+```console
+just tula-component-matrix
+```
+
+Run the verified perflibs component slice:
+
+```console
+just tula-perflibs-matrix
+just tula-enum-cli-matrix
+just tula-netcdf-matrix
+just tula-grppi-matrix
+just tula-fitting-matrix
+```
+
+These component commands concretize and install Tula under GCC 14 and LLVM
+20, run package CTests, validate minimal dependency graphs, and build
+independent installed consumers. `production-matrix` remains the separate
+Tula → Kidscpp → Citlali gate.
 
 The root spec controls reachable transitive variants directly:
 
