@@ -153,3 +153,56 @@ headers, views, reference indices, and loaders. Returning copies allowed lazy
 ranges to reference a destroyed temporary. The reference-returning API matches
 the ownership model and is validated by Tula, Tlaloc, Kidscpp, and Citlali
 tests.
+
+## D019 — CFITSIO and CCfits form one adapter package
+
+Accepted 2026-07-31.
+
+Citlali consumes `tula-cfitsio` through `TulaCfitsio` and the aggregate
+`tula_deps::cfitsio` target. The adapter owns discovery and propagation of the
+CFITSIO C library and its CCfits C++ interface. It accepts CFITSIO 4.3 or newer
+and CCfits 2.6, avoiding an external-only dependency on the unlisted CFITSIO
+4.3.1 patch release. Fortran bindings are disabled because the aggregate's C
+and C++ contract does not use them.
+
+Provider origin remains Spack policy. The same adapter is tested with both
+system externals and Spack source builds; no provider fact enters CMake target
+names or generated C++ headers.
+
+## D020 — A stack repository owns integration and deployment policy
+
+Accepted as a local prototype 2026-07-31.
+
+Package recipes remain decentralized. `toltec_cpp_stack` owns only the
+multi-repository revision manifest, platform configuration, development and
+future release environments, dev-container bootstrap, and eventual buildcache
+trust configuration. This separates portable deployment inputs from reusable
+TulaCMake infrastructure without adding a wrapper CLI around Spack.
+
+## D021 — OpenMP is a transitive package variant
+
+Accepted 2026-07-31.
+
+Citlali and Kidscpp expose an `openmp` Spack variant and constrain their Tula
+dependency to the same state. Citlali also maps the concrete variant to its
+CMake discovery, link interface, generated capability header, and installed
+package metadata. This makes `+openmp` versus `~openmp` part of the solved DAG;
+it cannot be selected accidentally from undeclared host state.
+
+Linux GCC 14 and LLVM 20 production profiles retain the default `+openmp`.
+The native Homebrew LLVM 20 portability profile explicitly uses `~openmp`
+because that keg does not contain the runtime.
+
+## D022 — Patch NetCDF C++4 at the package-recipe boundary
+
+Accepted 2026-07-31.
+
+The TolTEC Spack repository inherits the builtin `netcdf-cxx4` recipe and adds
+one patch for release 4.3.1. The dormant upstream CMake project imports the
+NetCDF C target before reconstructing its `hdf5::hdf5_hl` link-interface
+target. The patch creates that imported interface from CMake's discovered HDF5
+HL libraries first.
+
+This is package integration metadata, so it lives beside the decentralized
+TulaCMake recipes. It is not a host-profile flag and does not change NetCDF or
+Tula runtime behavior.

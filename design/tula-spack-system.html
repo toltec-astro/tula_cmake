@@ -476,7 +476,7 @@ tula_deps::clipp</pre>
     <div class="slide-head"><span class="section">05 · evidence</span><h2>NetCDF C++ discovery is normalized once and exported transitively</h2></div>
     <div class="flow">
       <div class="node"><h3><code>tula::netcdf</code></h3><p>Tula type dispatch, scalar access, diagnostics</p></div><div class="arrow">→</div>
-      <div class="node"><h3><code>tula_deps::netcdf_cxx4</code></h3><p>relocatable adapter config and target</p></div><div class="arrow">→</div>
+      <div class="node"><h3><code>tula_deps::netcdf_cxx4</code></h3><p>CMake-discovered header + C++/C libraries</p></div><div class="arrow">→</div>
       <div class="node"><h3><code>netcdf-cxx4</code></h3><p>Spack owns C++ and C package graph</p></div>
     </div>
     <div class="cols-2">
@@ -691,8 +691,75 @@ table.load_rows(rows);</pre>
     </div>
   </section>
 
+  <section class="slide" data-title="CFITSIO adapter and provider matrix">
+    <div class="slide-head"><span class="section">08 · dependency adapter</span><h2>One FITS contract; provider origin remains Spack policy</h2></div>
+    <div class="flow">
+      <div class="node"><strong>CFITSIO 4.3+</strong><small>C API · external 4.3.1 or source 4.6.3</small></div>
+      <div class="arrow">+</div>
+      <div class="node"><strong>CCfits 2.6</strong><small>C++ interface · external or source</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>TulaCfitsio</strong><small>installed config package</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>tula_deps::cfitsio</strong><small>single relocatable target</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>Citlali</strong><small>no repeated pkg-config discovery</small></div>
+    </div>
+    <div class="cols-2">
+      <pre>find_package(TulaCfitsio 1 CONFIG REQUIRED)
+
+target_link_libraries(citlali
+  PUBLIC tula_deps::cfitsio)</pre>
+      <div class="panel"><h3>Four independent Linux roots</h3><table><tr><th>Compiler</th><th>External</th><th>Source</th></tr><tr><td>GCC 14</td><td>/usr 4.3.1 + 2.6</td><td>Spack 4.6.3 + 2.6</td></tr><tr><td>LLVM 20</td><td>/usr 4.3.1 + 2.6</td><td>Spack 4.6.3 + 2.6</td></tr></table><p>Each case builds and runs a separate consumer that calls both APIs.</p></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Integration repository structure">
+    <div class="slide-head"><span class="section">09 · deployment ownership</span><h2>The stack repository composes peers; recipes remain decentralized</h2></div>
+    <div class="cols-2">
+      <pre>cpp/
+├── toltec_cpp_stack/
+│   ├── stack.yaml
+│   ├── .devcontainer/
+│   ├── config/
+│   │   ├── repos.yaml
+│   │   └── macos-homebrew-llvm20/
+│   ├── environments/development/
+│   │   ├── linux-gcc14/
+│   │   ├── linux-llvm20/
+│   │   ├── macos-homebrew-llvm20/
+│   │   └── macos-homebrew-llvm20-citlali/
+│   ├── justfile
+│   └── README.md
+├── tula_cmake/
+├── tula/
+├── kidscpp/
+└── citlali/</pre>
+      <div><div class="panel"><h3>Stack-owned</h3><p>Accepted source revisions, repository composition, platform externals, development profiles, future release locks, and buildcache trust.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipe, variants, patches, and behavior tests remain in each project repository.</p></div><div class="callout">The stack adds no wrapper CLI. <code>just</code> only records repeatable native Spack acceptance sequences.</div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Clean machine and macOS LLVM workflow">
+    <div class="slide-head"><span class="section">10 · developer UX</span><h2>Bootstrap is explicit, local, and validates the exact compiler</h2></div>
+    <div class="cols-2">
+      <div class="panel"><h3>Linux dev container</h3><pre>clone sibling repositories
+open toltec_cpp_stack in container
+
+spack -e environments/development/\
+  linux-gcc14 concretize
+spack -e ... install --test=all</pre><p>The container mounts the sibling tree and installs GCC 14, LLVM 20, Spack 1.2.2, and test prerequisites. It has no editor-extension dependency.</p></div>
+      <div class="panel"><h3>Native macOS arm64</h3><pre>brew install llvm@20 gcc@14 cmake ninja pkgconf
+/opt/homebrew/opt/llvm@20/bin/clang++ \
+  --version
+
+git clone --branch v1.2.2 ... .tools/spack
+. .tools/spack/share/spack/setup-env.sh
+spack -e environments/development/\
+  macos-homebrew-llvm20 concretize</pre><p>The profile requires Homebrew LLVM 20.1.8 by absolute path. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3 for the C++4 4.3.1 export contract. It requests <code>citlali~openmp</code> because the versioned LLVM keg does not ship that runtime; Linux retains <code>+openmp</code>. Measured: FITS consumer pass, Citlali 6/6, installed CLI pass. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
+    </div>
+  </section>
+
   <section class="slide" data-title="Accepted system and release boundary">
-    <div class="slide-head"><span class="section">08 · measured state</span><h2>All current integration roots pass; publication is the remaining boundary</h2></div>
+    <div class="slide-head"><span class="section">11 · measured state</span><h2>All current integration roots pass; publication is the remaining boundary</h2></div>
     <div class="cols-2">
       <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali production graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
       <div class="panel"><h3>Release work</h3><ol><li>tag immutable project sources</li><li>replace development branch recipes</li><li>compose portable release environments</li><li>run the same gates from release archives</li><li>optionally publish signed buildcache artifacts</li></ol></div>

@@ -2,37 +2,43 @@
 
 ## 1. Fresh development machine
 
-The supported development bootstrap is the repository dev container:
+The local `../toltec_cpp_stack/README.md` is the concise clean-machine guide
+and prototype owner of cross-repository environments. The detail below remains
+the TulaCMake implementation and regression reference.
+
+The portable development bootstrap is the `toltec_cpp_stack` dev container:
 
 1. Install Docker and a client capable of opening `devcontainer.json`.
-2. Clone the workspace repositories.
-3. Rebuild the dev container.
+2. Clone `toltec_cpp_stack`, `tula_cmake`, `tula`, `kidscpp`, and `citlali`
+   as siblings.
+3. Open `toltec_cpp_stack` and rebuild its dev container.
 4. Run the acceptance surface inside the container:
 
    ```console
-   cd /workspaces/cpp
-   just all
+   cd /workspaces/cpp/toltec_cpp_stack
+   just validate-linux gcc14
+   just validate-linux llvm20
    ```
 
 The post-create script pins Spack 1.2.2 at `/opt/spack`. It installs GCC 14,
 LLVM 20, CMake, Ninja, Just, and the system development packages used by the
 measured chain. GCC 13 is deliberately absent from the supported matrix.
-The devcontainer also mounts `${HOME}/Codes/toltec/toltec_astro/run`
-read-only at the same absolute path, preserving the raw-data symlink targets
-without copying 6.1 GB into the workspace or container.
+The portable dev container does not assume a host science-data path. Add the
+large read-only data mount locally only when running the observation gate; the
+ordinary package and installed-consumer matrices need only the repository
+fixtures.
 
 The expected checkout inside the container is:
 
 ```text
 /workspaces/cpp/
+├── toltec_cpp_stack/
 ├── tula_cmake/
 ├── tula/
 ├── kidscpp/
 ├── citlali/
 ├── tlaloc/
-├── tolteca_test_data/
-├── .devcontainer/
-└── justfile
+└── tolteca_test_data/   optional integration fixtures
 ```
 
 Once the production environment is installed, run the observation fixture
@@ -53,8 +59,8 @@ The repeatable gate performs the same invocation, captures the full log, and
 asserts filtered products for all three arrays:
 
 ```console
-cd /workspaces/cpp
-just citlali-real
+cd /workspaces/cpp/tula_cmake
+just citlali-real-workdir
 ```
 
 ## 2. Native Spack commands
@@ -134,7 +140,44 @@ The YAML manifests, repository configuration, recipes, and patches are
 versioned. Development locks and views remain local because develop specs
 contain absolute checkout paths and the views link to machine-local prefixes.
 
-## 4. Local multi-repository development
+The FITS adapter has an explicit provider matrix:
+
+```text
+tula_cmake/environments/integration/tula_cfitsio/
+├── gcc14_external/spack.yaml
+├── llvm20_external/spack.yaml
+├── gcc14_source/spack.yaml
+└── llvm20_source/spack.yaml
+```
+
+Run it with `just tula-cfitsio-matrix`. Both upstream libraries switch policy
+together; Citlali sees the same `tula_deps::cfitsio` target in every case.
+
+## 4. Native macOS
+
+The tested native compiler is the keg-only Homebrew LLVM 20.1.8, not
+AppleClang and not an unversioned Homebrew LLVM:
+
+```console
+brew install llvm@20 gcc@14 cmake ninja pkgconf
+/opt/homebrew/opt/llvm@20/bin/clang++ --version
+```
+
+The stack prototype registers the absolute compiler paths in
+`config/macos-homebrew-llvm20/packages.yaml`; developers do not need to link
+the keg or modify their shell PATH. See `../toltec_cpp_stack/README.md` for the
+pinned Spack bootstrap and native commands.
+
+The full Citlali graph also registers Homebrew GCC 14's `gfortran` for FFTW's
+build-language edge and pins Spack CMake 3.27.9 because the Ceres 2.2 recipe
+does not accept CMake 4.x. C and C++ compilation remains exact LLVM 20.1.8.
+It selects serial NetCDF C 4.9.3 from source, bypassing the stale 4.8.1 patch
+path and retaining a working export contract with NetCDF C++4 4.3.1.
+The profile requests `citlali~openmp`, since the versioned Homebrew LLVM keg
+does not include that runtime. The option is propagated across Citlali,
+Kidscpp, Tula, and `tula-perflibs`; Linux profiles continue to use `+openmp`.
+
+## 5. Local multi-repository development
 
 The implemented production environments compose the decentralized repositories
 and point selected packages at local checkouts:
@@ -213,7 +256,7 @@ The edit/build/install boundaries remain visible on disk:
 Do not use the source or stage directory as a downstream prefix. Package tests
 and consumers must use the installed prefix or environment view.
 
-## 5. Debugging a package build
+## 6. Debugging a package build
 
 Use Spack and CMake diagnostics directly:
 
@@ -228,7 +271,7 @@ cmake --build ... --verbose
 TulaCMake target inspection is for concise target-contract diagnostics, not a
 replacement for these tools.
 
-## 6. End-user installation
+## 7. End-user installation
 
 The intended released workflow is:
 
@@ -252,7 +295,7 @@ When a matching signed buildcache artifact exists, Spack installs it. Otherwise
 the same concrete spec is built from source. This does not change the user
 interface or graph.
 
-## 7. External application integration
+## 8. External application integration
 
 A project may remain outside a Spack root graph while consuming an installed
 prefix. Its native CMake boundary remains ordinary component discovery:
@@ -268,7 +311,7 @@ graph. Tlaloc now follows that model: its repository owns the recipe, the root
 environment selects the compiler and local checkout, and CMake requests only
 the Tula ECSV component it uses.
 
-## 8. Release workflow
+## 9. Release workflow
 
 Each source repository:
 

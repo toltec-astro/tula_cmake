@@ -1,0 +1,29 @@
+spack:
+  include:
+    - ../../../production/config/repos.yaml
+    - ../../../production/config/source-fits/packages.yaml
+    - ../../../production/config/devcontainer/packages.yaml
+
+  specs:
+    - tula-cfitsio@1.0.0 %cxx=gcc@14.2.0
+
+  concretizer:
+    unify: true
+    reuse: false
+
+  view:
+    default:
+      root: .spack-view
+      link: roots
+
+  develop:
+    tula-cmake:
+      spec: tula-cmake@3.2.0
+      path: ../../../..
+    tula-cfitsio:
+      spec: tula-cfitsio@1.0.0
+      path: ../../../../packages/tula_cfitsio
+
+  packages:
+    cxx:
+      require: gcc@14.2.0

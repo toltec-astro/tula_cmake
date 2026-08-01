@@ -335,6 +335,63 @@ tula-netcdf-matrix spack="spack":
             ctest --test-dir "$consumer_build" --output-on-failure
     done
 
+# Verify the CFITSIO + CCfits adapter with external and source providers.
+tula-cfitsio-matrix spack="spack":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    spack_cmd="{{ spack }}"
+    environments="{{ root }}/environments/integration/tula_cfitsio"
+
+    for case_spec in \
+        gcc14_external:external \
+        llvm20_external:external \
+        gcc14_source:source \
+        llvm20_source:source; do
+        environment_name="${case_spec%%:*}"
+        provider="${case_spec##*:}"
+        environment="${environments}/${environment_name}"
+
+        "$spack_cmd" -e "$environment" concretize --force
+        dag="$("$spack_cmd" -e "$environment" find -cd)"
+        for required in tula-cfitsio ccfits cfitsio; do
+            grep -F "$required" <<<"$dag"
+        done
+
+        # The matrix owns its compiled consumer below. Dependency package test
+        # suites are outside this boundary and can be platform-sensitive.
+        "$spack_cmd" -e "$environment" install \
+            --yes-to-all \
+            --test=root \
+            --overwrite \
+            --show-log-on-error
+
+        for dependency in cfitsio ccfits; do
+            prefix="$("$spack_cmd" -e "$environment" location -i "$dependency")"
+            if [[ "$provider" == external && "$prefix" != /usr ]]; then
+                echo "Expected external ${dependency}, got ${prefix}" >&2
+                exit 1
+            fi
+            if [[ "$provider" == source && "$prefix" == /usr ]]; then
+                echo "Expected source-built ${dependency}, got ${prefix}" >&2
+                exit 1
+            fi
+        done
+
+        adapter_prefix="$("$spack_cmd" -e "$environment" location -i tula-cfitsio)"
+        consumer_build="{{ build_root }}/cfitsio-consumer/${environment_name}"
+        "$spack_cmd" -e "$environment" build-env tula-cfitsio -- \
+            cmake --fresh \
+                -S "{{ root }}/tests/cfitsio_consumer" \
+                -B "$consumer_build" \
+                -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_PREFIX_PATH="$adapter_prefix"
+        "$spack_cmd" -e "$environment" build-env tula-cfitsio -- \
+            cmake --build "$consumer_build" --parallel
+        "$spack_cmd" -e "$environment" build-env tula-cfitsio -- \
+            ctest --test-dir "$consumer_build" --output-on-failure
+    done
+
 # Verify GrPPI with and without its optional OpenMP backend.
 tula-grppi-matrix spack="spack":
     #!/usr/bin/env bash

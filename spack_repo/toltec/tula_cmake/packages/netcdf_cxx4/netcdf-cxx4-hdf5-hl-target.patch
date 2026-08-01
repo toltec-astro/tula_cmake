@@ -1,0 +1,23 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7600f6d..5bc4880 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -344,6 +344,18 @@ MARK_AS_ADVANCED(NCXX_CTEST_PROJECT_NAME
+ # Seek out dependent libraries.
+ ################################
+ 
++# NetCDF C exports hdf5::hdf5_hl in its link interface, but CMake's FindHDF5
++# module only defines HDF5::HDF5. Reconstruct the missing target before the
++# netCDF config is imported. This is required by current HDF5/NetCDF releases.
++FIND_PACKAGE(HDF5 COMPONENTS C HL REQUIRED)
++IF(NOT TARGET hdf5::hdf5_hl)
++  ADD_LIBRARY(hdf5::hdf5_hl INTERFACE IMPORTED)
++  SET_TARGET_PROPERTIES(hdf5::hdf5_hl PROPERTIES
++    INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}"
++    INTERFACE_LINK_LIBRARIES "${HDF5_HL_LIBRARIES}"
++  )
++ENDIF()
++
+ 
+ ###
+ # Find NetCDF

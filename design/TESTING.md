@@ -22,6 +22,7 @@ fixtures and Spack environments.
 | NetCDF component matrix | Normalized adapter, exact closure, real file I/O, installed consumer | `just tula-netcdf-matrix` |
 | GrPPI component matrix | Adapter boundary and execution behavior with/without OpenMP | `just tula-grppi-matrix` |
 | Fitting component matrix | Minimal Ceres closure and installed fitting consumer | `just tula-fitting-matrix` |
+| CFITSIO provider matrix | Aggregate CFITSIO/CCfits target under external and source policy | `just tula-cfitsio-matrix` |
 | Production package matrix | Tula, Kidscpp, Citlali package tests, installed consumers, installed CLI | `just production-matrix` |
 | Citlali observation gate | Full 149101 input set through the installed CLI and FITS output | `just citlali-real-workdir` |
 | Tlaloc integration matrix | Minimal ECSV closure, full executable, required real tune report, excluded Kidscpp/Ceres | `just tlaloc-matrix` |
@@ -174,7 +175,8 @@ optional layer.
 `tula+netcdf` is tested under GCC 14 and LLVM 20. It requires only logging,
 Eigen, `tula-netcdf-cxx4`, NetCDF C++4, and the C library below it. The adapter
 exports `tula_deps::netcdf_cxx4`; Tula and downstream projects no longer
-repeat a `pkg-config` target name.
+repeat a discovery target name. The adapter's CMake discovery recognizes both
+the Linux `libnetcdf_c++4` and source/macOS `libnetcdf-cxx4` filenames.
 
 Both package tests and an installed consumer perform real NetCDF file I/O.
 Every unrelated Tula component and Ceres is rejected from the graph.
@@ -225,7 +227,40 @@ or build-tree package config. The gate reads each installed package-test log,
 requires the exact 16/7/6 totals and named real-data cases, and fails if any
 case is reported as skipped.
 
-## 13. Citlali observation gate
+## 13. CFITSIO/CCfits provider matrix
+
+Four independent environments test the cross-product rather than assuming that
+an external success implies a source build works:
+
+```text
+environments/integration/tula_cfitsio/
+├── gcc14_external/spack.yaml
+├── llvm20_external/spack.yaml
+├── gcc14_source/spack.yaml
+└── llvm20_source/spack.yaml
+```
+
+Every root contains only `tula-cfitsio`. External cases require the Ubuntu
+CFITSIO 4.3.1 and CCfits 2.6 prefixes at `/usr`. Source cases override those
+two package policies, select Spack CFITSIO 4.6.3 and CCfits 2.6, and reject
+`/usr` as their installed prefixes. Each case then builds a separate CMake
+consumer against the installed `TulaCfitsio` config and calls both the CFITSIO
+C API and CCfits C++ API through `tula_deps::cfitsio`.
+
+The native macOS environment adds a fifth focused case: Homebrew LLVM 20.1.8
+is registered as the exact compiler external while Spack builds the two FITS
+libraries from source. The gate validates `clang++ --version` before use.
+The separate complete native graph requests `citlali~openmp` because the
+versioned Homebrew LLVM keg does not contain the runtime; this also exercises
+the transitive no-OpenMP variant contract through Kidscpp and Tula.
+That graph pins source NetCDF C 4.9.3 rather than Spack's broken 4.8.1 patch
+path or the incompatible 4.10/HDF5 target export with C++4 4.3.1.
+
+Measured result: Citlali builds, 6/6 root package tests pass, and the installed
+CLI reports Citlali 4.0.0 and Kidscpp 3.1.0. The focused source-built
+CFITSIO/CCfits consumer also passes.
+
+## 14. Citlali observation gate
 
 `just citlali-real-workdir` runs the installed GCC 14 CLI against observation
 149101. The input set contains eleven TolTEC NetCDF timestreams, the recomputed
@@ -243,7 +278,7 @@ The measured 2026-07-31 run:
 The complete console record is retained at
 `tula_cmake/build/citlali-real-workdir/gcc14.log` by the repeatable recipe.
 
-## 14. Tlaloc integration matrix
+## 15. Tlaloc integration matrix
 
 The GCC 14 and LLVM 20 roots build the complete `tlaloc_clip` executable from
 the clean Tlaloc baseline. The gate asserts this graph before installation:
@@ -272,7 +307,7 @@ Tula now returns stable const references from table, loader, header, and view
 accessors. Both the focused ECSV matrix and the complete production matrix pass
 after the correction.
 
-## 15. Adding the next component
+## 16. Adding the next component
 
 For each new Tula component:
 

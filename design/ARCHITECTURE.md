@@ -29,7 +29,9 @@ source participates in Spack:
 tula_cmake
 ├── TulaCMake CMake modules
 ├── tula-logging bundle recipe
+├── tula-cfitsio bundle recipe
 ├── tula-perflibs source and recipe
+├── narrow NetCDF C++4 recipe override and patch
 ├── tula-boilerplate example and recipe
 └── tula-downstream example and recipe
 
@@ -60,6 +62,7 @@ The development checkout keeps the independent Git repositories as siblings:
 
 ```text
 /workspaces/cpp/
+├── toltec_cpp_stack/     composition, platform profiles, revision manifest
 ├── tula_cmake/          infrastructure, examples, and root environments
 │   ├── cmake/
 │   ├── environments/
@@ -84,9 +87,7 @@ The development checkout keeps the independent Git repositories as siblings:
 │   ├── src/
 │   ├── tests/
 │   └── spack_repo/
-├── tolteca_test_data/   real NetCDF integration fixtures
-├── .devcontainer/
-└── justfile             workspace validation entrypoint
+└── tolteca_test_data/   optional real-data fixtures
 ```
 
 Sibling placement is a development convenience, not a CMake composition
@@ -195,7 +196,15 @@ tula_deps::csv_parser
 tula_deps::eigen3
 tula_deps::perflibs
 tula_deps::netcdf_cxx4
+tula_deps::cfitsio
 ```
+
+NetCDF C++4 4.3.1 is old enough that its installed metadata differs by
+platform: Linux distributions commonly supply `netcdf-cxx4.pc`, while the
+source-built macOS package does not. The adapter therefore discovers the
+actual `netcdf` header, C++ library (`netcdf-cxx4` or `netcdf_c++4`), and C
+library with CMake and records those resolved artifacts in its exported
+interface. Downstream packages never repeat that platform distinction.
 
 The first measured Tula component closure is:
 
@@ -208,6 +217,10 @@ tula::ecsv
 
 tula::perflibs ─────> tula_deps::perflibs ──> Threads [+ OpenMP]
 tula::netcdf ───────> tula::eigen + tula_deps::netcdf_cxx4
+
+citlali ─────────────> tula_deps::cfitsio
+                       ├── CFITSIO C library
+                       └── CCfits C++ interface
 ```
 
 The adapter header reports provider/platform facts. Tula's generated config
@@ -246,6 +259,7 @@ tula_cmake/
 ├── packages/
 │   ├── tula_eigen3/
 │   ├── tula_logging/
+│   ├── tula_cfitsio/
 │   ├── tula_netcdf_cxx4/
 │   ├── tula_perflibs/
 │   └── tula_yaml_cpp/
@@ -257,7 +271,9 @@ tula_cmake/
 ├── environments/
 │   └── production/
 ├── spack_repo/
-│   └── toltec/tula_cmake/
+│   └── toltec/tula_cmake/packages/
+│       ├── netcdf_cxx4/       # inherited builtin + narrow export patch
+│       └── tula_*/
 └── design/
 ```
 
@@ -383,6 +399,11 @@ The supported development matrix is intentionally small:
 
 GCC 13 is not a supported lane. Native AppleClang is not a substitute for the
 LLVM 20 lane. A macOS environment must select and validate Homebrew LLVM 20.
+The full macOS graph may use Homebrew GCC 14 only for an explicit Fortran
+build-language edge; it does not replace LLVM for C or C++. Because Homebrew
+`llvm@20` does not include an OpenMP runtime, the native portability profile
+selects `citlali~openmp`. That variant propagates through Kidscpp and Tula.
+Both Linux production lanes retain `+openmp`.
 
 ## 12. Explicit exclusions
 
@@ -408,7 +429,8 @@ citlali::citlali
 ├── kids::kids
 │   └── exact Tula component closure
 ├── exact Tula component closure
-└── Citlali-owned Ceres/Boost/Spectra/FFTW/FITS dependencies
+└── Citlali-owned Ceres/Boost/Spectra/FFTW dependencies
+    └── tula_deps::cfitsio ──> CFITSIO + CCfits
 ```
 
 Kidscpp owns TolTEC NetCDF metadata, slicing, PSD construction, and
@@ -422,3 +444,52 @@ installed dependency prefixes remain inside the devcontainer/Spack scope;
 the 6.1 GB raw-data tree is mounted read-only; generated FITS products are
 written to `/tmp`. This validates the complete executable without making
 science data a build dependency or duplicating it into the workspace.
+
+## 14. Integration and deployment repository
+
+The local `toltec_cpp_stack` prototype owns cross-repository composition. It
+does not take package recipes away from their source repositories:
+
+```text
+toltec_cpp_stack/
+├── stack.yaml                     accepted source revisions + Spack version
+├── .devcontainer/                 editor-independent Linux bootstrap
+├── config/
+│   ├── repos.yaml                 decentralized recipe composition
+│   └── macos-homebrew-llvm20/
+│       └── packages.yaml          exact compiler/tool externals
+├── environments/development/
+│   ├── linux-gcc14/spack.yaml
+│   ├── linux-llvm20/spack.yaml
+│   ├── macos-homebrew-llvm20/spack.yaml
+│   └── macos-homebrew-llvm20-citlali/spack.yaml
+├── justfile                       named acceptance sequences only
+└── README.md                      clean-machine quick start
+```
+
+Developer environments use sibling `develop:` paths and intentionally ignore
+local locks. A future release environment in this repository will replace
+those paths with immutable sources, commit its lock, and own buildcache mirror
+and trust configuration.
+
+## 15. CFITSIO provider boundary
+
+`tula-cfitsio` is a no-code aggregate package like `tula-logging`. Its CMake
+config performs the two provider-faithful `pkg-config` discoveries once and
+exports one relocatable target. Citlali finds the adapter and never repeats
+provider-specific target names.
+
+Spack provider configuration is deliberately outside the CMake contract:
+
+```text
+external profile                 source profile
+CFITSIO 4.3.1 at /usr            CFITSIO 4.6.3 built by Spack
+CCfits 2.6 at /usr               CCfits 2.6 built by Spack
+          \                       /
+           tula_deps::cfitsio
+                    |
+                 Citlali
+```
+
+The matrix checks both policies with GCC 14 and LLVM 20, then compiles and
+runs a separate installed-package consumer that calls both APIs.

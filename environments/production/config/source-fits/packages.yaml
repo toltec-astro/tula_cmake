@@ -1,0 +1,10 @@
+# Override only the FITS pair from the platform external policy. This keeps
+# compilers and unrelated development dependencies external while proving that
+# the same adapter graph can build CFITSIO and CCfits from Spack sources.
+packages:
+  cfitsio::
+    require: "@4.6.3+bzip2~fortran"
+    buildable: true
+  ccfits::
+    require: "@2.6"
+    buildable: true
