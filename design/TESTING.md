@@ -107,7 +107,7 @@ reports under `tolteca_test_data/data_lmt/toltec/reduced`.
 
 ## 6. Measured result
 
-Measured on 2026-07-31:
+Measured on 2026-08-01:
 
 | Lane | Component closure | Package tests | Adapter consumer | ECSV consumer | Missing component |
 | --- | --- | --- | --- | --- | --- |
@@ -150,6 +150,10 @@ Measured on 2026-07-31:
 | --- | --- | --- |
 | GCC 14.2 / C++23 | pass / pass | pass / pass |
 | LLVM 20.1.2 / C++23 | pass / pass | pass / pass |
+
+Native macOS adds Homebrew LLVM 20.1.8 plus Spack-built
+`llvm-openmp@20.1.8`; the enabled installed consumer passes and its Mach-O
+dependency list contains `libomp.dylib` from that prefix.
 
 ## 8. Tula enum and CLI matrix
 
@@ -249,16 +253,19 @@ C++ API plus its underlying CFITSIO C API through `tula_deps::ccfits`.
 
 The native macOS environment adds a fifth focused case: Homebrew LLVM 20.1.8
 is registered as the exact compiler external while Spack builds the two FITS
-libraries from source. The gate validates `clang++ --version` before use.
-The separate complete native graph requests `citlali~openmp` because the
-versioned Homebrew LLVM keg does not contain the runtime; this also exercises
-the transitive no-OpenMP variant contract through Kidscpp and Tula.
+libraries and `llvm-openmp@20.1.8` from source. The gate validates
+`clang++ --version`, builds an installed `tula::perflibs` consumer, requires
+`_OPENMP`, runs `omp_get_max_threads()`, and checks the final binary's
+`libomp.dylib` linkage.
+The separate complete native graph requests `citlali+openmp`; the capability
+propagates through Kidscpp and Tula while only `tula-perflibs` handles runtime
+discovery.
 That graph pins source NetCDF C 4.9.3 rather than Spack's broken 4.8.1 patch
 path or the incompatible 4.10/HDF5 target export with C++4 4.3.1.
 
-Measured result: Citlali builds, 6/6 root package tests pass, and the installed
-CLI reports Citlali 4.0.0 and Kidscpp 3.1.0. The focused source-built
-CFITSIO/CCfits consumer also passes.
+Measured result: Citlali builds with OpenMP, 6/6 root package tests pass, and
+the installed CLI reports Citlali 4.0.0 and Kidscpp 3.1.0. The focused
+source-built CFITSIO/CCfits and installed OpenMP consumers also pass.
 
 ## 14. Citlali observation gate
 

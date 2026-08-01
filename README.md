@@ -56,6 +56,12 @@ and required-component rejection.
 LLVM 20, each with OpenMP enabled and disabled. Its graph contains only the
 perflibs adapter and platform threading requirements.
 
+On Darwin, `tula-perflibs+openmp` adds the exact `llvm-openmp` runtime to the
+Spack graph. The installed adapter records the resolved `FindOpenMP` inputs so
+consumers reconstruct that runtime instead of probing an unrelated host
+library. The native Homebrew Clang 20.1.8 lane uses Spack-built
+`llvm-openmp@20.1.8` and runs the same installed Tula consumer.
+
 The enum and CLI components are independently measured in both compiler lanes.
 The enum closure contains logging, bitmask, and meta-enum; CLI adds only Clipp.
 NetCDF C++ discovery is normalized by its own relocatable adapter and verified

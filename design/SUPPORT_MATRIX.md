@@ -39,8 +39,10 @@ not claim it.
 
 The focused CCfits/CFITSIO adapter and the complete Citlali root are also
 measured on native macOS 26 arm64 with Homebrew LLVM 20.1.8 and C++23.
-Citlali's six package tests and installed CLI pass with `~openmp`; AppleClang
-is not substituted. Homebrew GCC 14.3 supplies only the Fortran build edge.
+Citlali's six package tests and installed CLI pass with `+openmp`, backed by
+Spack-built `llvm-openmp@20.1.8`; the focused installed perflibs consumer also
+passes and links that runtime. AppleClang is not substituted. Homebrew GCC
+14.3 supplies only the Fortran build edge.
 
 ## 2. Root workflows
 
@@ -49,7 +51,7 @@ is not substituted. Homebrew GCC 14.3 supplies only the Fortran build edge.
 | TulaCMake installed fixture | TulaCMake installs; a separate producer and consumer use the installed modules | `just unit` | Measured |
 | Spack boilerplate/downstream slice | Direct and transitive variant constraints, local develop sources, environment views | `just spack-matrix` | Measured with GCC 14 |
 | Tula ECSV component slice | Minimal component closure, adapters, installed discovery, real tune reports | `just tula-component-matrix` | Measured with GCC 14 and LLVM 20 |
-| Tula perflibs component slice | Threads baseline, optional compiler OpenMP, minimal graph, installed discovery | `just tula-perflibs-matrix` | Four cases measured with GCC 14 and LLVM 20 |
+| Tula perflibs component slice | Threads baseline, optional resolved OpenMP runtime, minimal graph, installed discovery | `just tula-perflibs-matrix` | Four Linux cases plus native macOS LLVM 20.1.8 + libomp 20.1.8 |
 | Tula enum/CLI slices | Exact reflected-enum and typed-CLI closures with installed consumers | `just tula-enum-cli-matrix` | Four cases measured with GCC 14 and LLVM 20 |
 | Tula NetCDF slice | Normalized NetCDF C++ target, exact closure, file I/O, installed consumer | `just tula-netcdf-matrix` | Measured with GCC 14 and LLVM 20 |
 | Tula GrPPI slice | Clean adapter boundary and optional OpenMP execution mode | `just tula-grppi-matrix` | Four cases measured with GCC 14 and LLVM 20 |
@@ -70,7 +72,7 @@ They may be consumed without finding Tula.
 | `tula-yaml-cpp@0.8.0` | `TulaYamlCpp` | `tula_deps::yaml_cpp` | yaml-cpp 0.8.0 | Measured |
 | `tula-csv-parser@2020.06.12` | `TulaCsvParser` | `tula_deps::csv_parser` | pinned Jerry-Ma csv-parser | Measured |
 | `tula-eigen3@3.4.0` | `TulaEigen3` | `tula_deps::eigen3` | Eigen 3.4.0 | Measured |
-| `tula-perflibs@0.1.0` | `TulaPerflibs` | `tula_deps::perflibs` | Threads and optional compiler OpenMP | Measured with OpenMP enabled and disabled |
+| `tula-perflibs@0.1.0` | `TulaPerflibs` | `tula_deps::perflibs` | Threads and optional resolved OpenMP runtime | Measured with OpenMP enabled and disabled; exact Darwin libomp edge |
 | `tula-netcdf-cxx4@4.3.1` | `TulaNetcdfCxx4` | `tula_deps::netcdf_cxx4` | NetCDF C++4 4.3.1 | Measured |
 | `tula-ccfits@1.0.0` | `TulaCcfits` | `tula_deps::ccfits` | CCfits 2.6 + CFITSIO 4.3+ | Measured external/source under GCC 14 and LLVM 20; source under macOS LLVM 20.1.8 |
 

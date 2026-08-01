@@ -3,8 +3,12 @@
 include(CMakeFindDependencyMacro)
 find_dependency(Threads)
 if(@TULA_PERFLIBS_ENABLE_OPENMP@)
-    find_dependency(OpenMP COMPONENTS CXX)
+    if(NOT TARGET OpenMP::OpenMP_CXX)
+@TULA_PERFLIBS_OPENMP_CACHE@
+        find_dependency(OpenMP COMPONENTS CXX)
+    endif()
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/TulaPerflibsTargets.cmake")
+set(TulaPerflibs_OPENMP_ENABLED @TULA_PERFLIBS_ENABLE_OPENMP@)
 check_required_components(TulaPerflibs)

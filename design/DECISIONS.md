@@ -184,14 +184,16 @@ TulaCMake infrastructure without adding a wrapper CLI around Spack.
 Accepted 2026-07-31.
 
 Citlali and Kidscpp expose an `openmp` Spack variant and constrain their Tula
-dependency to the same state. Citlali also maps the concrete variant to its
-CMake discovery, link interface, generated capability header, and installed
-package metadata. This makes `+openmp` versus `~openmp` part of the solved DAG;
-it cannot be selected accidentally from undeclared host state.
+dependency to the same state. Citlali maps the concrete variant to its
+generated capability header and validates that Tula has the same state;
+`tula::perflibs` carries the compile/link interface. This makes `+openmp`
+versus `~openmp` part of the solved DAG; it cannot be selected accidentally
+from undeclared host state.
 
-Linux GCC 14 and LLVM 20 production profiles retain the default `+openmp`.
-The native Homebrew LLVM 20 portability profile explicitly uses `~openmp`
-because that keg does not contain the runtime.
+Linux GCC 14, Linux LLVM 20, and native Homebrew LLVM 20 production profiles
+retain the default `+openmp`. The Homebrew compiler keg does not contain the
+runtime, so `tula-perflibs+openmp` depends on the matching Spack
+`llvm-openmp@20.1.8` package on Darwin.
 
 ## D022 — Patch NetCDF C++4 at the package-recipe boundary
 
@@ -206,3 +208,18 @@ HL libraries first.
 This is package integration metadata, so it lives beside the decentralized
 TulaCMake recipes. It is not a host-profile flag and does not change NetCDF or
 Tula runtime behavior.
+
+## D023 — Perflibs owns OpenMP runtime integration
+
+Accepted 2026-08-01.
+
+`tula-perflibs` is the only TolTEC package that discovers and exports the
+OpenMP compiler/runtime contract. Its low-level target is
+`tula_deps::perflibs`; Tula exposes `tula::perflibs`. Citlali and Kidscpp do
+not call `find_package(OpenMP)` independently.
+
+On Darwin the Spack recipe pairs exact Homebrew Clang 20.1.8 with
+`llvm-openmp@20.1.8`. The adapter's installed config preserves the resolved
+flags, include directory, and library so an installed consumer cannot silently
+select a different Homebrew `libomp`. Whether `llvm-openmp` is source-built or
+a reviewed external remains environment policy, not a package variant.

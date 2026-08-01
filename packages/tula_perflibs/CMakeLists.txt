@@ -7,7 +7,7 @@ include(GNUInstallDirs)
 find_package(TulaCMake 3 CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
-option(TULA_PERFLIBS_ENABLE_OPENMP "Require compiler-native OpenMP" ON)
+option(TULA_PERFLIBS_ENABLE_OPENMP "Require and export an OpenMP runtime" ON)
 if(TULA_PERFLIBS_ENABLE_OPENMP)
     find_package(OpenMP REQUIRED COMPONENTS CXX)
 endif()
@@ -26,6 +26,27 @@ tula_cmake_target_defaults(TARGET tula_perflibs WARNINGS)
 target_link_libraries(tula_perflibs INTERFACE Threads::Threads)
 if(TULA_PERFLIBS_ENABLE_OPENMP)
     target_link_libraries(tula_perflibs INTERFACE OpenMP::OpenMP_CXX)
+endif()
+
+# FindOpenMP's imported target is not exported by CMake. Preserve the resolved
+# inputs so installed consumers reconstruct the same runtime instead of probing
+# their host and accidentally selecting a different libomp.
+set(TULA_PERFLIBS_OPENMP_CACHE "")
+if(TULA_PERFLIBS_ENABLE_OPENMP)
+    string(APPEND TULA_PERFLIBS_OPENMP_CACHE
+        "set(OpenMP_CXX_FLAGS [==[${OpenMP_CXX_FLAGS}]==])\n")
+    string(APPEND TULA_PERFLIBS_OPENMP_CACHE
+        "set(OpenMP_CXX_INCLUDE_DIR [==[${OpenMP_CXX_INCLUDE_DIR}]==])\n")
+    string(APPEND TULA_PERFLIBS_OPENMP_CACHE
+        "set(OpenMP_CXX_LIB_NAMES [==[${OpenMP_CXX_LIB_NAMES}]==])\n")
+    foreach(_openmp_library_name IN LISTS OpenMP_CXX_LIB_NAMES)
+        set(_openmp_library_variable
+            "OpenMP_${_openmp_library_name}_LIBRARY")
+        string(APPEND TULA_PERFLIBS_OPENMP_CACHE
+            "set(${_openmp_library_variable} [==[${${_openmp_library_variable}}]==])\n")
+    endforeach()
+    unset(_openmp_library_name)
+    unset(_openmp_library_variable)
 endif()
 tula_cmake_generate_config_header(
     TARGET tula_perflibs

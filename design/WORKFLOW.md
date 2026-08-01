@@ -173,9 +173,10 @@ build-language edge and pins Spack CMake 3.27.9 because the Ceres 2.2 recipe
 does not accept CMake 4.x. C and C++ compilation remains exact LLVM 20.1.8.
 It selects serial NetCDF C 4.9.3 from source, bypassing the stale 4.8.1 patch
 path and retaining a working export contract with NetCDF C++4 4.3.1.
-The profile requests `citlali~openmp`, since the versioned Homebrew LLVM keg
-does not include that runtime. The option is propagated across Citlali,
-Kidscpp, Tula, and `tula-perflibs`; Linux profiles continue to use `+openmp`.
+The compiler keg does not include OpenMP, so the profile builds the matching
+`llvm-openmp@20.1.8` runtime with Spack and requests `citlali+openmp`. The
+option propagates across Citlali, Kidscpp, Tula, and `tula-perflibs`; the
+adapter alone resolves and exports the compiler/runtime details.
 
 ## 5. Local multi-repository development
 

@@ -220,7 +220,7 @@ target_link_libraries(app PRIVATE
         <tr><td><code>tula-yaml-cpp</code></td><td><code>TulaYamlCpp</code></td><td><code>tula_deps::yaml_cpp</code></td><td>yaml-cpp</td></tr>
         <tr><td><code>tula-csv-parser</code></td><td><code>TulaCsvParser</code></td><td><code>tula_deps::csv_parser</code></td><td>pinned csv-parser headers</td></tr>
         <tr><td><code>tula-eigen3</code></td><td><code>TulaEigen3</code></td><td><code>tula_deps::eigen3</code></td><td>Eigen 3</td></tr>
-        <tr><td><code>tula-perflibs</code></td><td><code>TulaPerflibs</code></td><td><code>tula_deps::perflibs</code></td><td>Threads + optional compiler OpenMP</td></tr>
+        <tr><td><code>tula-perflibs</code></td><td><code>TulaPerflibs</code></td><td><code>tula_deps::perflibs</code></td><td>Threads + optional resolved OpenMP runtime</td></tr>
         <tr><td><code>tula-netcdf-cxx4</code></td><td><code>TulaNetcdfCxx4</code></td><td><code>tula_deps::netcdf_cxx4</code></td><td>NetCDF C++4 + NetCDF C</td></tr>
       </tbody>
     </table>
@@ -293,6 +293,7 @@ endif()</pre>
 └── tula_deps::perflibs
     ├── Threads::Threads
     └── OpenMP::OpenMP_CXX  # +openmp only
+        └── llvm-openmp@20.1.8  # Darwin
 
 # minimal roots
 tula+perflibs+openmp
@@ -305,9 +306,11 @@ tula+perflibs~openmp</pre>
         </tbody>
       </table>
     </div>
-    <div class="callout">The focused test requires <code>_OPENMP</code> and
-      calls <code>omp_get_max_threads()</code> only in enabled graphs. Both
-      states still exercise <code>std::jthread</code>.</div>
+    <div class="callout"><code>tula-perflibs</code> alone resolves and exports
+      OpenMP. Its installed config preserves the selected flags, header, and
+      library; Citlali and Kidscpp consume <code>tula::perflibs</code> without
+      another <code>find_package(OpenMP)</code>. The focused test requires
+      <code>_OPENMP</code> and calls <code>omp_get_max_threads()</code>.</div>
   </section>
 
   <section class="slide" data-title="Spack closure">
@@ -754,7 +757,28 @@ spack -e ... install --test=all</pre><p>The container mounts the sibling tree an
 git clone --branch v1.2.2 ... .tools/spack
 . .tools/spack/share/spack/setup-env.sh
 spack -e environments/development/\
-  macos-homebrew-llvm20 concretize</pre><p>The profile requires Homebrew LLVM 20.1.8 by absolute path. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3 for the C++4 4.3.1 export contract. It requests <code>citlali~openmp</code> because the versioned LLVM keg does not ship that runtime; Linux retains <code>+openmp</code>. Measured: FITS consumer pass, Citlali 6/6, installed CLI pass. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
+  macos-homebrew-llvm20 concretize</pre><p>The profile requires Homebrew LLVM 20.1.8 by absolute path. Because that keg does not ship OpenMP, Spack builds exact <code>llvm-openmp@20.1.8</code> and <code>tula-perflibs</code> exports it. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3. Measured with <code>citlali+openmp</code>: FITS consumer pass, installed OpenMP consumer pass, Citlali 6/6, installed CLI pass. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Darwin OpenMP artifact flow">
+    <div class="slide-head"><span class="section">10 · developer UX</span><h2>The graph chooses the runtime once and the installed target carries it forward</h2></div>
+    <pre>macOS packages.yaml                  Spack DAG
+┌──────────────────────────┐        ┌──────────────────────────────┐
+│ llvm external @20.1.8    │───────▶│ Homebrew clang++ 20.1.8     │
+│ llvm-openmp @20.1.8      │───────▶│ source-built libomp 20.1.8  │
+└──────────────────────────┘        └──────────────┬───────────────┘
+                                                  │
+                         tula-perflibs configure  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ FindOpenMP → -fopenmp + omp.h + libomp.dylib                   │
+│ TulaPerflibsConfig.cmake records those resolved inputs          │
+└──────────────────────────────┬──────────────────────────────────┘
+                               ▼
+ tula::perflibs → kidscpp → citlali → installed CLI</pre>
+    <div class="cols-2" style="margin-top:18px">
+      <div class="panel"><h3>Capability</h3><p><code>+openmp</code> / <code>~openmp</code> is a solved transitive package choice.</p></div>
+      <div class="panel"><h3>Provider policy</h3><p>Source build versus reviewed external is selected in <code>packages.yaml</code>; CMake targets do not change.</p></div>
     </div>
   </section>
 
