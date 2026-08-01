@@ -22,7 +22,7 @@ fixtures and Spack environments.
 | NetCDF component matrix | Normalized adapter, exact closure, real file I/O, installed consumer | `just tula-netcdf-matrix` |
 | GrPPI component matrix | Adapter boundary and execution behavior with/without OpenMP | `just tula-grppi-matrix` |
 | Fitting component matrix | Minimal Ceres closure and installed fitting consumer | `just tula-fitting-matrix` |
-| CFITSIO provider matrix | Aggregate CFITSIO/CCfits target under external and source policy | `just tula-cfitsio-matrix` |
+| CCfits provider matrix | CCfits API and CFITSIO implementation under external and source policy | `just tula-ccfits-matrix` |
 | Production package matrix | Tula, Kidscpp, Citlali package tests, installed consumers, installed CLI | `just production-matrix` |
 | Citlali observation gate | Full 149101 input set through the installed CLI and FITS output | `just citlali-real-workdir` |
 | Tlaloc integration matrix | Minimal ECSV closure, full executable, required real tune report, excluded Kidscpp/Ceres | `just tlaloc-matrix` |
@@ -233,19 +233,19 @@ Four independent environments test the cross-product rather than assuming that
 an external success implies a source build works:
 
 ```text
-environments/integration/tula_cfitsio/
+environments/integration/tula_ccfits/
 ├── gcc14_external/spack.yaml
 ├── llvm20_external/spack.yaml
 ├── gcc14_source/spack.yaml
 └── llvm20_source/spack.yaml
 ```
 
-Every root contains only `tula-cfitsio`. External cases require the Ubuntu
+Every root contains only `tula-ccfits`. External cases require the Ubuntu
 CFITSIO 4.3.1 and CCfits 2.6 prefixes at `/usr`. Source cases override those
 two package policies, select Spack CFITSIO 4.6.3 and CCfits 2.6, and reject
 `/usr` as their installed prefixes. Each case then builds a separate CMake
-consumer against the installed `TulaCfitsio` config and calls both the CFITSIO
-C API and CCfits C++ API through `tula_deps::cfitsio`.
+consumer against the installed `TulaCcfits` config and calls the public CCfits
+C++ API plus its underlying CFITSIO C API through `tula_deps::ccfits`.
 
 The native macOS environment adds a fifth focused case: Homebrew LLVM 20.1.8
 is registered as the exact compiler external while Spack builds the two FITS

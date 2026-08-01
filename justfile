@@ -335,12 +335,12 @@ tula-netcdf-matrix spack="spack":
             ctest --test-dir "$consumer_build" --output-on-failure
     done
 
-# Verify the CFITSIO + CCfits adapter with external and source providers.
-tula-cfitsio-matrix spack="spack":
+# Verify the CCfits API and its CFITSIO dependency with external and source providers.
+tula-ccfits-matrix spack="spack":
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
-    environments="{{ root }}/environments/integration/tula_cfitsio"
+    environments="{{ root }}/environments/integration/tula_ccfits"
 
     for case_spec in \
         gcc14_external:external \
@@ -353,7 +353,7 @@ tula-cfitsio-matrix spack="spack":
 
         "$spack_cmd" -e "$environment" concretize --force
         dag="$("$spack_cmd" -e "$environment" find -cd)"
-        for required in tula-cfitsio ccfits cfitsio; do
+        for required in tula-ccfits ccfits cfitsio; do
             grep -F "$required" <<<"$dag"
         done
 
@@ -377,18 +377,18 @@ tula-cfitsio-matrix spack="spack":
             fi
         done
 
-        adapter_prefix="$("$spack_cmd" -e "$environment" location -i tula-cfitsio)"
-        consumer_build="{{ build_root }}/cfitsio-consumer/${environment_name}"
-        "$spack_cmd" -e "$environment" build-env tula-cfitsio -- \
+        adapter_prefix="$("$spack_cmd" -e "$environment" location -i tula-ccfits)"
+        consumer_build="{{ build_root }}/ccfits-consumer/${environment_name}"
+        "$spack_cmd" -e "$environment" build-env tula-ccfits -- \
             cmake --fresh \
-                -S "{{ root }}/tests/cfitsio_consumer" \
+                -S "{{ root }}/tests/ccfits_consumer" \
                 -B "$consumer_build" \
                 -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_PREFIX_PATH="$adapter_prefix"
-        "$spack_cmd" -e "$environment" build-env tula-cfitsio -- \
+        "$spack_cmd" -e "$environment" build-env tula-ccfits -- \
             cmake --build "$consumer_build" --parallel
-        "$spack_cmd" -e "$environment" build-env tula-cfitsio -- \
+        "$spack_cmd" -e "$environment" build-env tula-ccfits -- \
             ctest --test-dir "$consumer_build" --output-on-failure
     done
 

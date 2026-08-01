@@ -691,24 +691,24 @@ table.load_rows(rows);</pre>
     </div>
   </section>
 
-  <section class="slide" data-title="CFITSIO adapter and provider matrix">
-    <div class="slide-head"><span class="section">08 · dependency adapter</span><h2>One FITS contract; provider origin remains Spack policy</h2></div>
+  <section class="slide" data-title="CCfits adapter and provider matrix">
+    <div class="slide-head"><span class="section">08 · dependency adapter</span><h2>CCfits is the public contract; CFITSIO is its implementation dependency</h2></div>
     <div class="flow">
-      <div class="node"><strong>CFITSIO 4.3+</strong><small>C API · external 4.3.1 or source 4.6.3</small></div>
-      <div class="arrow">+</div>
-      <div class="node"><strong>CCfits 2.6</strong><small>C++ interface · external or source</small></div>
+      <div class="node"><strong>CFITSIO 4.3+</strong><small>C implementation · external 4.3.1 or source 4.6.3</small></div>
       <div class="arrow">→</div>
-      <div class="node"><strong>TulaCfitsio</strong><small>installed config package</small></div>
+      <div class="node"><strong>CCfits 2.6</strong><small>public C++ API · external or source</small></div>
       <div class="arrow">→</div>
-      <div class="node"><strong>tula_deps::cfitsio</strong><small>single relocatable target</small></div>
+      <div class="node"><strong>TulaCcfits</strong><small>installed config package</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>tula_deps::ccfits</strong><small>single relocatable target</small></div>
       <div class="arrow">→</div>
       <div class="node"><strong>Citlali</strong><small>no repeated pkg-config discovery</small></div>
     </div>
     <div class="cols-2">
-      <pre>find_package(TulaCfitsio 1 CONFIG REQUIRED)
+      <pre>find_package(TulaCcfits 1 CONFIG REQUIRED)
 
 target_link_libraries(citlali
-  PUBLIC tula_deps::cfitsio)</pre>
+  PUBLIC tula_deps::ccfits)</pre>
       <div class="panel"><h3>Four independent Linux roots</h3><table><tr><th>Compiler</th><th>External</th><th>Source</th></tr><tr><td>GCC 14</td><td>/usr 4.3.1 + 2.6</td><td>Spack 4.6.3 + 2.6</td></tr><tr><td>LLVM 20</td><td>/usr 4.3.1 + 2.6</td><td>Spack 4.6.3 + 2.6</td></tr></table><p>Each case builds and runs a separate consumer that calls both APIs.</p></div>
     </div>
   </section>

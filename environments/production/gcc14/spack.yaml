@@ -25,9 +25,9 @@ spack:
     tula-cmake:
       spec: tula-cmake@3.2.0
       path: ../../..
-    tula-cfitsio:
-      spec: tula-cfitsio@1.0.0
-      path: ../../../packages/tula_cfitsio
+    tula-ccfits:
+      spec: tula-ccfits@1.0.0
+      path: ../../../packages/tula_ccfits
     tula-perflibs:
       spec: tula-perflibs@0.1.0
       path: ../../../packages/tula_perflibs

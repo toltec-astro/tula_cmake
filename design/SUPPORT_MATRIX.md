@@ -37,7 +37,7 @@ not claim it.
 | Tlaloc package and real tune-reader test | pass | pass |
 | Installed Tlaloc executable present | pass | pass |
 
-The focused CFITSIO/CCfits adapter and the complete Citlali root are also
+The focused CCfits/CFITSIO adapter and the complete Citlali root are also
 measured on native macOS 26 arm64 with Homebrew LLVM 20.1.8 and C++23.
 Citlali's six package tests and installed CLI pass with `~openmp`; AppleClang
 is not substituted. Homebrew GCC 14.3 supplies only the Fortran build edge.
@@ -54,7 +54,7 @@ is not substituted. Homebrew GCC 14.3 supplies only the Fortran build edge.
 | Tula NetCDF slice | Normalized NetCDF C++ target, exact closure, file I/O, installed consumer | `just tula-netcdf-matrix` | Measured with GCC 14 and LLVM 20 |
 | Tula GrPPI slice | Clean adapter boundary and optional OpenMP execution mode | `just tula-grppi-matrix` | Four cases measured with GCC 14 and LLVM 20 |
 | Tula fitting slice | Minimal logging/Eigen/Ceres closure and installed consumer | `just tula-fitting-matrix` | Measured with GCC 14 and LLVM 20 |
-| CFITSIO/CCfits adapter | Aggregate target plus external/source provider policy | `just tula-cfitsio-matrix` | Four cases: GCC 14 and LLVM 20 × external and source |
+| CCfits/CFITSIO adapter | Aggregate target plus external/source provider policy | `just tula-ccfits-matrix` | Four cases: GCC 14 and LLVM 20 × external and source |
 | Tula → Kidscpp → Citlali | Exact non-skipped package-test totals, installed consumers, and installed CLI | `just production-matrix` | Measured with GCC 14 and LLVM 20 |
 | Citlali observation 149101 | Eleven TolTEC streams, telescope stream, APT, 123 scans, raw/filtered FITS output | `just citlali-real-workdir` | Measured with GCC 14 |
 | Tlaloc | Minimal Tula ECSV closure, full CLI build, real tune-report reader, no Kidscpp/Ceres | `just tlaloc-matrix` | Measured with GCC 14 and LLVM 20 |
@@ -72,7 +72,7 @@ They may be consumed without finding Tula.
 | `tula-eigen3@3.4.0` | `TulaEigen3` | `tula_deps::eigen3` | Eigen 3.4.0 | Measured |
 | `tula-perflibs@0.1.0` | `TulaPerflibs` | `tula_deps::perflibs` | Threads and optional compiler OpenMP | Measured with OpenMP enabled and disabled |
 | `tula-netcdf-cxx4@4.3.1` | `TulaNetcdfCxx4` | `tula_deps::netcdf_cxx4` | NetCDF C++4 4.3.1 | Measured |
-| `tula-cfitsio@1.0.0` | `TulaCfitsio` | `tula_deps::cfitsio` | CFITSIO 4.3+ + CCfits 2.6 | Measured external/source under GCC 14 and LLVM 20; source under macOS LLVM 20.1.8 |
+| `tula-ccfits@1.0.0` | `TulaCcfits` | `tula_deps::ccfits` | CCfits 2.6 + CFITSIO 4.3+ | Measured external/source under GCC 14 and LLVM 20; source under macOS LLVM 20.1.8 |
 
 Logging, YAML, Eigen, perflibs, NetCDF, and FITS build small relocatable packages
 from `tula_cmake/packages/`. csv-parser's generic Spack recipe installs its
@@ -112,7 +112,7 @@ the higher-level ECSV component. There is no `tula::headers` umbrella.
 | `find_package(tula 3.1 CONFIG REQUIRED COMPONENTS enum)` | Defines `tula::enum` and reconstructs logging, bitmask, and meta-enum |
 | `find_package(tula 3.1 CONFIG REQUIRED COMPONENTS cli)` | Defines `tula::cli` and its enum/Clipp closure |
 | `find_package(TulaNetcdfCxx4 CONFIG REQUIRED)` | Defines `tula_deps::netcdf_cxx4` without Tula |
-| `find_package(TulaCfitsio CONFIG REQUIRED)` | Defines aggregate `tula_deps::cfitsio` backed by both CFITSIO and CCfits |
+| `find_package(TulaCcfits CONFIG REQUIRED)` | Defines `tula_deps::ccfits` for the CCfits API and required CFITSIO implementation |
 | `find_package(tula 3.1 CONFIG REQUIRED COMPONENTS netcdf)` | Defines `tula::netcdf` with its Eigen and NetCDF C++ closure |
 | `find_package(tula 3.1 CONFIG REQUIRED COMPONENTS grppi)` | Defines `tula::grppi` and its logging/enum/perflibs closure |
 | `find_package(tula 3.1 CONFIG REQUIRED COMPONENTS fitting)` | Defines `tula::fitting` with logging, Eigen, and Ceres |

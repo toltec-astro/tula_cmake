@@ -1,11 +1,11 @@
-"""Normalized CFITSIO/CCfits target adapter used by TolTEC projects."""
+"""Normalized CCfits target adapter used by TolTEC projects."""
 
 from spack.package import depends_on, version
 from spack_repo.builtin.build_systems.cmake import CMakePackage
 
 
-class TulaCfitsio(CMakePackage):
-    """Install ``tula_deps::cfitsio`` backed by CFITSIO and CCfits."""
+class TulaCcfits(CMakePackage):
+    """Install the CCfits API with its required CFITSIO implementation."""
 
     homepage = "https://github.com/toltec-astro/tula_cmake"
 

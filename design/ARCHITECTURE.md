@@ -29,7 +29,7 @@ source participates in Spack:
 tula_cmake
 ├── TulaCMake CMake modules
 ├── tula-logging bundle recipe
-├── tula-cfitsio bundle recipe
+├── tula-ccfits bundle recipe
 ├── tula-perflibs source and recipe
 ├── narrow NetCDF C++4 recipe override and patch
 ├── tula-boilerplate example and recipe
@@ -196,7 +196,7 @@ tula_deps::csv_parser
 tula_deps::eigen3
 tula_deps::perflibs
 tula_deps::netcdf_cxx4
-tula_deps::cfitsio
+tula_deps::ccfits
 ```
 
 NetCDF C++4 4.3.1 is old enough that its installed metadata differs by
@@ -218,9 +218,9 @@ tula::ecsv
 tula::perflibs ─────> tula_deps::perflibs ──> Threads [+ OpenMP]
 tula::netcdf ───────> tula::eigen + tula_deps::netcdf_cxx4
 
-citlali ─────────────> tula_deps::cfitsio
-                       ├── CFITSIO C library
-                       └── CCfits C++ interface
+citlali ─────────────> tula_deps::ccfits
+                       ├── CCfits C++ interface (public API)
+                       └── CFITSIO C library (implementation dependency)
 ```
 
 The adapter header reports provider/platform facts. Tula's generated config
@@ -259,7 +259,7 @@ tula_cmake/
 ├── packages/
 │   ├── tula_eigen3/
 │   ├── tula_logging/
-│   ├── tula_cfitsio/
+│   ├── tula_ccfits/
 │   ├── tula_netcdf_cxx4/
 │   ├── tula_perflibs/
 │   └── tula_yaml_cpp/
@@ -430,7 +430,7 @@ citlali::citlali
 │   └── exact Tula component closure
 ├── exact Tula component closure
 └── Citlali-owned Ceres/Boost/Spectra/FFTW dependencies
-    └── tula_deps::cfitsio ──> CFITSIO + CCfits
+    └── tula_deps::ccfits ──> CCfits ──> CFITSIO
 ```
 
 Kidscpp owns TolTEC NetCDF metadata, slicing, PSD construction, and
@@ -472,12 +472,13 @@ local locks. A future release environment in this repository will replace
 those paths with immutable sources, commit its lock, and own buildcache mirror
 and trust configuration.
 
-## 15. CFITSIO provider boundary
+## 15. CCfits provider boundary
 
-`tula-cfitsio` is a no-code aggregate package like `tula-logging`. Its CMake
-config performs the two provider-faithful `pkg-config` discoveries once and
-exports one relocatable target. Citlali finds the adapter and never repeats
-provider-specific target names.
+`tula-ccfits` is a no-code aggregate package like `tula-logging`. CCfits is the
+public C++ API used by Citlali; CFITSIO is its required C implementation
+dependency. The CMake config performs both provider-faithful `pkg-config`
+discoveries once and exports one relocatable target. Citlali finds the adapter
+and never repeats provider-specific target names.
 
 Spack provider configuration is deliberately outside the CMake contract:
 
@@ -486,7 +487,7 @@ external profile                 source profile
 CFITSIO 4.3.1 at /usr            CFITSIO 4.6.3 built by Spack
 CCfits 2.6 at /usr               CCfits 2.6 built by Spack
           \                       /
-           tula_deps::cfitsio
+           tula_deps::ccfits
                     |
                  Citlali
 ```

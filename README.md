@@ -44,7 +44,7 @@ tula_deps::eigen3     -> tula::eigen
 tula_deps::csv_parser -> tula::ecsv
 tula_deps::perflibs   -> tula::perflibs
 tula_deps::netcdf_cxx4 -> tula::netcdf
-tula_deps::cfitsio      -> Citlali FITS I/O (CFITSIO + CCfits)
+tula_deps::ccfits      -> Citlali FITS I/O (CCfits + its CFITSIO dependency)
 ```
 
 `tula+ecsv` builds only that closure. `just tula-component-matrix` has passed
@@ -232,7 +232,7 @@ Run the verified perflibs component slice:
 just tula-perflibs-matrix
 just tula-enum-cli-matrix
 just tula-netcdf-matrix
-just tula-cfitsio-matrix
+just tula-ccfits-matrix
 just tula-grppi-matrix
 just tula-fitting-matrix
 just tlaloc-matrix

@@ -154,15 +154,15 @@ ranges to reference a destroyed temporary. The reference-returning API matches
 the ownership model and is validated by Tula, Tlaloc, Kidscpp, and Citlali
 tests.
 
-## D019 — CFITSIO and CCfits form one adapter package
+## D019 — CCfits and its CFITSIO dependency form one adapter package
 
 Accepted 2026-07-31.
 
-Citlali consumes `tula-cfitsio` through `TulaCfitsio` and the aggregate
-`tula_deps::cfitsio` target. The adapter owns discovery and propagation of the
-CFITSIO C library and its CCfits C++ interface. It accepts CFITSIO 4.3 or newer
-and CCfits 2.6, avoiding an external-only dependency on the unlisted CFITSIO
-4.3.1 patch release. Fortran bindings are disabled because the aggregate's C
+Citlali consumes `tula-ccfits` through `TulaCcfits` and the aggregate
+`tula_deps::ccfits` target. The adapter owns discovery and propagation of the
+CCfits C++ API and its CFITSIO C implementation dependency. It accepts CCfits
+2.6 and CFITSIO 4.3 or newer, avoiding an external-only dependency on the
+unlisted CFITSIO 4.3.1 patch release. Fortran bindings are disabled because the aggregate's C
 and C++ contract does not use them.
 
 Provider origin remains Spack policy. The same adapter is tested with both

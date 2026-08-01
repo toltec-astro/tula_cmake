@@ -143,15 +143,15 @@ contain absolute checkout paths and the views link to machine-local prefixes.
 The FITS adapter has an explicit provider matrix:
 
 ```text
-tula_cmake/environments/integration/tula_cfitsio/
+tula_cmake/environments/integration/tula_ccfits/
 ├── gcc14_external/spack.yaml
 ├── llvm20_external/spack.yaml
 ├── gcc14_source/spack.yaml
 └── llvm20_source/spack.yaml
 ```
 
-Run it with `just tula-cfitsio-matrix`. Both upstream libraries switch policy
-together; Citlali sees the same `tula_deps::cfitsio` target in every case.
+Run it with `just tula-ccfits-matrix`. Both upstream libraries switch policy
+together; Citlali sees the same `tula_deps::ccfits` target in every case.
 
 ## 4. Native macOS
 
