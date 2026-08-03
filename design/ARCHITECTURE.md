@@ -62,7 +62,7 @@ The development checkout keeps the independent Git repositories as siblings:
 
 ```text
 /workspaces/cpp/
-├── toltec_cpp_stack/     composition, platform profiles, revision manifest
+├── tolteca_deploy/      location CLI + packaged profiles and revision manifest
 ├── tula_cmake/          infrastructure, examples, and root environments
 │   ├── cmake/
 │   ├── environments/
@@ -98,6 +98,7 @@ Each project-owned package repository follows Spack package API v2 layout:
 
 ```text
 <project>/spack_repo/
+├── develop.yaml          # local-development specs and repo-relative paths
 └── toltec/
     └── <namespace>/
         ├── repo.yaml
@@ -111,6 +112,10 @@ For example, Tula owns `tula`, `tula-bitmask`, `tula-clipp`,
 `tula-csv-parser`, `tula-grppi`, and `tula-meta-enum` recipes beneath
 `tula/spack_repo/toltec/tula/packages/`. The environment references the inner
 directory containing `repo.yaml` and `packages/`.
+
+`tolteca_deploy` reads each selected source's `spack_repo/develop.yaml` and
+composes the native environment `develop:` block. This keeps package/path
+ownership beside the recipes instead of in a central deployment mapping.
 
 ## 3. Dependency topology
 
@@ -450,32 +455,36 @@ the 6.1 GB raw-data tree is mounted read-only; generated FITS products are
 written to `/tmp`. This validates the complete executable without making
 science data a build dependency or duplicating it into the workspace.
 
-## 14. Integration and deployment repository
+## 14. Integration and deployment ownership
 
-The local `toltec_cpp_stack` prototype owns cross-repository composition. It
-does not take package recipes away from their source repositories:
+`tolteca_deploy` owns cross-repository composition without taking package
+recipes away from their source repositories:
 
 ```text
-toltec_cpp_stack/
+tolteca_deploy/src/tolteca_deploy/data/spack/
 ├── stack.yaml                     accepted source revisions + Spack version
-├── .devcontainer/                 editor-independent Linux bootstrap
 ├── config/
-│   ├── repos.yaml                 decentralized recipe composition
 │   └── macos-homebrew-llvm20/
 │       └── packages.yaml          exact compiler/tool externals
-├── environments/development/
-│   ├── linux-gcc14/spack.yaml
-│   ├── linux-llvm20/spack.yaml
-│   ├── macos-homebrew-llvm20/spack.yaml
-│   └── macos-homebrew-llvm20-citlali/spack.yaml
-├── justfile                       named acceptance sequences only
-└── README.md                      clean-machine quick start
+└── profiles/development/
+    ├── linux-gcc14/{profile.yaml,spack.yaml}
+    ├── linux-llvm20/{profile.yaml,spack.yaml}
+    ├── macos-homebrew-llvm20/{profile.yaml,spack.yaml}
+    └── macos-homebrew-llvm20-citlali/{profile.yaml,spack.yaml}
+
+LOCATION/
+├── .tools/spack/                  pinned Spack checkout
+├── .spack/{config,stage}/         location-specific mutable state
+├── spack/<profile>/               independent environment
+│   └── .spack-env/view/           native installed view
+└── src/                           configured source checkouts
 ```
 
 Developer environments use sibling `develop:` paths and intentionally ignore
-local locks. A future release environment in this repository will replace
+local locks. A future release profile packaged by `tolteca_deploy` will replace
 those paths with immutable sources, commit its lock, and own buildcache mirror
-and trust configuration.
+and trust configuration. Local editor/dev-container configuration is not a
+release artifact and is deliberately outside this contract.
 
 ## 15. CCfits provider boundary
 

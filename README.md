@@ -130,6 +130,7 @@ tula_cmake/
 │   ├── tula_perflibs/
 │   └── tula_yaml_cpp/
 ├── spack_repo/
+│   ├── develop.yaml              # repo-owned local-development package paths
 │   └── toltec/tula_cmake/packages/
 │       ├── tula_cmake/
 │       ├── tula_csv_parser/

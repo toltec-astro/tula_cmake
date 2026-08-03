@@ -2,43 +2,40 @@
 
 ## 1. Fresh development machine
 
-The local `../toltec_cpp_stack/README.md` is the concise clean-machine guide
-and prototype owner of cross-repository environments. The detail below remains
-the TulaCMake implementation and regression reference.
+The clean-machine location workflow is owned by `tolteca_deploy`. Clone the
+editable repositories as siblings, write a location config containing local
+`file://` sources (or immutable remote Git sources), and bootstrap it:
 
-The portable development bootstrap is the `toltec_cpp_stack` dev container:
+```console
+uvx --from ./tolteca_deploy tolteca_deploy setup \
+  --config ./toltec_astro_dev.yaml
+cd ./toltec_astro_dev
+source dotbashrc                    # or: direnv allow
+just run update                     # reconcile sources + generate Spack env
+just cpp-install                    # concretize, install, test, smoke-check
+```
 
-1. Install Docker and a client capable of opening `devcontainer.json`.
-2. Clone `toltec_cpp_stack`, `tula_cmake`, `tula`, `kidscpp`, and `citlali`
-   as siblings.
-3. Open `toltec_cpp_stack` and rebuild its dev container.
-4. Run the acceptance surface inside the container:
-
-   ```console
-   cd /workspaces/cpp/toltec_cpp_stack
-   just validate-linux gcc14
-   just validate-linux llvm20
-   ```
-
-The post-create script pins Spack 1.2.2 at `/opt/spack`. It installs GCC 14,
-LLVM 20, CMake, Ninja, Just, and the system development packages used by the
-measured chain. GCC 13 is deliberately absent from the supported matrix.
-The portable dev container does not assume a host science-data path. Add the
-large read-only data mount locally only when running the observation gate; the
-ordinary package and installed-consumer matrices need only the repository
-fixtures.
+The location pins Spack 1.2.2 under `.tools/spack`. Its config, build stage,
+environment, lock, and view are location-specific; its compiled store and
+download cache are user-shared by default and can be location-scoped.
+Linux profiles require GCC 14 or LLVM 20; GCC 13 is deliberately absent.
+Editor and dev-container files are local developer conveniences, not exported
+deployment inputs. The profile plus native Spack commands is the portable
+contract.
 
 The expected checkout inside the container is:
 
 ```text
 /workspaces/cpp/
-├── toltec_cpp_stack/
+├── tolteca_deploy/
 ├── tula_cmake/
 ├── tula/
 ├── kidscpp/
 ├── citlali/
 ├── tlaloc/
-└── tolteca_test_data/   optional integration fixtures
+├── tolteca_test_data/   optional integration fixtures
+├── toltec_astro_dev.yaml
+└── toltec_astro_dev/    generated self-contained location
 ```
 
 Once the production environment is installed, run the observation fixture
@@ -46,7 +43,7 @@ from the work-directory root so its relative `./data` path resolves:
 
 ```console
 cd /workspaces/cpp/tolteca_test_data/tolteca_workdir
-/workspaces/cpp/tula_cmake/environments/production/gcc14/.spack-view/bin/citlali \
+/workspaces/cpp/toltec_astro_dev/spack/development/linux-gcc14/.spack-env/view/bin/citlali \
   redu/citlali_o149101_0_2_c1.yaml
 ```
 
@@ -163,10 +160,10 @@ brew install llvm@20 gcc@14 cmake ninja pkgconf
 /opt/homebrew/opt/llvm@20/bin/clang++ --version
 ```
 
-The stack prototype registers the absolute compiler paths in
-`config/macos-homebrew-llvm20/packages.yaml`; developers do not need to link
-the keg or modify their shell PATH. See `../toltec_cpp_stack/README.md` for the
-pinned Spack bootstrap and native commands.
+The packaged `tolteca_deploy` profile registers the absolute compiler paths in
+`data/spack/config/macos-homebrew-llvm20/packages.yaml`; developers do not
+need to link the keg or modify their shell PATH. Its generated location exposes
+the pinned Spack bootstrap and native commands.
 
 The full Citlali graph also registers Homebrew GCC 14's `gfortran` for FFTW's
 build-language edge and pins Spack CMake 3.27.9 because the Ceres 2.2 recipe

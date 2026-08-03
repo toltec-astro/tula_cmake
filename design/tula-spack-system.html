@@ -185,6 +185,7 @@ target_link_libraries(app PRIVATE
     <div class="slide-head"><span class="section">02 · filesystem</span><h2>Editable repositories remain siblings; installed boundaries remain real</h2></div>
     <div class="cols-2">
       <pre>/workspaces/cpp/
+├── tolteca_deploy/    location + packaged profiles
 ├── tula_cmake/       build tools + shared adapters
 ├── tula/             base C++ library + recipe
 ├── kidscpp/          next downstream boundary
@@ -201,14 +202,16 @@ target_link_libraries(app PRIVATE
 │   └── tula_perflibs/
 ├── spack_repo/.../packages/
 │   └── tula_csv_parser/
+├── spack_repo/develop.yaml
 ├── environments/integration/tula_ecsv/
 ├── environments/integration/tula_perflibs/
 ├── tests/deps_consumer/
 └── design/</pre>
     </div>
-    <p class="muted">Spack <code>develop</code> entries point recipes at these
-      checkouts. Build stages, installed prefixes, and environment views do not
-      become source dependencies.</p>
+    <p class="muted">Each repository's <code>spack_repo/develop.yaml</code>
+      maps its development specs to repo-relative source paths. The deployment
+      environment composes those declarations; build stages, prefixes, and
+      views do not become source dependencies.</p>
   </section>
 
   <section class="slide" data-title="Adapter packages">
@@ -716,48 +719,49 @@ target_link_libraries(citlali
     </div>
   </section>
 
-  <section class="slide" data-title="Integration repository structure">
-    <div class="slide-head"><span class="section">09 · deployment ownership</span><h2>The stack repository composes peers; recipes remain decentralized</h2></div>
+  <section class="slide" data-title="Deployment package structure">
+    <div class="slide-head"><span class="section">09 · deployment ownership</span><h2>The deployment package composes peers; recipes remain decentralized</h2></div>
     <div class="cols-2">
       <pre>cpp/
-├── toltec_cpp_stack/
-│   ├── stack.yaml
-│   ├── .devcontainer/
-│   ├── config/
-│   │   ├── repos.yaml
-│   │   └── macos-homebrew-llvm20/
-│   ├── environments/development/
-│   │   ├── linux-gcc14/
-│   │   ├── linux-llvm20/
-│   │   ├── macos-homebrew-llvm20/
-│   │   └── macos-homebrew-llvm20-citlali/
-│   ├── justfile
-│   └── README.md
+├── tolteca_deploy/
+│   └── src/tolteca_deploy/data/spack/
+│       ├── stack.yaml
+│       ├── config/macos-homebrew-llvm20/
+│       └── profiles/development/
+│           ├── linux-gcc14/
+│           ├── linux-llvm20/
+│           ├── macos-homebrew-llvm20/
+│           └── macos-homebrew-llvm20-citlali/
 ├── tula_cmake/
+│   └── spack_repo/develop.yaml
 ├── tula/
+│   └── spack_repo/develop.yaml
 ├── kidscpp/
-└── citlali/</pre>
-      <div><div class="panel"><h3>Stack-owned</h3><p>Accepted source revisions, repository composition, platform externals, development profiles, future release locks, and buildcache trust.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipe, variants, patches, and behavior tests remain in each project repository.</p></div><div class="callout">The stack adds no wrapper CLI. <code>just</code> only records repeatable native Spack acceptance sequences.</div></div>
+│   └── spack_repo/develop.yaml
+└── citlali/
+    └── spack_repo/develop.yaml</pre>
+      <div><div class="panel"><h3>Deployment-owned</h3><p>Accepted source revisions, profile selection, platform externals, future release locks, buildcache trust, and uv/Spack activation. Each location keeps <code>spack/&lt;profile&gt;/{spack.yaml,spack.lock,.spack-env/view}</code> together; store and cache are user-shared by default or location-scoped by policy.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipes, variants, patches, behavior tests, and local-development package paths remain in each project repository.</p></div><div class="callout"><code>tolteca_deploy</code> generates native Spack configuration but keeps <code>spack -e</code> visible. <code>.spack_repo</code> remains reserved for project-owned recipes, not deployment environments.</div></div>
     </div>
   </section>
 
   <section class="slide" data-title="Clean machine and macOS LLVM workflow">
     <div class="slide-head"><span class="section">10 · developer UX</span><h2>Bootstrap is explicit, local, and validates the exact compiler</h2></div>
     <div class="cols-2">
-      <div class="panel"><h3>Linux dev container</h3><pre>clone sibling repositories
-open toltec_cpp_stack in container
-
-spack -e environments/development/\
-  linux-gcc14 concretize
-spack -e ... install --test=all</pre><p>The container mounts the sibling tree and installs GCC 14, LLVM 20, Spack 1.2.2, and test prerequisites. It has no editor-extension dependency.</p></div>
+      <div class="panel"><h3>Linux development location</h3><pre>clone sibling repositories
+uvx --from ./tolteca_deploy \
+  tolteca_deploy setup \
+  --config location.yaml
+cd LOCATION &amp;&amp; source dotbashrc
+just run update
+just cpp-install</pre><p>The selected profile requires GCC 14 or LLVM 20. The location pins Spack 1.2.2 and isolates its cache, stage, store, environment, and view; a dev container is optional local tooling rather than a deployment artifact.</p></div>
       <div class="panel"><h3>Native macOS arm64</h3><pre>brew install llvm@20 gcc@14 cmake ninja pkgconf
 /opt/homebrew/opt/llvm@20/bin/clang++ \
   --version
 
-git clone --branch v1.2.2 ... .tools/spack
-. .tools/spack/share/spack/setup-env.sh
-spack -e environments/development/\
-  macos-homebrew-llvm20 concretize</pre><p>The profile requires Homebrew LLVM 20.1.8 by absolute path. Because that keg does not ship OpenMP, Spack builds exact <code>llvm-openmp@20.1.8</code> and <code>tula-perflibs</code> exports it. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3. Measured with <code>citlali+openmp</code>: FITS consumer pass, installed OpenMP consumer pass, Citlali 6/6, installed CLI pass. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
+tolteca_deploy setup --config location.yaml
+cd LOCATION &amp;&amp; source dotbashrc
+just run update
+just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by absolute path. Because that keg does not ship OpenMP, Spack builds exact <code>llvm-openmp@20.1.8</code> and <code>tula-perflibs</code> exports it. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3. The complete location-local graph installs successfully; the installed Citlali CLI processed observation 149101 through all 123 scans and wrote raw and filtered FITS products. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
     </div>
   </section>
 

@@ -169,15 +169,37 @@ Provider origin remains Spack policy. The same adapter is tested with both
 system externals and Spack source builds; no provider fact enters CMake target
 names or generated C++ headers.
 
-## D020 — A stack repository owns integration and deployment policy
+## D020 — `tolteca_deploy` owns integration and deployment policy
 
-Accepted as a local prototype 2026-07-31.
+Accepted 2026-08-03; supersedes the local standalone-stack prototype.
 
-Package recipes remain decentralized. `toltec_cpp_stack` owns only the
-multi-repository revision manifest, platform configuration, development and
-future release environments, dev-container bootstrap, and eventual buildcache
-trust configuration. This separates portable deployment inputs from reusable
-TulaCMake infrastructure without adding a wrapper CLI around Spack.
+Package recipes remain decentralized. The wheel-shipped
+`tolteca_deploy/data/spack/` assets own the multi-repository revision
+manifest, platform configuration, development and future release profiles,
+and eventual buildcache trust configuration. A generated location owns its
+pinned Spack checkout, environment, stage, and view; the configured storage
+policy owns the install store and cache. This keeps
+portable deployment inputs separate from reusable TulaCMake infrastructure
+while leaving the native `spack -e` interface visible. The superseded
+standalone composition repository has been removed.
+
+## D023 — Independent environments are visible; reusable storage is policy
+
+Accepted 2026-08-03.
+
+Each deployment location owns one visible independent environment at
+`spack/<profile>/`. Its lock, generated configuration, and native
+`.spack-env/view` stay together. The install store and source cache are
+user-shared by default and may be location-scoped or redirected to an explicit
+storage root. Build stages remain location-local. This follows Spack's native
+environment model, removes redundant `environments/cpp` and `views/cpp`
+layers, and avoids overloading `.spack_repo`, which denotes project-owned
+package recipes.
+
+Wheel-shipped deployment inputs remain inside the Python import package as
+`tolteca_deploy/data/{configs,location,spack}`. This preserves reliable
+`importlib.resources` access from both editable installs and wheels while
+removing the generic `data/stacks/cpp` nesting.
 
 ## D021 — OpenMP is a transitive package variant
 
