@@ -271,8 +271,8 @@ source-built CFITSIO/CCfits and installed OpenMP consumers also pass.
 
 `just citlali-real-workdir` runs the installed GCC 14 CLI against observation
 149101. The input set contains eleven TolTEC NetCDF timestreams, the recomputed
-telescope stream, and the APT ECSV table. The raw data remains outside the
-workspace and is mounted read-only; output is isolated under `/tmp`.
+telescope stream, and the APT ECSV table from the sibling
+`tolteca_test_data/tolteca_workdir` fixture; output is isolated under `/tmp`.
 
 The measured 2026-07-31 run:
 
@@ -284,6 +284,11 @@ The measured 2026-07-31 run:
 
 The complete console record is retained at
 `tula_cmake/build/citlali-real-workdir/gcc14.log` by the repeatable recipe.
+
+The native macOS arm64 Homebrew LLVM 20.1.8 location independently installs
+the same OpenMP graph and processes all 123 scans. Citlali's memory diagnostic
+uses `getrusage`, including Darwin's byte-to-KiB conversion, rather than the
+Linux-only `/proc/self/status` interface.
 
 ## 15. Tlaloc integration matrix
 

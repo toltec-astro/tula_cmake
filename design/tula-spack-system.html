@@ -599,15 +599,17 @@ Kidscpp
       <div class="node"><strong>/tmp output</strong><small>raw + filtered FITS, PSD, indices</small></div>
     </div>
     <div class="cols-2">
-      <pre>host toltec_astro/run (6.1 GB)
-  │ read-only devcontainer mount
-  ▼
-absolute symlink targets
-  │
-/workspaces/cpp/tolteca_test_data/
+      <pre>tolteca_test_data/
   └── tolteca_workdir/
-      ├── data/  APT + raw links
-      └── redu/  runtime YAML</pre>
+      ├── data/
+      │   ├── 11 TolTEC streams
+      │   ├── telescope stream
+      │   └── APT ECSV + tune reports
+      └── redu/
+          └── runtime YAML
+
+inputs are resolved at runtime
+outputs remain isolated under /tmp</pre>
       <pre>cd tolteca_workdir
 citlali redu/citlali_o149101_0_2_c1.yaml
 
@@ -753,7 +755,7 @@ uvx --from ./tolteca_deploy \
   --config location.yaml
 cd LOCATION &amp;&amp; source dotbashrc
 just run update
-just cpp-install</pre><p>The selected profile requires GCC 14 or LLVM 20. The location pins Spack 1.2.2 and isolates its cache, stage, store, environment, and view; a dev container is optional local tooling rather than a deployment artifact.</p></div>
+just cpp-install</pre><p>The selected profile requires GCC 14 or LLVM 20. The location pins Spack 1.2.2 and keeps configuration, build stage, environment, lock, and view location-specific. The compiled store and download cache are user-shared by default or location-scoped by policy. A dev container is optional local tooling rather than a deployment artifact.</p></div>
       <div class="panel"><h3>Native macOS arm64</h3><pre>brew install llvm@20 gcc@14 cmake ninja pkgconf
 /opt/homebrew/opt/llvm@20/bin/clang++ \
   --version
@@ -761,7 +763,7 @@ just cpp-install</pre><p>The selected profile requires GCC 14 or LLVM 20. The lo
 tolteca_deploy setup --config location.yaml
 cd LOCATION &amp;&amp; source dotbashrc
 just run update
-just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by absolute path. Because that keg does not ship OpenMP, Spack builds exact <code>llvm-openmp@20.1.8</code> and <code>tula-perflibs</code> exports it. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3. The complete location-local graph installs successfully; the installed Citlali CLI processed observation 149101 through all 123 scans and wrote raw and filtered FITS products. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
+just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by absolute path. Because that keg does not ship OpenMP, Spack builds exact <code>llvm-openmp@20.1.8</code> and <code>tula-perflibs</code> exports it. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3. The installed Citlali CLI uses portable <code>getrusage</code> memory diagnostics, processed observation 149101 through all 123 scans, and wrote raw and filtered FITS products. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
     </div>
   </section>
 
@@ -787,7 +789,7 @@ just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by a
   </section>
 
   <section class="slide" data-title="Accepted system and release boundary">
-    <div class="slide-head"><span class="section">11 · measured state</span><h2>All current integration roots pass; publication is the remaining boundary</h2></div>
+    <div class="slide-head"><span class="section">11 · measured state</span><h2>Development branches pass; immutable release packaging is the remaining boundary</h2></div>
     <div class="cols-2">
       <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali production graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
       <div class="panel"><h3>Release work</h3><ol><li>tag immutable project sources</li><li>replace development branch recipes</li><li>compose portable release environments</li><li>run the same gates from release archives</li><li>optionally publish signed buildcache artifacts</li></ol></div>

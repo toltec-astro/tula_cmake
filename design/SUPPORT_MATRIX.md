@@ -1,6 +1,6 @@
 # Support matrix and public target catalog
 
-This page records measured behavior on the unpublished `v3.x_spack` branch.
+This page records measured behavior on the `v3.x_spack` development branch.
 Recipes and CMake declarations are authoritative. “Planned” means that source
 or an early recipe may exist, but the current component acceptance gate does
 not claim it.
@@ -58,7 +58,7 @@ passes and links that runtime. AppleClang is not substituted. Homebrew GCC
 | Tula fitting slice | Minimal logging/Eigen/Ceres closure and installed consumer | `just tula-fitting-matrix` | Measured with GCC 14 and LLVM 20 |
 | CCfits/CFITSIO adapter | Aggregate target plus external/source provider policy | `just tula-ccfits-matrix` | Four cases: GCC 14 and LLVM 20 × external and source |
 | Tula → Kidscpp → Citlali | Exact non-skipped package-test totals, installed consumers, and installed CLI | `just production-matrix` | Measured with GCC 14 and LLVM 20 |
-| Citlali observation 149101 | Eleven TolTEC streams, telescope stream, APT, 123 scans, raw/filtered FITS output | `just citlali-real-workdir` | Measured with GCC 14 |
+| Citlali observation 149101 | Eleven TolTEC streams, telescope stream, APT, 123 scans, raw/filtered FITS output | `just citlali-real-workdir` plus native location run | Measured with GCC 14 and macOS Homebrew LLVM 20 |
 | Tlaloc | Minimal Tula ECSV closure, full CLI build, real tune-report reader, no Kidscpp/Ceres | `just tlaloc-matrix` | Measured with GCC 14 and LLVM 20 |
 
 ## 3. Dependency adapter packages
@@ -147,7 +147,7 @@ silently skipping the test.
 
 The observation-level Citlali gate uses the work-directory fixture at
 `tolteca_test_data/tolteca_workdir/redu/citlali_o149101_0_2_c1.yaml`.
-Its raw-data symlinks resolve through a read-only devcontainer mount of
-`toltec_astro/run`; generated products go to
-`/tmp/citlali-o149101-output`. The measured run completed all 123 scans and
+Its data paths are resolved from that fixture at runtime; generated products
+go to `/tmp/citlali-o149101-output`. The measured GCC 14 and native macOS
+Homebrew LLVM 20 runs completed all 123 scans and
 wrote raw and filtered FITS products for a1100, a1400, and a2000.

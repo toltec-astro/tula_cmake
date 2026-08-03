@@ -449,11 +449,13 @@ the user-facing reduction CLI. The production gate verifies package tests,
 three independent installed consumers, and the installed executable under
 GCC 14 and LLVM 20.
 
-The observation-level gate adds a distinct runtime boundary. Source and
-installed dependency prefixes remain inside the devcontainer/Spack scope;
-the 6.1 GB raw-data tree is mounted read-only; generated FITS products are
-written to `/tmp`. This validates the complete executable without making
-science data a build dependency or duplicating it into the workspace.
+The observation-level gate adds a distinct runtime boundary. The source
+repositories and the separately maintained `tolteca_test_data` fixture are
+sibling checkouts; installed dependencies remain inside the selected Spack
+environment. Citlali resolves the fixture's NetCDF, ECSV, and tune-report
+paths at runtime, while generated FITS products are isolated under `/tmp`.
+This validates the complete executable without making science data a build
+dependency or copying it into an install prefix.
 
 ## 14. Integration and deployment ownership
 

@@ -77,6 +77,10 @@ installed consumers and the installed CLI pass. A GCC 14 observation-level
 run processes all 123 scans in the supplied 149101 fixture and writes raw and
 filtered FITS products for all three arrays.
 
+The native macOS arm64 Homebrew LLVM 20.1.8 location also installs the complete
+OpenMP graph and processes all 123 scans. Citlali uses portable `getrusage`
+memory reporting rather than a Linux-only `/proc` parser.
+
 The narrow Tlaloc integration is also measured in both lanes. It builds the
 full `tlaloc_clip` executable with only `tula::ecsv`, keeps NetCDF/FFTW/
 MariaDB/KATCP as Tlaloc-owned dependencies, excludes Kidscpp and Ceres, and

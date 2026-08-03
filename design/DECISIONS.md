@@ -174,7 +174,7 @@ names or generated C++ headers.
 Accepted 2026-08-03; supersedes the local standalone-stack prototype.
 
 Package recipes remain decentralized. The wheel-shipped
-`tolteca_deploy/data/spack/` assets own the multi-repository revision
+`tolteca_deploy/src/tolteca_deploy/data/spack/` assets own the multi-repository revision
 manifest, platform configuration, development and future release profiles,
 and eventual buildcache trust configuration. A generated location owns its
 pinned Spack checkout, environment, stage, and view; the configured storage
@@ -197,7 +197,7 @@ layers, and avoids overloading `.spack_repo`, which denotes project-owned
 package recipes.
 
 Wheel-shipped deployment inputs remain inside the Python import package as
-`tolteca_deploy/data/{configs,location,spack}`. This preserves reliable
+`tolteca_deploy/src/tolteca_deploy/data/{configs,location,spack}`. This preserves reliable
 `importlib.resources` access from both editable installs and wheels while
 removing the generic `data/stacks/cpp` nesting.
 

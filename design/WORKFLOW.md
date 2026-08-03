@@ -177,35 +177,27 @@ adapter alone resolves and exports the compiler/runtime details.
 
 ## 5. Local multi-repository development
 
-The implemented production environments compose the decentralized repositories
-and point selected packages at local checkouts:
+Each selected source repository owns a small `spack_repo/develop.yaml` mapping:
 
 ```yaml
-spack:
-  specs:
-    - citlali@4
-
-  develop:
-    tula-cmake:
-      spec: tula-cmake@3.2
-      path: ../../tula_cmake
-    tula:
-      spec: tula@3
-      path: ../../tula
-    kidscpp:
-      spec: kidscpp@3
-      path: ../../kidscpp
-    citlali:
-      spec: citlali@4
-      path: ../../citlali
+# kidscpp/spack_repo/develop.yaml
+develop:
+  kidscpp: {spec: "kidscpp@3.1.0", path: .}
 ```
+
+`location.spack.develop.sources` lists source repositories once. During
+generation, `tolteca_deploy` reads their mappings, resolves paths relative to
+each repository root, and composes the native environment's `develop:` block.
+It rejects duplicate package ownership and does not maintain a second central
+package-to-path map.
 
 Typical edit cycle:
 
 ```console
-spack -e dev concretize --force
-spack -e dev install --test=root
-spack -e dev find -lv
+source toltec_astro_dev/dotbashrc
+spack -e "$TOLTECA_CPP_ENV" concretize --force
+spack -e "$TOLTECA_CPP_ENV" install --test=root
+spack -e "$TOLTECA_CPP_ENV" find -lv
 ```
 
 For this workspace, use the committed environments directly:
