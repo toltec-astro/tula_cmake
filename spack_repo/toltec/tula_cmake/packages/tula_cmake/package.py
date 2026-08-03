@@ -8,8 +8,9 @@ class TulaCmake(CMakePackage):
     """Install the CMake-only TulaCMake package."""
 
     homepage = "https://github.com/toltec-astro/tula_cmake"
+    git = "https://github.com/toltec-astro/tula_cmake.git"
 
-    version("3.2.0")
+    version("3.2.0", tag="v3.2.0")
 
     depends_on("cmake@3.25:", type="build")
 

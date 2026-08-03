@@ -8,8 +8,10 @@ class TulaPerflibs(CMakePackage):
     """Install the Threads/OpenMP interface target and capability header."""
 
     homepage = "https://github.com/toltec-astro/tula_cmake"
+    git = "https://github.com/toltec-astro/tula_cmake.git"
+    root_cmakelists_dir = "packages/tula_perflibs"
 
-    version("0.1.0")
+    version("0.1.0", tag="v3.2.0")
 
     variant(
         "openmp",

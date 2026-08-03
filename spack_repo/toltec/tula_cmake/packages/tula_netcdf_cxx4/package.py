@@ -8,8 +8,10 @@ class TulaNetcdfCxx4(CMakePackage):
     """Install ``tula_deps::netcdf_cxx4`` backed by NetCDF C++4."""
 
     homepage = "https://github.com/toltec-astro/tula_cmake"
+    git = "https://github.com/toltec-astro/tula_cmake.git"
+    root_cmakelists_dir = "packages/tula_netcdf_cxx4"
 
-    version("4.3.1")
+    version("4.3.1", tag="v3.2.0")
 
     depends_on("cmake@3.25:", type="build")
     depends_on("cxx", type="build")

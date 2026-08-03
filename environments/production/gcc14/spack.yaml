@@ -4,7 +4,7 @@ spack:
     - ../config/devcontainer/packages.yaml
 
   specs:
-    - citlali@4.0.0 %cxx=gcc@14.2.0
+    - citlali@4.1.0 %cxx=gcc@14.2.0
 
   concretizer:
     unify: true
@@ -17,7 +17,7 @@ spack:
 
   develop:
     citlali:
-      spec: citlali@4.0.0
+      spec: citlali@4.1.0
       path: ../../../../citlali
     kidscpp:
       spec: kidscpp@3.1.0
