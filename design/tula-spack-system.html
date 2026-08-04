@@ -761,14 +761,14 @@ uvx --from ./tolteca_deploy \
 cd LOCATION &amp;&amp; source dotbashrc
 just run update
 just cpp-install</pre><p>The selected profile requires GCC 14 or LLVM 20. The location pins Spack 1.2.2 and keeps configuration, build stage, environment, lock, and view location-specific. The compiled store and download cache are user-shared by default or location-scoped by policy. A dev container is optional local tooling rather than a deployment artifact.</p></div>
-      <div class="panel"><h3>Native macOS arm64</h3><pre>brew install llvm@20 gcc@14 cmake ninja pkgconf
+      <div class="panel"><h3>Native macOS arm64</h3><pre>brew install llvm@20 gcc cmake ninja
 /opt/homebrew/opt/llvm@20/bin/clang++ \
   --version
 
 tolteca_deploy setup --config location.yaml
 cd LOCATION &amp;&amp; source dotbashrc
 just run update
-just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by absolute path. Because that keg does not ship OpenMP, Spack builds exact <code>llvm-openmp@20.1.8</code> and <code>tula-perflibs</code> exports it. The full graph uses GCC 14 only for FFTW's Fortran edge, CMake 3.27.9 for Ceres 2.2, and source NetCDF C 4.9.3. The installed Citlali CLI uses portable <code>getrusage</code> memory diagnostics, processed observation 149101 through all 123 scans, and wrote raw and filtered FITS products. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
+just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by absolute path. Before concretizing it runs native <code>spack compiler find /opt/homebrew/opt/gcc/bin</code>, so the current Homebrew GCC supplies only Fortran edges without a stale major-version path. The measured graph detected GCC 15.2.0 for Fortran and retained Clang 20.1.8 for C/C++. Spack builds exact <code>llvm-openmp@20.1.8</code>, isolated <code>pkgconf@2.5.1</code>, and source NetCDF C 4.9.3; Homebrew's global pkg-config directory cannot leak a different HDF5 into the graph. The installed Citlali CLI and its package checks pass. AppleClang and unversioned LLVM cannot silently satisfy it.</p></div>
     </div>
   </section>
 
@@ -778,6 +778,8 @@ just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by a
 ┌──────────────────────────┐        ┌──────────────────────────────┐
 │ llvm external @20.1.8    │───────▶│ Homebrew clang++ 20.1.8     │
 │ llvm-openmp @20.1.8      │───────▶│ source-built libomp 20.1.8  │
+│ compiler find gcc prefix │───────▶│ detected Fortran frontend   │
+│ source pkgconf @2.5.1    │───────▶│ isolated NetCDF/HDF5 search │
 └──────────────────────────┘        └──────────────┬───────────────┘
                                                   │
                          tula-perflibs configure  ▼

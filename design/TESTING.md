@@ -262,6 +262,10 @@ propagates through Kidscpp and Tula while only `tula-perflibs` handles runtime
 discovery.
 That graph pins source NetCDF C 4.9.3 rather than Spack's broken 4.8.1 patch
 path or the incompatible 4.10/HDF5 target export with C++4 4.3.1.
+Spack discovers the installed Homebrew GCC version for Fortran-only edges and
+builds `pkgconf@2.5.1` itself. The measured graph used GCC 15.2.0 for Fortran
+and Clang 20.1.8 for C/C++. The concrete NetCDF graph contains Spack HDF5
+1.14.6 with `~szip~zstd` and no Homebrew dependency node.
 
 Measured result: Citlali builds with OpenMP, 6/6 root package tests pass, and
 the installed CLI reports Citlali 4.1.0 and Kidscpp 3.1.0. The focused

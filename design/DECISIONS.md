@@ -264,3 +264,19 @@ On Darwin the Spack recipe pairs exact Homebrew Clang 20.1.8 with
 flags, include directory, and library so an installed consumer cannot silently
 select a different Homebrew `libomp`. Whether `llvm-openmp` is source-built or
 a reviewed external remains environment policy, not a package variant.
+
+## D027 — Discover Homebrew Fortran; isolate pkg-config metadata
+
+Accepted 2026-08-03.
+
+The native macOS profile does not encode a Homebrew GCC major, patch version,
+or versioned `gfortran-N` path. Before concretization, the location runs
+Spack's native `compiler find /opt/homebrew/opt/gcc/bin`. Spack records the
+detected external compiler in the location-scoped user config and uses it only
+for packages with Fortran edges; Homebrew LLVM 20 remains the C/C++ provider.
+
+The profile source-builds `pkgconf@2.5.1` instead of registering Homebrew's
+binary. Its compiled-in `/opt/homebrew/lib/pkgconfig` search directory exposes
+unrelated formula metadata and can mix Homebrew HDF5 headers with a Spack HDF5
+library in the NetCDF C build. An isolated pkgconf prefix makes every detected
+NetCDF/HDF5 dependency an explicit node in the concrete Spack graph.

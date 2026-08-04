@@ -156,7 +156,7 @@ The tested native compiler is the keg-only Homebrew LLVM 20.1.8, not
 AppleClang and not an unversioned Homebrew LLVM:
 
 ```console
-brew install llvm@20 gcc@14 cmake ninja pkgconf
+brew install llvm@20 gcc cmake ninja
 /opt/homebrew/opt/llvm@20/bin/clang++ --version
 ```
 
@@ -165,11 +165,17 @@ The packaged `tolteca_deploy` profile registers the absolute compiler paths in
 need to link the keg or modify their shell PATH. Its generated location exposes
 the pinned Spack bootstrap and native commands.
 
-The full Citlali graph also registers Homebrew GCC 14's `gfortran` for FFTW's
-build-language edge and pins Spack CMake 3.27.9 because the Ceres 2.2 recipe
-does not accept CMake 4.x. C and C++ compilation remains exact LLVM 20.1.8.
+The full Citlali graph lets Spack discover the current Homebrew `gfortran`
+through the stable `/opt/homebrew/opt/gcc/bin` formula prefix for the LAPACK
+build-language edge; it does not pin a formula major or a versioned executable.
+The measured 2026-08-03 graph detected GCC 15.2.0 for Fortran while retaining
+Clang 20.1.8 for C/C++. It pins Spack CMake 3.27.9 because the Ceres 2.2 recipe does not
+accept CMake 4.x. C and C++ compilation remains exact LLVM 20.1.8.
 It selects serial NetCDF C 4.9.3 from source, bypassing the stale 4.8.1 patch
 path and retaining a working export contract with NetCDF C++4 4.3.1.
+`pkgconf@2.5.1` is also built by Spack: Homebrew's executable has the broad
+`/opt/homebrew/lib/pkgconfig` search path compiled in, which can otherwise
+mix Homebrew HDF5 headers with the locked Spack HDF5 library.
 The compiler keg does not include OpenMP, so the profile builds the matching
 `llvm-openmp@20.1.8` runtime with Spack and requests `citlali+openmp`. The
 option propagates across Citlali, Kidscpp, Tula, and `tula-perflibs`; the

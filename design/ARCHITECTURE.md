@@ -406,14 +406,20 @@ The supported development matrix is intentionally small:
 
 GCC 13 is not a supported lane. Native AppleClang is not a substitute for the
 LLVM 20 lane. A macOS environment must select and validate Homebrew LLVM 20.
-The full macOS graph may use Homebrew GCC 14 only for an explicit Fortran
-build-language edge; it does not replace LLVM for C or C++. Because Homebrew
+The full macOS graph uses the current Homebrew GCC only for explicit Fortran
+build-language edges; Spack discovers its exact version from the stable GCC
+formula prefix, and it does not replace LLVM for C or C++. Because Homebrew
 `llvm@20` does not include an OpenMP runtime, the native profile builds exact
 `llvm-openmp@20.1.8` with Spack. `tula-perflibs` discovers it and preserves
 the resolved flags, header path, and library in its installed CMake config.
 Citlali links `tula::perflibs`; it never repeats runtime probing. All three
 production lanes retain `+openmp`, while `~openmp` remains a tested graph
 choice.
+
+The macOS profile source-builds `pkgconf` in the Spack store. The Homebrew
+binary's compiled-in `/opt/homebrew/lib/pkgconfig` path is deliberately
+excluded because it would allow unrelated Homebrew HDF5, SZIP, or Zstd
+metadata to contaminate the isolated NetCDF C/HDF5 graph.
 
 ## 12. Explicit exclusions
 

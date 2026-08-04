@@ -42,8 +42,9 @@ The focused CCfits/CFITSIO adapter and the complete Citlali root are also
 measured on native macOS 26 arm64 with Homebrew LLVM 20.1.8 and C++23.
 Citlali's six package tests and installed CLI pass with `+openmp`, backed by
 Spack-built `llvm-openmp@20.1.8`; the focused installed perflibs consumer also
-passes and links that runtime. AppleClang is not substituted. Homebrew GCC
-14.3 supplies only the Fortran build edge.
+passes and links that runtime. AppleClang is not substituted. Spack discovers
+the installed Homebrew GCC dynamically and uses only its Fortran frontend for
+the LAPACK build edge; the measured 2026-08-03 graph used GCC 15.2.0.
 
 ## 2. Root workflows
 
