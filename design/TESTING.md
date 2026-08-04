@@ -276,7 +276,7 @@ CLI, and requires the reported build profile and lock SHA-256 to match the
 active environment. The accepted locks are packaged by `tolteca_deploy`.
 
 The 2026-08-03 result passed both lanes. The locked project revisions are
-TulaCMake `8d96675a`, Tula `8fa4cbd3`, Kidscpp `8d80a80a`, and Citlali
+TulaCMake `5138dfc4`, Tula `8fa4cbd3`, Kidscpp `8d80a80a`, and Citlali
 `d751f299`. This gate tests source releases, not a buildcache.
 
 ## 15. Citlali observation gate
