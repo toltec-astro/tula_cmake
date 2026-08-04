@@ -631,6 +631,51 @@ citlali-real-workdir spack="spack" compiler="gcc14":
         )"
     done
 
+# Build tagged package sources without Spack develop paths. Local Git URL
+# redirects make this gate runnable before the accepted tags are published.
+release-matrix spack="spack":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    spack_cmd="{{ spack }}"
+    release="{{ root }}/environments/release/unity"
+    workspace="$(dirname "{{ root }}")"
+
+    export GIT_CONFIG_COUNT=4
+    export GIT_CONFIG_KEY_0="url.file://${workspace}/tula_cmake.insteadOf"
+    export GIT_CONFIG_VALUE_0=https://github.com/toltec-astro/tula_cmake.git
+    export GIT_CONFIG_KEY_1="url.file://${workspace}/tula.insteadOf"
+    export GIT_CONFIG_VALUE_1=https://github.com/toltec-astro/tula.git
+    export GIT_CONFIG_KEY_2="url.file://${workspace}/kidscpp.insteadOf"
+    export GIT_CONFIG_VALUE_2=https://github.com/toltec-astro/kidscpp.git
+    export GIT_CONFIG_KEY_3="url.file://${workspace}/citlali.insteadOf"
+    export GIT_CONFIG_VALUE_3=https://github.com/toltec-astro/citlali.git
+
+    for compiler in gcc14 llvm20; do
+        environment="${release}/${compiler}"
+        "$spack_cmd" -e "$environment" concretize --force
+        export TOLTECA_BUILD_PROFILE="release/unity-${compiler}"
+        export TOLTECA_LOCK_SHA256
+        TOLTECA_LOCK_SHA256="$(sha256sum "$environment/spack.lock" | cut -d' ' -f1)"
+        "$spack_cmd" -e "$environment" install \
+            --yes-to-all \
+            --test=all \
+            --overwrite \
+            --show-log-on-error
+
+        concrete="$("$spack_cmd" -e "$environment" find -clv)"
+        printf '%s\n' "$concrete"
+        if grep -F "dev_path=" <<<"$concrete"; then
+            echo "Release graph unexpectedly contains a develop source" >&2
+            exit 1
+        fi
+
+        prefix="$("$spack_cmd" -e "$environment" location -i citlali)"
+        version="$($prefix/bin/citlali --version 2>&1)"
+        printf '%s\n' "$version"
+        grep -F "profile=release/unity-${compiler}" <<<"$version"
+        grep -F "lock=${TOLTECA_LOCK_SHA256}" <<<"$version"
+    done
+
 # Build Tlaloc against the minimal Tula ECSV feature set.
 tlaloc-matrix spack="spack":
     #!/usr/bin/env bash

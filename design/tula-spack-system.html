@@ -555,7 +555,7 @@ tula_deps::grppi
       <div class="arrow">→</div>
       <div class="node"><strong>Kidscpp 3.1</strong><small>7/7 reader, PSD, solver</small></div>
       <div class="arrow">→</div>
-      <div class="node"><strong>Citlali 4.0</strong><small>6/6 engine + CLI</small></div>
+      <div class="node"><strong>Citlali 4.1</strong><small>6/6 engine + CLI</small></div>
     </div>
     <div class="cols-2">
       <div class="panel">
@@ -618,7 +618,9 @@ result
 ├── a1100 raw + filtered FITS
 ├── a1400 raw + filtered FITS
 ├── a2000 raw + filtered FITS
-└── exit 0 in 2m53s</pre>
+└── exit 0 in 2m52s
+
+FITS headers retain source + DAG provenance</pre>
     </div>
     <div class="callout"><code>just citlali-real-workdir</code> reproduces the
       invocation, records the full log, and asserts the three filtered output
@@ -728,12 +730,15 @@ target_link_libraries(citlali
 ├── tolteca_deploy/
 │   └── src/tolteca_deploy/data/spack/
 │       ├── stack.yaml
-│       ├── config/macos-homebrew-llvm20/
-│       └── profiles/development/
+│       ├── config/{unity-devcontainer,macos-homebrew-llvm20}/
+│       ├── fixtures/citlali-observation-149101.yaml
+│       └── profiles/{development,release}/
 │           ├── linux-gcc14/
 │           ├── linux-llvm20/
 │           ├── macos-homebrew-llvm20/
-│           └── macos-homebrew-llvm20-citlali/
+│           ├── macos-homebrew-llvm20-citlali/
+│           ├── unity-gcc14/{spack.yaml,spack.lock}
+│           └── unity-llvm20/{spack.yaml,spack.lock}
 ├── tula_cmake/
 │   └── spack_repo/develop.yaml
 ├── tula/
@@ -742,7 +747,7 @@ target_link_libraries(citlali
 │   └── spack_repo/develop.yaml
 └── citlali/
     └── spack_repo/develop.yaml</pre>
-      <div><div class="panel"><h3>Deployment-owned</h3><p>Accepted source revisions, profile selection, platform externals, future release locks, buildcache trust, and uv/Spack activation. Each location keeps <code>spack/&lt;profile&gt;/{spack.yaml,spack.lock,.spack-env/view}</code> together; store and cache are user-shared by default or location-scoped by policy.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipes, variants, patches, behavior tests, and local-development package paths remain in each project repository.</p></div><div class="callout"><code>tolteca_deploy</code> generates native Spack configuration but keeps <code>spack -e</code> visible. <code>.spack_repo</code> remains reserved for project-owned recipes, not deployment environments.</div></div>
+      <div><div class="panel"><h3>Deployment-owned</h3><p>Accepted source revisions, profile selection, platform externals, required release locks, fixture contracts, and uv/Spack activation. Each location keeps <code>spack/&lt;profile&gt;/{spack.yaml,spack.lock,.spack-env/view}</code> together; store and cache are user-shared by default or location-scoped by policy.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipes, variants, patches, behavior tests, and local-development package paths remain in each project repository.</p></div><div class="callout"><code>tolteca_deploy</code> generates native Spack configuration but keeps <code>spack -e</code> visible. Buildcache publication is deferred and is not required for source-release reproducibility.</div></div>
     </div>
   </section>
 
@@ -788,18 +793,60 @@ just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by a
     </div>
   </section>
 
+  <section class="slide" data-title="Release artifact flow">
+    <div class="slide-head"><span class="section">11 · release graph</span><h2>Release composition uses the same recipes without local development paths</h2></div>
+    <div class="flow">
+      <div class="node"><strong>Git tags</strong><small>TulaCMake 3.2 · Tula/Kids 3.1 · Citlali 4.1</small></div><div class="arrow">→</div>
+      <div class="node"><strong>project recipes</strong><small>versions, variants, dependency edges</small></div><div class="arrow">→</div>
+      <div class="node"><strong>platform policy</strong><small>Unity/devcontainer externals + compiler</small></div><div class="arrow">→</div>
+      <div class="node"><strong>spack.lock</strong><small>exact source commits and DAG hashes</small></div><div class="arrow">→</div>
+      <div class="node"><strong>installed view</strong><small>CLI + CMake packages</small></div>
+    </div>
+    <div class="cols-2" style="margin-top:18px">
+      <pre>development profile
+repositories.sources: [...]
+develop.sources: [...]
+lock: regenerate
+spack concretize --force</pre>
+      <pre>release profile
+repositories.sources: [...]
+develop.sources: []
+lock: required
+spack concretize</pre>
+    </div>
+    <div class="callout">Both locked graphs were source-fetched and installed in the devcontainer with no <code>dev_path</code>: GCC 14.2 and LLVM 20.1.2, both C++23.</div>
+  </section>
+
+  <section class="slide" data-title="Build and product provenance">
+    <div class="slide-head"><span class="section">11 · provenance</span><h2>One lock identity follows the build into runtime and science products</h2></div>
+    <pre>spack.lock ──SHA-256──▶ package.py build environment
+                             │
+                             ▼
+TulaCMakeGitVersion.cmake ──▶ generated version.h
+                             │
+                ┌────────────┼─────────────┐
+                ▼            ▼             ▼
+       citlali --version   NetCDF attrs   FITS/index metadata
+
+fields: semantic version · Git revision/state · compiler · C++ standard
+        package spec · DAG hash · build profile · lock SHA-256</pre>
+    <div class="cols-2"><div class="panel"><h3>Portable package tests</h3><p>Generated NetCDF and installed consumers run without the large science fixture.</p></div><div class="panel"><h3>Local observation gate</h3><p>A packaged fixture manifest validates required files/counts before the available 123-scan run. The data itself is not published.</p></div></div>
+  </section>
+
   <section class="slide" data-title="Accepted system and release boundary">
-    <div class="slide-head"><span class="section">11 · measured state</span><h2>Development branches pass; immutable release packaging is the remaining boundary</h2></div>
+    <div class="slide-head"><span class="section">12 · measured state</span><h2>Development and immutable source-release graphs pass</h2></div>
     <div class="cols-2">
       <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali production graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
-      <div class="panel"><h3>Release work</h3><ol><li>tag immutable project sources</li><li>replace development branch recipes</li><li>compose portable release environments</li><li>run the same gates from release archives</li><li>optionally publish signed buildcache artifacts</li></ol></div>
+      <div class="panel"><h3>Accepted release gates</h3><ol><li>immutable package tags</li><li>required GCC 14 and LLVM 20 locks</li><li>no local <code>dev_path</code></li><li>package tests + installed CLI</li><li>profile and lock provenance checks</li></ol></div>
     </div>
     <div class="callout">Canonical detail:
       <code>tula/design/COMPONENTS.md</code>,
       <code>design/ARCHITECTURE.md</code>,
       <code>design/SUPPORT_MATRIX.md</code>, and
-      <code>design/TESTING.md</code>. Superseded Conan documents are archived,
-      not mixed with active guidance.</div>
+      <code>design/TESTING.md</code>, and
+      <code>tolteca_deploy/design/cpp_release.md</code>. Actual Unity transfer,
+      buildcache publication, and a redistributable minimal observation fixture
+      are deliberately deferred.</div>
   </section>
 </main>
 

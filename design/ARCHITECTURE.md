@@ -482,11 +482,14 @@ LOCATION/
 └── src/                           configured source checkouts
 ```
 
-Developer environments use sibling `develop:` paths and intentionally ignore
-local locks. A future release profile packaged by `tolteca_deploy` will replace
-those paths with immutable sources, commit its lock, and own buildcache mirror
-and trust configuration. Local editor/dev-container configuration is not a
-release artifact and is deliberately outside this contract.
+Developer environments use sibling `develop:` paths and intentionally
+regenerate local locks. The release profiles packaged by `tolteca_deploy`
+register the same decentralized recipe repositories without `develop:`, fetch
+immutable tags, and commit separate GCC 14 and LLVM 20 locks. Environment
+generation requires and copies the selected lock; release concretization never
+uses `--force`. Buildcache mirror and trust configuration is a later optional
+optimization. Local editor configuration is not a release artifact; the
+devcontainer is the current Unity-equivalent acceptance platform.
 
 ## 15. CCfits provider boundary
 

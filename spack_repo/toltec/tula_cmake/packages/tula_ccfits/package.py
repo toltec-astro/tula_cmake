@@ -9,7 +9,10 @@ class TulaCcfits(CMakePackage):
 
     homepage = "https://github.com/toltec-astro/tula_cmake"
     git = "https://github.com/toltec-astro/tula_cmake.git"
-    root_cmakelists_dir = "packages/tula_ccfits"
+    @property
+    def root_cmakelists_dir(self):
+        """Select the focused develop tree or monorepo release subtree."""
+        return "." if self.spec.is_develop else "packages/tula_ccfits"
 
     version("1.0.0", tag="v3.2.0")
 

@@ -104,12 +104,18 @@ GCC 13 is intentionally omitted. oneAPI/MKL remains outside current scope.
 A future macOS lane must select and validate Homebrew LLVM major version 20;
 native AppleClang is not that lane.
 
-## 7. Release work
+## 7. Release boundary
 
-Local development uses Spack `develop` paths. Publishing later requires:
+Local development uses Spack `develop` paths. Source-release publication now
+has:
 
-1. immutable source URLs and checksums for released TolTEC packages;
-2. stable composition of the decentralized recipe repositories;
-3. portable release lock files without local paths;
-4. the same compiler/component gates against release archives; and
-5. optional signed buildcache configuration.
+1. immutable Git tags for TulaCMake 3.2.0, Tula 3.1.0, Kidscpp 3.1.0, and
+   Citlali 4.1.0;
+2. stable decentralized recipe-repository composition;
+3. Unity/devcontainer GCC 14 and LLVM 20 release locks without `dev_path`;
+4. source-fetch package tests, installed consumers, and provenance checks; and
+5. a machine-readable contract for the local-only observation fixture.
+
+A signed buildcache remains optional and is explicitly deferred. The large
+science fixture is not published; a minimal redistributable subset will be
+added later without changing the package release contract.

@@ -9,7 +9,10 @@ class TulaNetcdfCxx4(CMakePackage):
 
     homepage = "https://github.com/toltec-astro/tula_cmake"
     git = "https://github.com/toltec-astro/tula_cmake.git"
-    root_cmakelists_dir = "packages/tula_netcdf_cxx4"
+    @property
+    def root_cmakelists_dir(self):
+        """Select the focused develop tree or monorepo release subtree."""
+        return "." if self.spec.is_develop else "packages/tula_netcdf_cxx4"
 
     version("4.3.1", tag="v3.2.0")
 

@@ -34,6 +34,7 @@ not claim it.
 | Citlali package | 6/6 | 6/6 |
 | Installed Tula/Kidscpp/Citlali consumers | 3/3 | 3/3 |
 | Installed Citlali CLI | pass | pass |
+| Immutable source-release graph (no `dev_path`) | pass | pass |
 | Tlaloc package and real tune-reader test | pass | pass |
 | Installed Tlaloc executable present | pass | pass |
 
@@ -58,6 +59,7 @@ passes and links that runtime. AppleClang is not substituted. Homebrew GCC
 | Tula fitting slice | Minimal logging/Eigen/Ceres closure and installed consumer | `just tula-fitting-matrix` | Measured with GCC 14 and LLVM 20 |
 | CCfits/CFITSIO adapter | Aggregate target plus external/source provider policy | `just tula-ccfits-matrix` | Four cases: GCC 14 and LLVM 20 × external and source |
 | Tula → Kidscpp → Citlali | Exact non-skipped package-test totals, installed consumers, and installed CLI | `just production-matrix` | Measured with GCC 14 and LLVM 20 |
+| Immutable source release | Tagged sources, required locks, no `dev_path`, installed CLI provenance | `just release-matrix` | Measured with GCC 14 and LLVM 20 |
 | Citlali observation 149101 | Eleven TolTEC streams, telescope stream, APT, 123 scans, raw/filtered FITS output | `just citlali-real-workdir` plus native location run | Measured with GCC 14 and macOS Homebrew LLVM 20 |
 | Tlaloc | Minimal Tula ECSV closure, full CLI build, real tune-report reader, no Kidscpp/Ceres | `just tlaloc-matrix` | Measured with GCC 14 and LLVM 20 |
 
@@ -119,7 +121,7 @@ the higher-level ECSV component. There is no `tula::headers` umbrella.
 | `find_package(tula 3.1 CONFIG REQUIRED COMPONENTS grppi)` | Defines `tula::grppi` and its logging/enum/perflibs closure |
 | `find_package(tula 3.1 CONFIG REQUIRED COMPONENTS fitting)` | Defines `tula::fitting` with logging, Eigen, and Ceres |
 | `find_package(kidscpp 3.1 CONFIG REQUIRED)` | Defines the installed `kids::kids` reader/solver target |
-| `find_package(citlali 4 CONFIG REQUIRED)` | Defines the installed `citlali::citlali` engine target |
+| `find_package(citlali 4.1 CONFIG REQUIRED)` | Defines the installed `citlali::citlali` engine target |
 
 Requesting a component absent from the concrete Tula installation makes
 `tula_FOUND` false at configure time.

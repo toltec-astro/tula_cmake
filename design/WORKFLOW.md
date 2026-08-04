@@ -263,27 +263,26 @@ replacement for these tools.
 
 ## 7. End-user installation
 
-The intended released workflow is:
+The released workflow is owned by a `tolteca_deploy` location:
 
 ```console
-git clone --branch v1.2.2 https://github.com/spack/spack.git
-. spack/share/spack/setup-env.sh
-
-git clone <toltec environment repository>
-spack env activate <environment>
-spack concretize
-spack install
-spack load citlali
-citlali --help
+uvx --from git+https://github.com/toltec-astro/tolteca_deploy.git@v0.1.0 \
+  tolteca_deploy config write toltec_cpp_release location.yaml
+uvx --from git+https://github.com/toltec-astro/tolteca_deploy.git@v0.1.0 \
+  tolteca_deploy setup --config location.yaml
+cd /path/to/location
+source dotbashrc
+just run update
+just cpp-install
+citlali --version
 ```
 
-An organization environment repository can pin the TolTEC recipe repositories,
-root spec, compiler policy, mirrors, and trusted binary caches. Users still see
-native Spack concepts and commands.
+`tolteca_deploy` packages the accepted recipe-repository sources, root spec,
+compiler/external policy, and required lock. Users still see native Spack
+concepts and commands.
 
-When a matching signed buildcache artifact exists, Spack installs it. Otherwise
-the same concrete spec is built from source. This does not change the user
-interface or graph.
+The current release gate builds the locked graph from source. Signed buildcache
+publication is a deferred optimization and will not change this interface.
 
 ## 8. External application integration
 
@@ -309,8 +308,8 @@ Each source repository:
 2. updates the version/checksum in its owned recipe;
 3. passes source-build and package tests;
 4. is concretized in the supported environment matrix;
-5. optionally publishes signed buildcache artifacts; and
-6. updates the organization environment lock.
+5. updates and tests the `tolteca_deploy` release locks; and
+6. may later publish signed buildcache artifacts.
 
 The recipe and CMake package config are tested together. A source tag is not
 considered releasable if only an in-tree build passes.

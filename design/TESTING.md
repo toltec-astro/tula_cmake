@@ -264,23 +264,41 @@ That graph pins source NetCDF C 4.9.3 rather than Spack's broken 4.8.1 patch
 path or the incompatible 4.10/HDF5 target export with C++4 4.3.1.
 
 Measured result: Citlali builds with OpenMP, 6/6 root package tests pass, and
-the installed CLI reports Citlali 4.0.0 and Kidscpp 3.1.0. The focused
+the installed CLI reports Citlali 4.1.0 and Kidscpp 3.1.0. The focused
 source-built CFITSIO/CCfits and installed OpenMP consumers also pass.
 
-## 14. Citlali observation gate
+## 14. Immutable source-release matrix
+
+`just release-matrix` builds the complete graph from the released Git tags in
+the Unity-equivalent devcontainer. It rejects any `dev_path`, installs package
+tests under GCC 14.2 and LLVM 20.1.2 with C++23, runs the installed Citlali
+CLI, and requires the reported build profile and lock SHA-256 to match the
+active environment. The accepted locks are packaged by `tolteca_deploy`.
+
+The 2026-08-03 result passed both lanes. The locked project revisions are
+TulaCMake `8d96675a`, Tula `8fa4cbd3`, Kidscpp `8d80a80a`, and Citlali
+`d751f299`. This gate tests source releases, not a buildcache.
+
+## 15. Citlali observation gate
 
 `just citlali-real-workdir` runs the installed GCC 14 CLI against observation
 149101. The input set contains eleven TolTEC NetCDF timestreams, the recomputed
 telescope stream, and the APT ECSV table from the sibling
 `tolteca_test_data/tolteca_workdir` fixture; output is isolated under `/tmp`.
 
-The measured 2026-07-31 run:
+The measured 2026-08-03 run:
 
 - loaded all input interfaces and 5,270 detector records;
 - processed all 123 scans with OpenMP;
 - produced raw FITS maps for a1100, a1400, and a2000;
 - produced filtered FITS maps and PSD/histogram/index products; and
-- exited successfully in 2m53s after the rebuilt container bootstrap.
+- exited successfully in 2m52s after the rebuilt container bootstrap; and
+- exposed the expected Citlali, Kidscpp, Tula, compiler, DAG, and source-state
+  provenance in the installed CLI and generated FITS headers.
+
+The runtime YAML uses workdir-relative input paths, so the same fixture works
+from the macOS checkout and its `/workspaces/cpp` devcontainer mount without
+machine-specific rewrites.
 
 The complete console record is retained at
 `tula_cmake/build/citlali-real-workdir/gcc14.log` by the repeatable recipe.
@@ -290,7 +308,7 @@ the same OpenMP graph and processes all 123 scans. Citlali's memory diagnostic
 uses `getrusage`, including Darwin's byte-to-KiB conversion, rather than the
 Linux-only `/proc/self/status` interface.
 
-## 15. Tlaloc integration matrix
+## 16. Tlaloc integration matrix
 
 The GCC 14 and LLVM 20 roots build the complete `tlaloc_clip` executable from
 the clean Tlaloc baseline. The gate asserts this graph before installation:
@@ -319,7 +337,7 @@ Tula now returns stable const references from table, loader, header, and view
 accessors. Both the focused ECSV matrix and the complete production matrix pass
 after the correction.
 
-## 16. Adding the next component
+## 17. Adding the next component
 
 For each new Tula component:
 

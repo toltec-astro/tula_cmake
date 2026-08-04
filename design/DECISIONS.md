@@ -110,9 +110,27 @@ Accepted 2026-07-30.
 
 Production-development `spack.yaml` files are versioned; their generated
 `spack.lock` files are ignored because `develop` specs embed absolute workspace
-paths and platform-specific external prefixes. Release environments will
-replace local develop paths with immutable source archives and commit their
-portable locks.
+paths and platform-specific external prefixes. Release environments replace
+local develop paths with immutable Git tags and commit compiler/profile locks.
+
+## D025 — Require release locks and preserve native Spack UX
+
+Accepted 2026-08-03.
+
+Development profiles regenerate with `spack concretize --force`. Release
+profile metadata declares `lock: required`; deployment copies the packaged
+lock and calls `spack concretize` without force. A missing lock is an error.
+No custom dependency solver or opaque wrapper CLI is introduced.
+
+## D026 — Keep large observation data outside releases
+
+Accepted 2026-08-03.
+
+The observation 149101 files remain local and are not pushed to GitHub.
+`tolteca_deploy` packages a typed fixture contract that validates the required
+paths/counts and expected runtime surface. Portable generated package tests
+run without those files; development acceptance adds real reader/solver and
+123-scan gates whenever the sibling fixture is present.
 
 ## D015 — Broad Tlaloc migration attempt
 
@@ -175,15 +193,16 @@ Accepted 2026-08-03; supersedes the local standalone-stack prototype.
 
 Package recipes remain decentralized. The wheel-shipped
 `tolteca_deploy/src/tolteca_deploy/data/spack/` assets own the multi-repository revision
-manifest, platform configuration, development and future release profiles,
-and eventual buildcache trust configuration. A generated location owns its
+manifest, platform configuration, development and required-lock release profiles,
+and fixture contracts. A generated location owns its
 pinned Spack checkout, environment, stage, and view; the configured storage
 policy owns the install store and cache. This keeps
 portable deployment inputs separate from reusable TulaCMake infrastructure
-while leaving the native `spack -e` interface visible. The superseded
+while leaving the native `spack -e` interface visible. Buildcache trust is a
+deferred optimization. The superseded
 standalone composition repository has been removed.
 
-## D023 — Independent environments are visible; reusable storage is policy
+## D024 — Independent environments are visible; reusable storage is policy
 
 Accepted 2026-08-03.
 

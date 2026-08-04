@@ -1,0 +1,16 @@
+spack:
+  include:
+    - ../../../production/config/repos.yaml
+    - ../../../production/config/devcontainer/packages.yaml
+  specs:
+    - citlali@4.1.0+openmp %cxx=llvm@20.1.2
+  concretizer:
+    unify: true
+    reuse: false
+  view:
+    default:
+      root: .spack-view
+      link: roots
+  packages:
+    cxx:
+      require: llvm@20.1.2
