@@ -106,11 +106,11 @@ native AppleClang is not that lane.
 
 ## 7. Release boundary
 
-Local development uses Spack `develop` paths. Source-release publication now
+Local development uses Spack `develop` paths. Clean-source acceptance now
 has:
 
-1. immutable Git tags for TulaCMake 3.2.0, Tula 3.1.0, Kidscpp 3.1.0, and
-   Citlali 4.1.0;
+1. immutable Git commits for TulaCMake 3.2.0, Tula 3.1.0, Kidscpp 3.1.0, and
+   Citlali 4.1.0, without pre-committing to final tag names;
 2. stable decentralized recipe-repository composition;
 3. Unity/devcontainer GCC 14 and LLVM 20 release locks without `dev_path`;
 4. source-fetch package tests, installed consumers, and provenance checks; and

@@ -271,17 +271,21 @@ Measured result: Citlali builds with OpenMP, 6/6 root package tests pass, and
 the installed CLI reports Citlali 4.1.0 and Kidscpp 3.1.0. The focused
 source-built CFITSIO/CCfits and installed OpenMP consumers also pass.
 
-## 14. Immutable source-release matrix
+## 14. Immutable clean-source matrix
 
-`just release-matrix` builds the complete graph from the released Git tags in
+`just release-matrix` builds the complete graph from immutable Git commits in
 the Unity-equivalent devcontainer. It rejects any `dev_path`, installs package
 tests under GCC 14.2 and LLVM 20.1.2 with C++23, runs the installed Citlali
-CLI, and requires the reported build profile and lock SHA-256 to match the
+CLI, and requires the runtime deployment profile and lock SHA-256 to match the
 active environment. The accepted locks are packaged by `tolteca_deploy`.
 
-The 2026-08-03 result passed both lanes. The locked project revisions are
-TulaCMake `5138dfc4`, Tula `8fa4cbd3`, Kidscpp `8d80a80a`, and Citlali
-`d751f299`. This gate tests source releases, not a buildcache.
+The 2026-08-05 result passed both lanes. The locked source snapshots are
+TulaCMake `a7d411dc`, Tula `212717a2`, Kidscpp `06b3130b`, and Citlali
+`91b7febc`. The GCC lock SHA-256 is
+`1475534940194fd4ac9bc32e1d32523010da08dc7320e0734c3efc8cf35a0986`;
+the LLVM lock SHA-256 is
+`07085da55ba3d7f942cc10e977f02dc4a6c05595371338b8a1095d748b74944a`.
+This gate tests source snapshots, not a buildcache or provisional tags.
 
 ## 15. Citlali observation gate
 

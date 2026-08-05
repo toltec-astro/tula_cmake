@@ -489,13 +489,28 @@ LOCATION/
 ```
 
 Developer environments use sibling `develop:` paths and intentionally
-regenerate local locks. The release profiles packaged by `tolteca_deploy`
-register the same decentralized recipe repositories without `develop:`, fetch
-immutable tags, and commit separate GCC 14 and LLVM 20 locks. Environment
+regenerate local locks. The release-profile machinery packaged by
+`tolteca_deploy` registers the same decentralized recipe repositories without
+`develop:`, fetches immutable commit snapshots, and commits separate GCC 14
+and LLVM 20 locks. Environment
 generation requires and copies the selected lock; release concretization never
 uses `--force`. Buildcache mirror and trust configuration is a later optional
 optimization. Local editor configuration is not a release artifact; the
 devcontainer is the current Unity-equivalent acceptance platform.
+
+Artifact and deployment provenance have different lifetimes:
+
+```text
+package source + compiler + concrete DAG ──build──> installed artifact
+deployment profile + spack.lock SHA-256 ──runtime──> CLI and science products
+```
+
+TulaCMake-generated headers contain only artifact identity. The deployment
+profile and lock are location properties and are exported by
+`tolteca_deploy` as `TOLTECA_SPACK_PROFILE` and
+`TOLTECA_SPACK_LOCK_SHA256`. Citlali reads them when invoked. This permits
+one content-addressed Spack prefix to be activated from multiple locations
+without recording false environment provenance in the binary.
 
 ## 15. CCfits provider boundary
 

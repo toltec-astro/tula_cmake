@@ -631,8 +631,8 @@ citlali-real-workdir spack="spack" compiler="gcc14":
         )"
     done
 
-# Build tagged package sources without Spack develop paths. Local Git URL
-# redirects make this gate runnable before the accepted tags are published.
+# Build immutable package snapshots without Spack develop paths. Local Git URL
+# redirects exercise the exact commits before the recipe revisions are pushed.
 release-matrix spack="spack":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -653,9 +653,9 @@ release-matrix spack="spack":
     for compiler in gcc14 llvm20; do
         environment="${release}/${compiler}"
         "$spack_cmd" -e "$environment" concretize --force
-        export TOLTECA_BUILD_PROFILE="release/unity-${compiler}"
-        export TOLTECA_LOCK_SHA256
-        TOLTECA_LOCK_SHA256="$(sha256sum "$environment/spack.lock" | cut -d' ' -f1)"
+        export TOLTECA_SPACK_PROFILE="snapshot/unity-${compiler}"
+        export TOLTECA_SPACK_LOCK_SHA256
+        TOLTECA_SPACK_LOCK_SHA256="$(sha256sum "$environment/spack.lock" | cut -d' ' -f1)"
         "$spack_cmd" -e "$environment" install \
             --yes-to-all \
             --test=all \
@@ -672,8 +672,8 @@ release-matrix spack="spack":
         prefix="$("$spack_cmd" -e "$environment" location -i citlali)"
         version="$($prefix/bin/citlali --version 2>&1)"
         printf '%s\n' "$version"
-        grep -F "profile=release/unity-${compiler}" <<<"$version"
-        grep -F "lock=${TOLTECA_LOCK_SHA256}" <<<"$version"
+        grep -F "profile=snapshot/unity-${compiler}" <<<"$version"
+        grep -F "lock=${TOLTECA_SPACK_LOCK_SHA256}" <<<"$version"
     done
 
 # Build Tlaloc against the minimal Tula ECSV feature set.

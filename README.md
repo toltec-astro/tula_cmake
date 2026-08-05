@@ -81,11 +81,13 @@ The native macOS arm64 Homebrew LLVM 20.1.8 location also installs the complete
 OpenMP graph and processes all 123 scans. Citlali uses portable `getrusage`
 memory reporting rather than a Linux-only `/proc` parser.
 
-The source-release gate fetches immutable tags for TulaCMake 3.2.0, Tula 3.1.0,
-Kidscpp 3.1.0, and Citlali 4.1.0 with no `dev_path`. Separate locked
-Unity/devcontainer graphs pass under GCC 14 and LLVM 20. Generated version
-headers carry source/tree state, compiler, C++ standard, package spec, DAG,
-profile, and lock identity into the CLI and science-product provenance.
+The clean-source gate fetches immutable commit snapshots for TulaCMake 3.2.0,
+Tula 3.1.0, Kidscpp 3.1.0, and Citlali 4.1.0 with no `dev_path`.
+Separate locked Unity/devcontainer graphs pass under GCC 14 and LLVM 20.
+Generated version headers carry artifact identity—source/tree state, compiler,
+C++ standard, package spec, and DAG. Citlali reads the active deployment
+profile and lock identity at runtime so a shared Spack installation cannot
+embed the identity of whichever environment happened to build it first.
 
 The narrow Tlaloc integration is also measured in both lanes. It builds the
 full `tlaloc_clip` executable with only `tula::ecsv`, keeps NetCDF/FFTW/

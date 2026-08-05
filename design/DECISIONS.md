@@ -110,8 +110,9 @@ Accepted 2026-07-30.
 
 Production-development `spack.yaml` files are versioned; their generated
 `spack.lock` files are ignored because `develop` specs embed absolute workspace
-paths and platform-specific external prefixes. Release environments replace
-local develop paths with immutable Git tags and commit compiler/profile locks.
+paths and platform-specific external prefixes. Clean-source environments
+replace local develop paths with immutable Git commits and commit
+compiler/profile locks.
 
 ## D025 — Require release locks and preserve native Spack UX
 
@@ -280,3 +281,20 @@ binary. Its compiled-in `/opt/homebrew/lib/pkgconfig` search directory exposes
 unrelated formula metadata and can mix Homebrew HDF5 headers with a Spack HDF5
 library in the NetCDF C build. An isolated pkgconf prefix makes every detected
 NetCDF/HDF5 dependency an explicit node in the concrete Spack graph.
+
+## D028 — Separate artifact identity from deployment identity
+
+Accepted 2026-08-05.
+
+TulaCMake-generated version headers contain semantic/source identity, Git tree
+state, compiler, C++ standard, concrete package spec, and DAG hash. They do not
+contain a deployment profile or lock hash: Spack installations are
+content-addressed and may be shared by multiple environments, so compile-time
+deployment values would describe only the first environment that built the
+prefix.
+
+`tolteca_deploy` instead exports `TOLTECA_SPACK_PROFILE` and
+`TOLTECA_SPACK_LOCK_SHA256` from the active location. Citlali reads those
+values at runtime for `--version`, NetCDF attributes, FITS headers, and index
+metadata. The clean-source gate uses exact commit snapshots while package tag
+naming remains intentionally undecided.

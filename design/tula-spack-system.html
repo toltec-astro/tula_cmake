@@ -795,10 +795,10 @@ just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by a
     </div>
   </section>
 
-  <section class="slide" data-title="Release artifact flow">
-    <div class="slide-head"><span class="section">11 · release graph</span><h2>Release composition uses the same recipes without local development paths</h2></div>
+  <section class="slide" data-title="Clean-source artifact flow">
+    <div class="slide-head"><span class="section">11 · clean-source graph</span><h2>Immutable composition uses the same recipes without local development paths</h2></div>
     <div class="flow">
-      <div class="node"><strong>Git tags</strong><small>TulaCMake 3.2 · Tula/Kids 3.1 · Citlali 4.1</small></div><div class="arrow">→</div>
+      <div class="node"><strong>Git commit snapshots</strong><small>exact SHA per TolTEC-owned package</small></div><div class="arrow">→</div>
       <div class="node"><strong>project recipes</strong><small>versions, variants, dependency edges</small></div><div class="arrow">→</div>
       <div class="node"><strong>platform policy</strong><small>Unity/devcontainer externals + compiler</small></div><div class="arrow">→</div>
       <div class="node"><strong>spack.lock</strong><small>exact source commits and DAG hashes</small></div><div class="arrow">→</div>
@@ -816,30 +816,33 @@ develop.sources: []
 lock: required
 spack concretize</pre>
     </div>
-    <div class="callout">Both locked graphs were source-fetched and installed in the devcontainer with no <code>dev_path</code>: GCC 14.2 and LLVM 20.1.2, both C++23.</div>
+    <div class="callout">Both locked graphs were source-fetched by commit and installed in the devcontainer with no tag and no <code>dev_path</code>: GCC 14.2 and LLVM 20.1.2, both C++23. Snapshots: TulaCMake <code>a7d411dc</code>, Tula <code>212717a2</code>, Kidscpp <code>06b3130b</code>, Citlali <code>91b7febc</code>.</div>
   </section>
 
   <section class="slide" data-title="Build and product provenance">
-    <div class="slide-head"><span class="section">11 · provenance</span><h2>One lock identity follows the build into runtime and science products</h2></div>
-    <pre>spack.lock ──SHA-256──▶ package.py build environment
-                             │
-                             ▼
+    <div class="slide-head"><span class="section">11 · provenance</span><h2>Artifact identity is compiled; deployment identity is resolved at runtime</h2></div>
+    <pre>package source + compiler + concrete DAG
+                 │ build
+                 ▼
 TulaCMakeGitVersion.cmake ──▶ generated version.h
-                             │
-                ┌────────────┼─────────────┐
-                ▼            ▼             ▼
-       citlali --version   NetCDF attrs   FITS/index metadata
+                             semantic version · Git revision/state
+                             compiler · C++ standard · spec · DAG hash
 
-fields: semantic version · Git revision/state · compiler · C++ standard
-        package spec · DAG hash · build profile · lock SHA-256</pre>
+active location ──▶ TOLTECA_SPACK_PROFILE
+spack.lock ─SHA──▶ TOLTECA_SPACK_LOCK_SHA256
+                 │ runtime
+                 ├────────────┬─────────────┐
+                 ▼            ▼             ▼
+        citlali --version   NetCDF attrs   FITS/index metadata</pre>
+    <div class="callout">A Spack prefix may be shared by multiple environments. Runtime lookup prevents the installed binary from permanently claiming the profile and lock of whichever location built it first.</div>
     <div class="cols-2"><div class="panel"><h3>Portable package tests</h3><p>Generated NetCDF and installed consumers run without the large science fixture.</p></div><div class="panel"><h3>Local observation gate</h3><p>A packaged fixture manifest validates required files/counts before the available 123-scan run. The data itself is not published.</p></div></div>
   </section>
 
   <section class="slide" data-title="Accepted system and release boundary">
-    <div class="slide-head"><span class="section">12 · measured state</span><h2>Development and immutable source-release graphs pass</h2></div>
+    <div class="slide-head"><span class="section">12 · measured state</span><h2>Development and immutable clean-source graphs pass</h2></div>
     <div class="cols-2">
       <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali production graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
-      <div class="panel"><h3>Accepted release gates</h3><ol><li>immutable package tags</li><li>required GCC 14 and LLVM 20 locks</li><li>no local <code>dev_path</code></li><li>package tests + installed CLI</li><li>profile and lock provenance checks</li></ol></div>
+      <div class="panel"><h3>Accepted clean-source gates</h3><ol><li>immutable package commits</li><li>required GCC 14 and LLVM 20 locks</li><li>no tag and no local <code>dev_path</code></li><li>package tests + installed CLI</li><li>runtime profile and lock checks</li></ol></div>
     </div>
     <div class="callout">Canonical detail:
       <code>tula/design/COMPONENTS.md</code>,
