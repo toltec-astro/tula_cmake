@@ -10,7 +10,7 @@ class TulaCmake(CMakePackage):
     homepage = "https://github.com/toltec-astro/tula_cmake"
     git = "https://github.com/toltec-astro/tula_cmake.git"
 
-    version("3.2.0", tag="v3.2.0")
+    version("3.2.0", commit="5138dfc4317dbace5a8e6e3872798fd440416860")
 
     depends_on("cmake@3.25:", type="build")
 

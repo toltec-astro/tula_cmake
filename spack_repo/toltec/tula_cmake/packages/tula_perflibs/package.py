@@ -14,7 +14,7 @@ class TulaPerflibs(CMakePackage):
         """Select the focused develop tree or monorepo release subtree."""
         return "." if self.spec.is_develop else "packages/tula_perflibs"
 
-    version("0.1.0", tag="v3.2.0")
+    version("0.1.0", commit="5138dfc4317dbace5a8e6e3872798fd440416860")
 
     variant(
         "openmp",

@@ -14,7 +14,7 @@ class TulaEigen3(CMakePackage):
         """Select the focused develop tree or monorepo release subtree."""
         return "." if self.spec.is_develop else "packages/tula_eigen3"
 
-    version("3.4.0", tag="v3.2.0")
+    version("3.4.0", commit="5138dfc4317dbace5a8e6e3872798fd440416860")
 
     depends_on("cmake@3.25:", type="build")
     depends_on("cxx", type="build")

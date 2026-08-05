@@ -87,8 +87,6 @@ function(tula_cmake_generate_version_header)
         SCOPE
         PACKAGE_SPEC
         DAG_HASH
-        BUILD_PROFILE
-        LOCK_SHA256
     )
     cmake_parse_arguments(
         PARSE_ARGV 0
@@ -138,8 +136,6 @@ function(tula_cmake_generate_version_header)
     _tula_cmake_escape_cpp_string(escaped_git_state "${version_GIT_STATE}")
     _tula_cmake_escape_cpp_string(escaped_spec "${version_PACKAGE_SPEC}")
     _tula_cmake_escape_cpp_string(escaped_dag_hash "${version_DAG_HASH}")
-    _tula_cmake_escape_cpp_string(escaped_profile "${version_BUILD_PROFILE}")
-    _tula_cmake_escape_cpp_string(escaped_lock "${version_LOCK_SHA256}")
     set(compiler "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
     _tula_cmake_escape_cpp_string(escaped_compiler "${compiler}")
     get_target_property(cxx_standard "${version_TARGET}" CXX_STANDARD)
@@ -161,9 +157,6 @@ inline constexpr std::string_view compiler = \"${escaped_compiler}\";
 inline constexpr int cxx_standard = ${cxx_standard};
 inline constexpr std::string_view package_spec = \"${escaped_spec}\";
 inline constexpr std::string_view dag_hash = \"${escaped_dag_hash}\";
-inline constexpr std::string_view build_profile = \"${escaped_profile}\";
-inline constexpr std::string_view lock_sha256 = \"${escaped_lock}\";
-
 }  // namespace ${version_NAMESPACE}
 ")
 
