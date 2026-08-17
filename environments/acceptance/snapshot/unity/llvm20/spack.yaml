@@ -1,7 +1,7 @@
 spack:
   include:
-    - ../../../production/config/repos.yaml
-    - ../../../production/config/devcontainer/packages.yaml
+    - ../../../config/repos.yaml
+    - ../../../config/devcontainer/packages.yaml
   specs:
     - citlali@4.1.0+openmp %cxx=llvm@20.1.2
   concretizer:

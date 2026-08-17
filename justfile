@@ -529,12 +529,12 @@ tula-fitting-matrix spack="spack":
             ctest --test-dir "$consumer_build" --output-on-failure
     done
 
-# Build the production chain and its installed consumers with GCC 14 and LLVM 20.
-production-matrix spack="spack":
+# Build the local-development acceptance chain with GCC 14 and LLVM 20.
+acceptance-matrix spack="spack":
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
-    production="{{ root }}/environments/production"
+    acceptance="{{ root }}/environments/acceptance/development"
 
     run_consumer() {
         local environment="$1"
@@ -578,7 +578,7 @@ production-matrix spack="spack":
     }
 
     for compiler in gcc14 llvm20; do
-        environment="${production}/${compiler}"
+        environment="${acceptance}/${compiler}"
         "$spack_cmd" -e "$environment" concretize --force
         "$spack_cmd" -e "$environment" install \
             --yes-to-all \
@@ -600,12 +600,23 @@ production-matrix spack="spack":
             --version
     done
 
+# Check that packaged deployment profiles retain the accepted portable policy.
+deployment-profile-consistency deploy_root="../tolteca_deploy":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    deploy="{{ deploy_root }}"
+    test -f "$deploy/pyproject.toml"
+    uv run --isolated --with pyyaml python \
+        "{{ root }}/tests/check_deployment_profile_alignment.py" \
+        --tula-cmake-root "{{ root }}" \
+        --deploy-root "$deploy"
+
 # Run the installed Citlali CLI on the complete observation 149101 fixture.
 citlali-real-workdir spack="spack" compiler="gcc14":
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
-    environment="{{ root }}/environments/production/{{ compiler }}"
+    environment="{{ root }}/environments/acceptance/development/{{ compiler }}"
     workdir="{{ root }}/../tolteca_test_data/tolteca_workdir"
     config="redu/citlali_o149101_0_2_c1.yaml"
     output_root="/tmp/citlali-o149101-output"
@@ -633,11 +644,11 @@ citlali-real-workdir spack="spack" compiler="gcc14":
 
 # Build immutable package snapshots without Spack develop paths. Local Git URL
 # redirects exercise the exact commits before the recipe revisions are pushed.
-release-matrix spack="spack":
+snapshot-matrix spack="spack":
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
-    release="{{ root }}/environments/release/unity"
+    snapshots="{{ root }}/environments/acceptance/snapshot/unity"
     workspace="$(dirname "{{ root }}")"
 
     export GIT_CONFIG_COUNT=4
@@ -651,7 +662,7 @@ release-matrix spack="spack":
     export GIT_CONFIG_VALUE_3=https://github.com/toltec-astro/citlali.git
 
     for compiler in gcc14 llvm20; do
-        environment="${release}/${compiler}"
+        environment="${snapshots}/${compiler}"
         "$spack_cmd" -e "$environment" concretize --force
         export TOLTECA_SPACK_PROFILE="snapshot/unity-${compiler}"
         export TOLTECA_SPACK_LOCK_SHA256

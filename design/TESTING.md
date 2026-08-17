@@ -23,7 +23,7 @@ fixtures and Spack environments.
 | GrPPI component matrix | Adapter boundary and execution behavior with/without OpenMP | `just tula-grppi-matrix` |
 | Fitting component matrix | Minimal Ceres closure and installed fitting consumer | `just tula-fitting-matrix` |
 | CCfits provider matrix | CCfits API and CFITSIO implementation under external and source policy | `just tula-ccfits-matrix` |
-| Production package matrix | Tula, Kidscpp, Citlali package tests, installed consumers, installed CLI | `just production-matrix` |
+| Development acceptance matrix | Tula, Kidscpp, Citlali package tests, installed consumers, installed CLI | `just acceptance-matrix` |
 | Citlali observation gate | Full 149101 input set through the installed CLI and FITS output | `just citlali-real-workdir` |
 | Tlaloc integration matrix | Minimal ECSV closure, full executable, required real tune report, excluded Kidscpp/Ceres | `just tlaloc-matrix` |
 
@@ -273,7 +273,7 @@ source-built CFITSIO/CCfits and installed OpenMP consumers also pass.
 
 ## 14. Immutable clean-source matrix
 
-`just release-matrix` builds the complete graph from immutable Git commits in
+`just snapshot-matrix` builds the complete graph from immutable Git commits in
 the Unity-equivalent devcontainer. It rejects any `dev_path`, installs package
 tests under GCC 14.2 and LLVM 20.1.2 with C++23, runs the installed Citlali
 CLI, and requires the runtime deployment profile and lock SHA-256 to match the
@@ -286,6 +286,15 @@ TulaCMake `a7d411dc`, Tula `212717a2`, Kidscpp `06b3130b`, and Citlali
 the LLVM lock SHA-256 is
 `07085da55ba3d7f942cc10e977f02dc4a6c05595371338b8a1095d748b74944a`.
 This gate tests source snapshots, not a buildcache or provisional tags.
+
+## 14.1. Deployment-profile consistency
+
+`just deployment-profile-consistency` compares each development and snapshot
+acceptance manifest with its packaged `tolteca_deploy` counterpart. It checks
+the portable policy shared by both layers: root spec, concretizer, view, and
+compiler requirement. TulaCMake-only repository includes, compiler external
+registrations, and local `develop:` paths are excluded because deployment
+generates those from the selected location and project-owned metadata.
 
 ## 15. Citlali observation gate
 

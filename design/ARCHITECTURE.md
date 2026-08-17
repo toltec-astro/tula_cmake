@@ -91,7 +91,7 @@ The development checkout keeps the independent Git repositories as siblings:
 ```
 
 Sibling placement is a development convenience, not a CMake composition
-mechanism. The production environments bind specs to these checkouts with
+mechanism. The development acceptance environments bind specs to these checkouts with
 `develop:` entries. Spack still builds and installs every package separately.
 
 Each project-owned package repository follows Spack package API v2 layout:
@@ -276,7 +276,11 @@ tula_cmake/
 │   └── spack/
 ├── tests/
 ├── environments/
-│   └── production/
+│   ├── integration/          # focused feature/provider fixtures
+│   └── acceptance/
+│       ├── config/           # checkout-local repository/provider overlays
+│       ├── development/      # complete local-source GCC/LLVM graphs
+│       └── snapshot/         # complete immutable-source GCC/LLVM graphs
 ├── spack_repo/
 │   └── toltec/tula_cmake/packages/
 │       ├── netcdf_cxx4/       # inherited builtin + narrow export patch
@@ -511,6 +515,20 @@ profile and lock are location properties and are exported by
 `TOLTECA_SPACK_LOCK_SHA256`. Citlali reads them when invoked. This permits
 one content-addressed Spack prefix to be activated from multiple locations
 without recording false environment provenance in the binary.
+
+Activation alone is insufficient for schedulers or subprocess managers that
+sanitize their child environment. `tolteca_deploy` therefore generates
+`LOCATION/bin/<executable>` wrappers after installation. Each wrapper binds
+the exact environment path, view, profile, and lock digest before executing
+the absolute Spack-view binary. External callers receive only a normal full
+executable path and remain independent of both Spack and `tolteca_deploy`.
+
+The similarly shaped files have distinct authority. TulaCMake acceptance
+environments are maintainer test fixtures; `tolteca_deploy` profiles are the
+portable operational inputs shipped to users. The
+`deployment-profile-consistency` gate compares their shared root spec,
+concretizer, view, and compiler policy while deliberately ignoring local
+repository includes, compiler registrations, and `develop:` paths.
 
 ## 15. CCfits provider boundary
 

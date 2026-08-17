@@ -135,6 +135,12 @@ tula_cmake/
 │       ├── config/
 │       ├── environments/
 │       └── repository/
+├── environments/
+│   ├── integration/          # focused feature/provider fixtures
+│   └── acceptance/
+│       ├── config/           # checkout-local composition
+│       ├── development/      # local-source GCC 14 and LLVM 20
+│       └── snapshot/         # immutable-source GCC 14 and LLVM 20
 ├── packages/
 │   ├── tula_eigen3/
 │   ├── tula_logging/
@@ -236,7 +242,8 @@ just spack-matrix
 Run the production compiler matrix:
 
 ```console
-just production-matrix
+just acceptance-matrix
+just deployment-profile-consistency
 ```
 
 Run the verified Tula ECSV component slice:
@@ -259,7 +266,7 @@ just tlaloc-matrix
 
 These component commands concretize and install Tula under GCC 14 and LLVM
 20, run package CTests, validate minimal dependency graphs, and build
-independent installed consumers. `production-matrix` remains the separate
+independent installed consumers. `acceptance-matrix` remains the separate
 Tula → Kidscpp → Citlali gate. `tlaloc-matrix` is the independent readout
 controller gate.
 

@@ -1,7 +1,7 @@
 spack:
   include:
-    - ../config/repos.yaml
-    - ../config/devcontainer/packages.yaml
+    - ../../config/repos.yaml
+    - ../../config/devcontainer/packages.yaml
 
   specs:
     - citlali@4.1.0 %cxx=llvm@20.1.2
@@ -18,34 +18,34 @@ spack:
   develop:
     citlali:
       spec: citlali@4.1.0
-      path: ../../../../citlali
+      path: ../../../../../citlali
     kidscpp:
       spec: kidscpp@3.1.0
-      path: ../../../../kidscpp
+      path: ../../../../../kidscpp
     tula-cmake:
       spec: tula-cmake@3.2.0
-      path: ../../..
+      path: ../../../..
     tula-ccfits:
       spec: tula-ccfits@1.0.0
-      path: ../../../packages/tula_ccfits
+      path: ../../../../packages/tula_ccfits
     tula-perflibs:
       spec: tula-perflibs@0.1.0
-      path: ../../../packages/tula_perflibs
+      path: ../../../../packages/tula_perflibs
     tula-logging:
       spec: tula-logging@1.0.0
-      path: ../../../packages/tula_logging
+      path: ../../../../packages/tula_logging
     tula-yaml-cpp:
       spec: tula-yaml-cpp@0.8.0
-      path: ../../../packages/tula_yaml_cpp
+      path: ../../../../packages/tula_yaml_cpp
     tula-eigen3:
       spec: tula-eigen3@3.4.0
-      path: ../../../packages/tula_eigen3
+      path: ../../../../packages/tula_eigen3
     tula-netcdf-cxx4:
       spec: tula-netcdf-cxx4@4.3.1
-      path: ../../../packages/tula_netcdf_cxx4
+      path: ../../../../packages/tula_netcdf_cxx4
     tula:
       spec: tula@3.1.0
-      path: ../../../../tula
+      path: ../../../../../tula
 
   packages:
     cxx:

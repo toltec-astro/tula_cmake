@@ -298,3 +298,20 @@ prefix.
 values at runtime for `--version`, NetCDF attributes, FITS headers, and index
 metadata. The clean-source gate uses exact commit snapshots while package tag
 naming remains intentionally undecided.
+
+## D029 — Separate acceptance fixtures from deployment profiles
+
+Accepted 2026-08-05.
+
+TulaCMake owns focused integration environments and complete maintainer
+acceptance environments. They live under `environments/integration/` and
+`environments/acceptance/{development,snapshot}/`; they may contain sibling
+checkout paths and test-only repository composition. They are not distributed
+as an end-user environment.
+
+`tolteca_deploy` owns the portable profiles, accepted revisions, and release
+locks installed into locations. A cross-repository consistency gate compares
+the portable policy shared by the two representations while excluding their
+intentionally different composition metadata. This makes deployment the
+operational authority without weakening TulaCMake's independent package and
+feature regression tests.

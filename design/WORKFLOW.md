@@ -38,7 +38,7 @@ The expected checkout inside the container is:
 └── toltec_astro_dev/    generated self-contained location
 ```
 
-Once the production environment is installed, run the observation fixture
+Once the development acceptance environment is installed, run the observation fixture
 from the work-directory root so its relative `./data` path resolves:
 
 ```console
@@ -91,24 +91,22 @@ Each environment can specify:
 The exact result is `spack.lock`. Separate environment directories may coexist
 and may select different compilers, variants, or package versions.
 
-The production settings are split by ownership:
+The maintainer acceptance settings are split by purpose:
 
 ```text
-tula_cmake/environments/production/
+tula_cmake/environments/acceptance/
 ├── config/
 │   ├── repos.yaml
 │   │   repository namespace composition
 │   └── devcontainer/
 │       └── packages.yaml
 │           system externals and their exact prefixes
-├── gcc14/
-│   ├── spack.yaml
-│   ├── spack.lock       generated local concrete DAG
-│   └── .spack-view/     generated root-package view
-└── llvm20/
-    ├── spack.yaml
-    ├── spack.lock       generated local concrete DAG
-    └── .spack-view/     generated root-package view
+├── development/
+│   ├── gcc14/{spack.yaml,spack.lock,.spack-view/}
+│   └── llvm20/{spack.yaml,spack.lock,.spack-view/}
+└── snapshot/unity/
+    ├── gcc14/{spack.yaml,spack.lock}
+    └── llvm20/{spack.yaml,spack.lock}
 ```
 
 The accepted Tula ECSV slice uses a separate component matrix:
@@ -209,16 +207,16 @@ spack -e "$TOLTECA_CPP_ENV" find -lv
 For this workspace, use the committed environments directly:
 
 ```console
-spack -e tula_cmake/environments/production/gcc14 concretize --force
-spack -e tula_cmake/environments/production/gcc14 \
+spack -e tula_cmake/environments/acceptance/development/gcc14 concretize --force
+spack -e tula_cmake/environments/acceptance/development/gcc14 \
   install --test=all --overwrite --show-log-on-error
 
-spack -e tula_cmake/environments/production/llvm20 concretize --force
-spack -e tula_cmake/environments/production/llvm20 \
+spack -e tula_cmake/environments/acceptance/development/llvm20 concretize --force
+spack -e tula_cmake/environments/acceptance/development/llvm20 \
   install --test=all --overwrite --show-log-on-error
 ```
 
-`just production` sequences those native commands and also builds independent
+`just acceptance-matrix` sequences those native commands and also builds independent
 consumers of the installed Tula, Kidscpp, and Citlali package configs.
 Spack hashes recipes, variants, dependency edges, and source identity. The
 explicit overwrite is required while iterating on a `develop` checkout because

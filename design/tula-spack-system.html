@@ -205,6 +205,8 @@ target_link_libraries(app PRIVATE
 ├── spack_repo/develop.yaml
 ├── environments/integration/tula_ecsv/
 ├── environments/integration/tula_perflibs/
+├── environments/acceptance/development/
+├── environments/acceptance/snapshot/
 ├── tests/deps_consumer/
 └── design/</pre>
     </div>
@@ -548,8 +550,8 @@ tula_deps::grppi
     </table>
   </section>
 
-  <section class="slide" data-title="Production package chain">
-    <div class="slide-head"><span class="section">06 · production</span><h2>Package tests and installed consumers close every compiled boundary</h2></div>
+  <section class="slide" data-title="Development acceptance chain">
+    <div class="slide-head"><span class="section">06 · acceptance</span><h2>Package tests and installed consumers close every compiled boundary</h2></div>
     <div class="flow">
       <div class="node"><strong>Tula 3.1</strong><small>16/16 component tests</small></div>
       <div class="arrow">→</div>
@@ -740,14 +742,17 @@ target_link_libraries(citlali
 │           ├── unity-gcc14/{spack.yaml,spack.lock}
 │           └── unity-llvm20/{spack.yaml,spack.lock}
 ├── tula_cmake/
-│   └── spack_repo/develop.yaml
+│   ├── spack_repo/develop.yaml
+│   └── environments/acceptance/
+│       ├── development/{gcc14,llvm20}/
+│       └── snapshot/unity/{gcc14,llvm20}/
 ├── tula/
 │   └── spack_repo/develop.yaml
 ├── kidscpp/
 │   └── spack_repo/develop.yaml
 └── citlali/
     └── spack_repo/develop.yaml</pre>
-      <div><div class="panel"><h3>Deployment-owned</h3><p>Accepted source revisions, profile selection, platform externals, required release locks, fixture contracts, and uv/Spack activation. Each location keeps <code>spack/&lt;profile&gt;/{spack.yaml,spack.lock,.spack-env/view}</code> together; store and cache are user-shared by default or location-scoped by policy.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipes, variants, patches, behavior tests, and local-development package paths remain in each project repository.</p></div><div class="callout"><code>tolteca_deploy</code> generates native Spack configuration but keeps <code>spack -e</code> visible. Buildcache publication is deferred and is not required for source-release reproducibility.</div></div>
+      <div><div class="panel"><h3>Deployment-owned</h3><p>Accepted source revisions, profile selection, platform externals, required release locks, fixture contracts, and uv/Spack activation. Each location keeps <code>spack/&lt;profile&gt;/{spack.yaml,spack.lock,.spack-env/view}</code> together; store and cache are user-shared by default or location-scoped by policy.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipes, variants, patches, behavior tests, and local-development package paths remain in each project repository.</p></div><div class="callout"><code>just deployment-profile-consistency</code> compares the shared root spec, concretizer, view, and compiler policy. Checkout-local includes and <code>develop:</code> paths remain acceptance-only.</div></div>
     </div>
   </section>
 
@@ -810,7 +815,7 @@ repositories.sources: [...]
 develop.sources: [...]
 lock: regenerate
 spack concretize --force</pre>
-      <pre>release profile
+      <pre>immutable deployment profile
 repositories.sources: [...]
 develop.sources: []
 lock: required
@@ -834,14 +839,21 @@ spack.lock ─SHA──▶ TOLTECA_SPACK_LOCK_SHA256
                  ├────────────┬─────────────┐
                  ▼            ▼             ▼
         citlali --version   NetCDF attrs   FITS/index metadata</pre>
-    <div class="callout">A Spack prefix may be shared by multiple environments. Runtime lookup prevents the installed binary from permanently claiming the profile and lock of whichever location built it first.</div>
+    <div class="callout">A Spack prefix may be shared by multiple environments. Runtime lookup prevents the installed binary from permanently claiming the profile and lock of whichever location built it first. For environment-sanitizing subprocess and scheduler boundaries, <code>LOCATION/bin/citlali</code> exports the exact environment, view, profile, and lock before executing the raw Spack-view binary.</div>
+    <pre>TolTECA / TolProj / Slurm
+          │ full executable path only
+          ▼
+LOCATION/bin/citlali            location-owned provenance wrapper
+          │ export identity; exec "$@"
+          ▼
+spack/&lt;profile&gt;/.spack-env/view/bin/citlali</pre>
     <div class="cols-2"><div class="panel"><h3>Portable package tests</h3><p>Generated NetCDF and installed consumers run without the large science fixture.</p></div><div class="panel"><h3>Local observation gate</h3><p>A packaged fixture manifest validates required files/counts before the available 123-scan run. The data itself is not published.</p></div></div>
   </section>
 
-  <section class="slide" data-title="Accepted system and release boundary">
+  <section class="slide" data-title="Accepted system and deployment boundary">
     <div class="slide-head"><span class="section">12 · measured state</span><h2>Development and immutable clean-source graphs pass</h2></div>
     <div class="cols-2">
-      <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali production graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
+      <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali development acceptance graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
       <div class="panel"><h3>Accepted clean-source gates</h3><ol><li>immutable package commits</li><li>required GCC 14 and LLVM 20 locks</li><li>no tag and no local <code>dev_path</code></li><li>package tests + installed CLI</li><li>runtime profile and lock checks</li></ol></div>
     </div>
     <div class="callout">Canonical detail:
