@@ -236,8 +236,16 @@ examples/spack/environments/default/.spack-view/bin/tula_downstream
 Or run both matrix entries:
 
 ```console
+just environment-manifests
 just spack-matrix
 ```
+
+`environment-manifests` validates every repository-owned relative Spack
+include before a compiler matrix starts, so directory reorganizations cannot
+leave checked-in environments pointing at removed paths. It does not require
+the sibling development checkouts and also runs as part of `just unit`. Unit
+configuration is fresh on every run so the same checkout can move between a
+devcontainer and its host without retaining an incompatible CMake cache path.
 
 Run the production compiler matrix:
 

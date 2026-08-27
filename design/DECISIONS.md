@@ -190,12 +190,16 @@ names or generated C++ headers.
 
 ## D020 — `tolteca_deploy` owns integration and deployment policy
 
-Accepted 2026-08-03; supersedes the local standalone-stack prototype.
+Accepted 2026-08-03; amended 2026-08-27; supersedes the local
+standalone-stack prototype.
 
 Package recipes remain decentralized. The wheel-shipped
-`tolteca_deploy/src/tolteca_deploy/data/spack/` assets own the multi-repository revision
-manifest, platform configuration, development and required-lock release profiles,
-and fixture contracts. A generated location owns its
+`tolteca_deploy/src/tolteca_deploy/data/spack/` assets own mutable development
+defaults, platform configuration, fixture contracts, and versioned release
+bundles. Each release bundle records its candidate/released status, exact Spack
+distribution, recipe-repository revisions, profiles, locks, and accepted lock
+digests. Package-source revisions remain owned by the recipes rather than being
+duplicated in deployment configuration. A generated location owns its
 pinned Spack checkout, environment, stage, and view; the configured storage
 policy owns the install store and cache. This keeps
 portable deployment inputs separate from reusable TulaCMake infrastructure
@@ -208,7 +212,7 @@ standalone composition repository has been removed.
 Accepted 2026-08-03.
 
 Each deployment location owns one visible independent environment at
-`spack/<profile>/`. Its lock, generated configuration, and native
+`spack/<mode>/[<release>/]<profile>/`. Its lock, generated configuration, and native
 `.spack-env/view` stay together. The install store and source cache are
 user-shared by default and may be location-scoped or redirected to an explicit
 storage root. Build stages remain location-local. This follows Spack's native
@@ -284,7 +288,7 @@ NetCDF/HDF5 dependency an explicit node in the concrete Spack graph.
 
 ## D028 — Separate artifact identity from deployment identity
 
-Accepted 2026-08-05.
+Accepted 2026-08-05; amended 2026-08-27.
 
 TulaCMake-generated version headers contain semantic/source identity, Git tree
 state, compiler, C++ standard, concrete package spec, and DAG hash. They do not
@@ -301,7 +305,7 @@ naming remains intentionally undecided.
 
 ## D029 — Separate acceptance fixtures from deployment profiles
 
-Accepted 2026-08-05.
+Accepted 2026-08-05; amended 2026-08-27.
 
 TulaCMake owns focused integration environments and complete maintainer
 acceptance environments. They live under `environments/integration/` and
@@ -309,8 +313,10 @@ acceptance environments. They live under `environments/integration/` and
 checkout paths and test-only repository composition. They are not distributed
 as an end-user environment.
 
-`tolteca_deploy` owns the portable profiles, accepted revisions, and release
-locks installed into locations. A cross-repository consistency gate compares
+`tolteca_deploy` owns portable development profiles and versioned release
+bundles. A bundle pins recipe-repository revisions; the selected recipes pin
+package-source revisions. It also owns the release locks and their accepted
+digests. A cross-repository consistency gate compares
 the portable policy shared by the two representations while excluding their
 intentionally different composition metadata. This makes deployment the
 operational authority without weakening TulaCMake's independent package and

@@ -393,6 +393,7 @@ check_required_components(tula)</pre>
     <table>
       <thead><tr><th>Fixture</th><th>Boundary</th><th>Failure detected in this round</th></tr></thead>
       <tbody>
+        <tr><td>manifest path gate</td><td>repository-owned Spack includes</td><td>stale pre-rename acceptance-config paths</td></tr>
         <tr><td>TulaCMake unit</td><td>installed helper → producer → consumer</td><td>export helper remains relocatable</td></tr>
         <tr><td>adapter consumer</td><td><code>Tula*</code> configs without Tula</td><td>synthetic nonexistent include directory</td></tr>
         <tr><td>Tula package CTests</td><td>component-linked header behavior</td><td>missing fmt edge from Eigen component</td></tr>
@@ -647,7 +648,9 @@ FITS headers retain source + DAG provenance</pre>
     <div class="callout">This is a separate application root, not an extension
       of the Citlali graph. Spack composes it from the project-owned
       <code>toltec.tlaloc</code>, <code>toltec.tula</code>, and
-      <code>toltec.tula_cmake</code> repositories.</div>
+      <code>toltec.tula_cmake</code> repositories. Revalidated 2026-08-25:
+      GCC 14.2 and LLVM 20.1.2 both installed <code>tlaloc_clip</code> and
+      passed the real tune reader test 1/1.</div>
   </section>
 
   <section class="slide" data-title="Tlaloc CMake boundary">
@@ -731,16 +734,17 @@ target_link_libraries(citlali
       <pre>cpp/
 ├── tolteca_deploy/
 │   └── src/tolteca_deploy/data/spack/
-│       ├── stack.yaml
+│       ├── development.yaml
 │       ├── config/{unity-devcontainer,macos-homebrew-llvm20}/
 │       ├── fixtures/citlali-observation-149101.yaml
-│       └── profiles/{development,release}/
-│           ├── linux-gcc14/
-│           ├── linux-llvm20/
-│           ├── macos-homebrew-llvm20/
-│           ├── macos-homebrew-llvm20-citlali/
-│           ├── unity-gcc14/{spack.yaml,spack.lock}
-│           └── unity-llvm20/{spack.yaml,spack.lock}
+│       ├── profiles/development/
+│       │   ├── linux-{gcc14,llvm20}/
+│       │   └── macos-homebrew-llvm20*/
+│       └── releases/2026.08-rc1/
+│           ├── manifest.yaml
+│           └── profiles/
+│               ├── unity-gcc14/{spack.yaml,spack.lock}
+│               └── unity-llvm20/{spack.yaml,spack.lock}
 ├── tula_cmake/
 │   ├── spack_repo/develop.yaml
 │   └── environments/acceptance/
@@ -752,8 +756,26 @@ target_link_libraries(citlali
 │   └── spack_repo/develop.yaml
 └── citlali/
     └── spack_repo/develop.yaml</pre>
-      <div><div class="panel"><h3>Deployment-owned</h3><p>Accepted source revisions, profile selection, platform externals, required release locks, fixture contracts, and uv/Spack activation. Each location keeps <code>spack/&lt;profile&gt;/{spack.yaml,spack.lock,.spack-env/view}</code> together; store and cache are user-shared by default or location-scoped by policy.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipes, variants, patches, behavior tests, and local-development package paths remain in each project repository.</p></div><div class="callout"><code>just deployment-profile-consistency</code> compares the shared root spec, concretizer, view, and compiler policy. Checkout-local includes and <code>develop:</code> paths remain acceptance-only.</div></div>
+      <div><div class="panel"><h3>Deployment-owned</h3><p>Mutable development defaults and immutable candidate/release composition are separate. A release bundle owns Spack, recipe-repository revisions, profiles, locks, and accepted lock digests. Each location keeps <code>spack/&lt;mode&gt;/[&lt;release&gt;/]&lt;profile&gt;/{spack.yaml,spack.lock,.spack-env/view}</code> together; store and cache are user-shared by default or location-scoped by policy.</p></div><div class="panel"><h3>Project-owned</h3><p>Source, CMake targets, package recipes, variants, patches, behavior tests, and local-development package paths remain in each project repository. Each recipe—not the deployment manifest—pins its package-source commit.</p></div><div class="callout"><code>just deployment-profile-consistency</code> compares the shared root spec, concretizer, view, and compiler policy. Checkout-local includes and <code>develop:</code> paths remain acceptance-only.</div></div>
     </div>
+  </section>
+
+  <section class="slide" data-title="Release candidate identity">
+    <div class="slide-head"><span class="section">09 · deployment ownership</span><h2>Recipe metadata, package source, and deployment composition are different identities</h2></div>
+    <div class="flow">
+      <div class="node"><strong>2026.08-rc1 manifest</strong><small>candidate status · Spack 1.2.2 · recipe repo commits</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>repository-owned recipe</strong><small>package version · immutable source commit</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>profile + spack.lock</strong><small>GCC 14 or LLVM 20 concrete DAG</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>installed location</strong><small>digest-verified graph + bound runtime identity</small></div>
+    </div>
+    <div class="cols-2">
+      <div class="panel"><h3>Why the commits differ</h3><pre>package source commit → metadata-only recipe commit → release manifest</pre><p>A recipe cannot select the commit containing itself. The later recipe commit intentionally points to the preceding clean source snapshot. Treating both as one <code>tested_commit</code> creates the false mismatch.</p></div>
+      <div class="panel"><h3>Candidate promotion</h3><pre>candidate → acceptance → same bundle marked released</pre><p>While development continues, <code>2026.08-rc1</code> remains a candidate. Promotion does not change source pins, recipe revisions, profiles, or locks. Any graph change creates a new candidate identity.</p></div>
+    </div>
+    <div class="callout">Development profiles remain mutable and may use sibling <code>develop:</code> paths. Release mode rejects repository overrides, verifies the packaged lock digest, and never concretizes with <code>--force</code>.</div>
   </section>
 
   <section class="slide" data-title="Clean machine and macOS LLVM workflow">

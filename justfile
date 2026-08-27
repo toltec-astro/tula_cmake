@@ -7,15 +7,21 @@ spack_root := root / "examples/spack"
 default:
     @just --list
 
+# Validate repository-owned relative includes in every Spack manifest.
+environment-manifests:
+    uv run --isolated --with pyyaml python \
+        "{{ root }}/tests/check_spack_manifest_paths.py" \
+        --root "{{ root }}"
+
 # Configure, build, and test the installed TulaCMake consumer fixture.
-unit:
-    cmake -S "{{ root }}" -B "{{ build_root }}/unit" -G Ninja \
+unit: environment-manifests
+    cmake --fresh -S "{{ root }}" -B "{{ build_root }}/unit" -G Ninja \
         -DCMAKE_BUILD_TYPE=Debug
     cmake --build "{{ build_root }}/unit" --parallel
     ctest --test-dir "{{ build_root }}/unit" --output-on-failure
 
 # Concretize, test, install, and run both GCC 14 vertical-slice environments.
-spack-matrix spack="spack":
+spack-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -54,7 +60,7 @@ check spack="spack": unit
     just spack-matrix "{{ spack }}"
 
 # Build the minimal Tula ECSV + CSV-parser closure under both compilers.
-tula-component-matrix spack="spack":
+tula-component-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -128,7 +134,7 @@ tula-component-matrix spack="spack":
     done
 
 # Verify the Tula perflibs component with OpenMP enabled and disabled.
-tula-perflibs-matrix spack="spack":
+tula-perflibs-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -195,7 +201,7 @@ tula-perflibs-matrix spack="spack":
     done
 
 # Verify the enum and CLI component closures independently.
-tula-enum-cli-matrix spack="spack":
+tula-enum-cli-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -271,7 +277,7 @@ tula-enum-cli-matrix spack="spack":
     done
 
 # Verify the NetCDF C++ adapter and Tula component in both compiler lanes.
-tula-netcdf-matrix spack="spack":
+tula-netcdf-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -336,7 +342,7 @@ tula-netcdf-matrix spack="spack":
     done
 
 # Verify the CCfits API and its CFITSIO dependency with external and source providers.
-tula-ccfits-matrix spack="spack":
+tula-ccfits-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -393,7 +399,7 @@ tula-ccfits-matrix spack="spack":
     done
 
 # Verify GrPPI with and without its optional OpenMP backend.
-tula-grppi-matrix spack="spack":
+tula-grppi-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -469,7 +475,7 @@ tula-grppi-matrix spack="spack":
     done
 
 # Verify the Ceres-backed fitting component without unrelated Tula features.
-tula-fitting-matrix spack="spack":
+tula-fitting-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -530,7 +536,7 @@ tula-fitting-matrix spack="spack":
     done
 
 # Build the local-development acceptance chain with GCC 14 and LLVM 20.
-acceptance-matrix spack="spack":
+acceptance-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -612,7 +618,7 @@ deployment-profile-consistency deploy_root="../tolteca_deploy":
         --deploy-root "$deploy"
 
 # Run the installed Citlali CLI on the complete observation 149101 fixture.
-citlali-real-workdir spack="spack" compiler="gcc14":
+citlali-real-workdir spack="spack" compiler="gcc14": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -644,7 +650,7 @@ citlali-real-workdir spack="spack" compiler="gcc14":
 
 # Build immutable package snapshots without Spack develop paths. Local Git URL
 # redirects exercise the exact commits before the recipe revisions are pushed.
-snapshot-matrix spack="spack":
+snapshot-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"
@@ -688,7 +694,7 @@ snapshot-matrix spack="spack":
     done
 
 # Build Tlaloc against the minimal Tula ECSV feature set.
-tlaloc-matrix spack="spack":
+tlaloc-matrix spack="spack": environment-manifests
     #!/usr/bin/env bash
     set -euo pipefail
     spack_cmd="{{ spack }}"

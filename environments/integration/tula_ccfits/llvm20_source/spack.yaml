@@ -1,8 +1,8 @@
 spack:
   include:
-    - ../../../production/config/repos.yaml
-    - ../../../production/config/source-fits/packages.yaml
-    - ../../../production/config/devcontainer/packages.yaml
+    - ../../../acceptance/config/repos.yaml
+    - ../../../acceptance/config/source-fits/packages.yaml
+    - ../../../acceptance/config/devcontainer/packages.yaml
 
   specs:
     - tula-ccfits@1.0.0 %cxx=llvm@20.1.2

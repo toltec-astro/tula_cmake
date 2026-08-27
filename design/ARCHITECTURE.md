@@ -474,31 +474,41 @@ recipes away from their source repositories:
 
 ```text
 tolteca_deploy/src/tolteca_deploy/data/spack/
-├── stack.yaml                     accepted source revisions + Spack version
+├── development.yaml               mutable-mode Spack distribution
 ├── config/
 │   └── macos-homebrew-llvm20/
 │       └── packages.yaml          exact compiler/tool externals
-└── profiles/development/
-    ├── linux-gcc14/{profile.yaml,spack.yaml}
-    ├── linux-llvm20/{profile.yaml,spack.yaml}
-    ├── macos-homebrew-llvm20/{profile.yaml,spack.yaml}
-    └── macos-homebrew-llvm20-citlali/{profile.yaml,spack.yaml}
+├── profiles/development/
+│   ├── linux-gcc14/{profile.yaml,spack.yaml}
+│   ├── linux-llvm20/{profile.yaml,spack.yaml}
+│   ├── macos-homebrew-llvm20/{profile.yaml,spack.yaml}
+│   └── macos-homebrew-llvm20-citlali/{profile.yaml,spack.yaml}
+└── releases/2026.08-rc1/
+    ├── manifest.yaml              candidate status, Spack, recipe revisions,
+    │                              profiles, accepted lock digests
+    └── profiles/
+        ├── unity-gcc14/{profile.yaml,spack.yaml,spack.lock}
+        └── unity-llvm20/{profile.yaml,spack.yaml,spack.lock}
 
 LOCATION/
 ├── .tools/spack/                  pinned Spack checkout
 ├── .spack/{config,stage}/         location-specific mutable state
-├── spack/<profile>/               independent environment
+├── spack/<mode>/[<release>/]<profile>/
+│                                   independent environment
 │   └── .spack-env/view/           native installed view
 └── src/                           configured source checkouts
 ```
 
 Developer environments use sibling `develop:` paths and intentionally
-regenerate local locks. The release-profile machinery packaged by
-`tolteca_deploy` registers the same decentralized recipe repositories without
-`develop:`, fetches immutable commit snapshots, and commits separate GCC 14
-and LLVM 20 locks. Environment
-generation requires and copies the selected lock; release concretization never
-uses `--force`. Buildcache mirror and trust configuration is a later optional
+regenerate local locks. A versioned release bundle packaged by
+`tolteca_deploy` registers exact decentralized recipe-repository revisions
+without `develop:`; those recipes select the immutable package-source commits.
+The bundle owns separate GCC 14 and LLVM 20 profiles, locks, and accepted lock
+digests. Environment generation requires and verifies the selected lock;
+release concretization never uses `--force`. `2026.08-rc1` remains a release
+candidate while the stack evolves. Promotion changes its status only after the
+same manifest and locks pass acceptance; it does not repoint recipes or
+reconcretize. Buildcache mirror and trust configuration is a later optional
 optimization. Local editor configuration is not a release artifact; the
 devcontainer is the current Unity-equivalent acceptance platform.
 
@@ -524,8 +534,9 @@ the absolute Spack-view binary. External callers receive only a normal full
 executable path and remain independent of both Spack and `tolteca_deploy`.
 
 The similarly shaped files have distinct authority. TulaCMake acceptance
-environments are maintainer test fixtures; `tolteca_deploy` profiles are the
-portable operational inputs shipped to users. The
+environments are maintainer test fixtures; `tolteca_deploy` development
+profiles and versioned release bundles are the portable operational inputs
+shipped to users. The
 `deployment-profile-consistency` gate compares their shared root spec,
 concretizer, view, and compiler policy while deliberately ignoring local
 repository includes, compiler registrations, and `develop:` paths.

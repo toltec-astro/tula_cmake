@@ -13,8 +13,8 @@ import yaml
 PROFILE_PAIRS = {
     "development/gcc14": "development/linux-gcc14",
     "development/llvm20": "development/linux-llvm20",
-    "snapshot/unity/gcc14": "release/unity-gcc14",
-    "snapshot/unity/llvm20": "release/unity-llvm20",
+    "snapshot/unity/gcc14": "release/2026.08-rc1/unity-gcc14",
+    "snapshot/unity/llvm20": "release/2026.08-rc1/unity-llvm20",
 }
 
 
@@ -39,18 +39,22 @@ def _portable_policy(spack: dict[str, Any]) -> dict[str, Any]:
 
 def check_profiles(tula_cmake_root: Path, deploy_root: Path) -> None:
     acceptance = tula_cmake_root / "environments" / "acceptance"
-    packaged = (
-        deploy_root
-        / "src"
-        / "tolteca_deploy"
-        / "data"
-        / "spack"
-        / "profiles"
-    )
+    packaged = deploy_root / "src" / "tolteca_deploy" / "data" / "spack"
     mismatches: list[str] = []
     for acceptance_name, packaged_name in PROFILE_PAIRS.items():
         acceptance_path = acceptance / acceptance_name / "spack.yaml"
-        packaged_path = packaged / packaged_name / "spack.yaml"
+        if packaged_name.startswith("release/"):
+            _, release_id, profile = packaged_name.split("/", maxsplit=2)
+            packaged_path = (
+                packaged
+                / "releases"
+                / release_id
+                / "profiles"
+                / profile
+                / "spack.yaml"
+            )
+        else:
+            packaged_path = packaged / "profiles" / packaged_name / "spack.yaml"
         acceptance_policy = _portable_policy(_load_spack(acceptance_path))
         packaged_policy = _portable_policy(_load_spack(packaged_path))
         if acceptance_policy != packaged_policy:

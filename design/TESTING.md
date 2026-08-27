@@ -10,6 +10,7 @@ fixtures and Spack environments.
 
 | Layer | Boundary exercised | Current command |
 | --- | --- | --- |
+| Spack manifest paths | Every repository-owned relative include resolves without requiring sibling source checkouts | `just environment-manifests` (also part of `just unit`) |
 | TulaCMake unit fixture | Installed helper modules, producer export, separate consumer | `just unit` |
 | Spack vertical slice | Variants, transitive root constraints, develop sources, package tests, environment view | `just spack-matrix` |
 | Adapter consumer | Four `tula_deps::*` configs and targets, no Tula discovery or headers | part of `just tula-component-matrix` |
@@ -347,6 +348,12 @@ All unrelated Tula variants are disabled; Kidscpp and Ceres are rejected from
 the DAG. The package test is enabled by `spack install --test=all` and requires
 the real observation 149101 tune report. It exercises the public Tula ECSV
 reader, typed column storage, and observation metadata.
+
+The matrix was revalidated in the rebuilt devcontainer on 2026-08-25 after
+the acceptance-directory rename. GCC 14.2 and LLVM 20.1.2 each passed the real
+`tlaloc::tune_reader_real` test (1/1) and installed an executable
+`tlaloc_clip` view. The manifest-path gate simultaneously validated 58
+repository-owned includes across all 28 checked-in Spack environments.
 
 This integration exposed a real lifetime defect: `ECSVTable::header_view()`
 returned a temporary while its lazy column range retained references into it.
