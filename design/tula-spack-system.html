@@ -126,7 +126,7 @@
   <section class="slide active" data-title="Current reference model">
     <div class="title-grid">
       <div>
-        <div class="section">TolTEC C++ build system · technical reference · 2026-07-31</div>
+        <div class="section">TolTEC C++ build system · technical reference · 2026-08-31</div>
         <h1>Spack graph,<br>explicit CMake components</h1>
         <p class="lead">The verified TulaCMake, Tula, Kidscpp, Citlali, and Tlaloc
           system: target namespaces, package ownership, minimal dependency
@@ -143,6 +143,7 @@
         <div><span>03</span><span>Tula component closure</span></div>
         <div><span>04</span><span>generated and installed artifacts</span></div>
         <div><span>05</span><span>tests and measured evidence</span></div>
+        <div><span>06</span><span>release and Unity deployment boundary</span></div>
       </div>
     </div>
   </section>
@@ -735,10 +736,11 @@ target_link_libraries(citlali
 ├── tolteca_deploy/
 │   └── src/tolteca_deploy/data/spack/
 │       ├── development.yaml
-│       ├── config/{unity-devcontainer,macos-homebrew-llvm20}/
+│       ├── config/{unity-devcontainer,unity-source,macos-homebrew-llvm20}/
 │       ├── fixtures/citlali-observation-149101.yaml
 │       ├── profiles/development/
 │       │   ├── linux-{gcc14,llvm20}/
+│       │   ├── unity-source-gcc14/
 │       │   └── macos-homebrew-llvm20*/
 │       └── releases/2026.08-rc1/
 │           ├── manifest.yaml
@@ -781,13 +783,13 @@ target_link_libraries(citlali
   <section class="slide" data-title="Clean machine and macOS LLVM workflow">
     <div class="slide-head"><span class="section">10 · developer UX</span><h2>Bootstrap is explicit, local, and validates the exact compiler</h2></div>
     <div class="cols-2">
-      <div class="panel"><h3>Linux development location</h3><pre>clone sibling repositories
-uvx --from ./tolteca_deploy \
-  tolteca_deploy setup \
-  --config location.yaml
-cd LOCATION &amp;&amp; source dotbashrc
-just run update
-just cpp-install</pre><p>The selected profile requires GCC 14 or LLVM 20. The location pins Spack 1.2.2 and keeps configuration, build stage, environment, lock, and view location-specific. The compiled store and download cache are user-shared by default or location-scoped by policy. A dev container is optional local tooling rather than a deployment artifact.</p></div>
+      <div class="panel"><h3>Linux stack-managed location</h3><pre>git clone .../tolteca_deploy.git
+bootstrap.sh \
+  --stack-root /work/toltec/opt/toltec_astro \
+  --preset unity_toltec_astro_dev
+source /work/toltec/opt/toltec_astro/
+  develop/dotbashrc
+just cpp-install</pre><p>The bootstrap needs only Git, curl, and system GCC 13. It installs uv, Python 3.13, and just below the stack; validates the exact root; then uses the ordinary location CLI. The location pins Spack 1.2.2 and keeps configuration, build stage, environment, lock, and view location-specific while sibling locations share the compiled store and download caches.</p></div>
       <div class="panel"><h3>Native macOS arm64</h3><pre>brew install llvm@20 gcc cmake ninja
 /opt/homebrew/opt/llvm@20/bin/clang++ \
   --version
@@ -827,7 +829,7 @@ just cpp-install</pre><p>The packaged profile requires Homebrew LLVM 20.1.8 by a
     <div class="flow">
       <div class="node"><strong>Git commit snapshots</strong><small>exact SHA per TolTEC-owned package</small></div><div class="arrow">→</div>
       <div class="node"><strong>project recipes</strong><small>versions, variants, dependency edges</small></div><div class="arrow">→</div>
-      <div class="node"><strong>platform policy</strong><small>Unity/devcontainer externals + compiler</small></div><div class="arrow">→</div>
+      <div class="node"><strong>platform policy</strong><small>reviewed externals + compiler bootstrap</small></div><div class="arrow">→</div>
       <div class="node"><strong>spack.lock</strong><small>exact source commits and DAG hashes</small></div><div class="arrow">→</div>
       <div class="node"><strong>installed view</strong><small>CLI + CMake packages</small></div>
     </div>
@@ -843,7 +845,7 @@ develop.sources: []
 lock: required
 spack concretize</pre>
     </div>
-    <div class="callout">Both locked graphs were source-fetched by commit and installed in the devcontainer with no tag and no <code>dev_path</code>: GCC 14.2 and LLVM 20.1.2, both C++23. Snapshots: TulaCMake <code>a7d411dc</code>, Tula <code>212717a2</code>, Kidscpp <code>06b3130b</code>, Citlali <code>91b7febc</code>.</div>
+    <div class="callout">Both locked graphs were source-fetched by commit and installed in the Linux aarch64 devcontainer with no tag and no <code>dev_path</code>: GCC 14.2 and LLVM 20.1.2, both C++23. These prove clean-source composition but are not x86_64 Unity locks. Snapshots: TulaCMake <code>a7d411dc</code>, Tula <code>212717a2</code>, Kidscpp <code>06b3130b</code>, Citlali <code>91b7febc</code>.</div>
   </section>
 
   <section class="slide" data-title="Build and product provenance">
@@ -872,8 +874,55 @@ spack/&lt;profile&gt;/.spack-env/view/bin/citlali</pre>
     <div class="cols-2"><div class="panel"><h3>Portable package tests</h3><p>Generated NetCDF and installed consumers run without the large science fixture.</p></div><div class="panel"><h3>Local observation gate</h3><p>A packaged fixture manifest validates required files/counts before the available 123-scan run. The data itself is not published.</p></div></div>
   </section>
 
+  <section class="slide" data-title="Measured Unity boundary">
+    <div class="slide-head"><span class="section">12 · Unity deployment</span><h2>The site profile must describe the host that actually exists</h2></div>
+    <div class="cols-2">
+      <pre>toltec-cpu002
+├── Ubuntu 24.04 · x86_64
+├── GCC/G++ 13.3.0
+├── CMake 3.28.3
+├── GNU Make 4.3
+├── pkg-config 1.8.1
+├── /work       shared software
+└── /nese/toltec
+    ├── data_lmt
+    └── dataprod_toltec</pre>
+      <div><div class="panel"><h3>Verified externals</h3><p>Only the system bootstrap compiler and build tools are declared external. GCC 14 and every C++ link/runtime dependency remain source-buildable.</p></div><div class="panel"><h3>Rejected assumption</h3><p>Unity does not contain GCC 14, LLVM 20, CCfits, or NetCDF C++4 at the <code>/usr</code> paths used by the original devcontainer policy. The aarch64 <code>2026.08-rc1/unity-*</code> locks are candidate evidence, not Unity artifacts.</p></div></div>
+    </div>
+    <div class="flow"><div class="node"><strong>system GCC 13</strong><small>bootstrap only</small></div><div class="arrow">→</div><div class="node"><strong>compiler environment</strong><small>Spack GCC 14.2 · concretized x86_64_v2</small></div><div class="arrow">→</div><div class="node"><strong>source dependency DAG</strong><small>CCfits · NetCDF · Ceres · FFTW …</small></div><div class="arrow">→</div><div class="node"><strong>Citlali C++23</strong><small>x86_64 lock accepted separately</small></div></div>
+  </section>
+
+  <section class="slide" data-title="Unity locations and stable stack entries">
+    <div class="slide-head"><span class="section">12 · Unity deployment</span><h2>Concrete locations stay isolated behind concise TolTEC Astro entry points</h2></div>
+    <div class="cols-2">
+      <pre>/work/toltec/opt/toltec_astro/
+├── bootstrap/                 generated flat config
+├── cache/uv/                  shared uv cache
+├── logs/                      deployment logs
+├── tools/
+│   ├── bin/{uv,uvx,just}
+│   ├── python/                uv-managed Python
+│   └── uv-tools/
+├── locations/
+│   ├── release-A/{.venv,spack,bin,run}
+│   └── toltec_astro_dev/{...}
+├── default → locations/release-A
+├── develop → locations/toltec_astro_dev
+└── spack/{store,cache}</pre>
+      <div><div class="panel"><h3>Activation</h3><pre>source /work/toltec/opt/
+  toltec_astro/default/dotbashrc
+
+citlali --version</pre><p><code>.envrc</code> resolves the physical location. Repointing <code>default</code> cannot change an already-activated shell.</p></div><div class="panel"><h3>Subprocess boundary</h3><pre>Tolteca / TolProj / Slurm
+        ↓ full path
+LOCATION/bin/citlali
+        ↓ bind profile + lock
+Spack-view binary</pre><p>The callers remain unaware of <code>tolteca_deploy</code>.</p></div></div>
+    </div>
+    <div class="callout"><code>location.path</code> is the only concrete identity. Optional <code>stack: {alias: develop}</code> validates the layout; derives shared Spack, uv cache, Python, and tool paths; and atomically publishes the alias. The packaged bootstrap validates the exact stack boundary before setup. The existing <code>toltec_shared</code> tree is untouched.</div>
+  </section>
+
   <section class="slide" data-title="Accepted system and deployment boundary">
-    <div class="slide-head"><span class="section">12 · measured state</span><h2>Development and immutable clean-source graphs pass</h2></div>
+    <div class="slide-head"><span class="section">13 · measured state</span><h2>Development and immutable clean-source graphs pass</h2></div>
     <div class="cols-2">
       <div class="panel"><h3>Accepted gates</h3><ol><li>Tula focused component matrices</li><li>Kidscpp and Citlali development acceptance graph</li><li>Citlali observation 149101 runtime</li><li>Tlaloc executable build + real tune reader</li><li>GCC 14 and LLVM 20, C++23</li></ol></div>
       <div class="panel"><h3>Accepted clean-source gates</h3><ol><li>immutable package commits</li><li>required GCC 14 and LLVM 20 locks</li><li>no tag and no local <code>dev_path</code></li><li>package tests + installed CLI</li><li>runtime profile and lock checks</li></ol></div>
@@ -883,9 +932,11 @@ spack/&lt;profile&gt;/.spack-env/view/bin/citlali</pre>
       <code>design/ARCHITECTURE.md</code>,
       <code>design/SUPPORT_MATRIX.md</code>, and
       <code>design/TESTING.md</code>, and
-      <code>tolteca_deploy/design/cpp_release.md</code>. Actual Unity transfer,
-      buildcache publication, and a redistributable minimal observation fixture
-      are deliberately deferred.</div>
+      <code>tolteca_deploy/design/cpp_release.md</code>, and
+      <code>tolteca_deploy/design/unity_deployment.md</code>. Unity discovery and
+      local site-integration validation are complete; an accepted x86_64 lock,
+      remote candidate location, buildcache publication, and a redistributable
+      minimal observation fixture remain explicit follow-up gates.</div>
   </section>
 </main>
 
