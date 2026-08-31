@@ -887,7 +887,7 @@ spack/&lt;profile&gt;/.spack-env/view/bin/citlali</pre>
 └── /nese/toltec
     ├── data_lmt
     └── dataprod_toltec</pre>
-      <div><div class="panel"><h3>Verified externals</h3><p>Only the system bootstrap compiler and build tools are declared external. GCC 14 and every C++ link/runtime dependency remain source-buildable.</p></div><div class="panel"><h3>Rejected assumption</h3><p>Unity does not contain GCC 14, LLVM 20, CCfits, or NetCDF C++4 at the <code>/usr</code> paths used by the original devcontainer policy. The aarch64 <code>2026.08-rc1/unity-*</code> locks are candidate evidence, not Unity artifacts.</p></div></div>
+      <div><div class="panel"><h3>Verified externals</h3><p>The system bootstrap compiler and build tools are preferred externals. Build tools retain source fallback when their versions are too old; GCC 14 and every C++ link/runtime dependency remain source-buildable.</p></div><div class="panel"><h3>Rejected assumption</h3><p>Unity does not contain GCC 14, LLVM 20, CCfits, or NetCDF C++4 at the <code>/usr</code> paths used by the original devcontainer policy. The aarch64 <code>2026.08-rc1/unity-*</code> locks are candidate evidence, not Unity artifacts.</p></div></div>
     </div>
     <div class="flow"><div class="node"><strong>system GCC 13</strong><small>bootstrap only</small></div><div class="arrow">→</div><div class="node"><strong>compiler environment</strong><small>Spack GCC 14.2 · concretized x86_64_v2</small></div><div class="arrow">→</div><div class="node"><strong>source dependency DAG</strong><small>CCfits · NetCDF · Ceres · FFTW …</small></div><div class="arrow">→</div><div class="node"><strong>Citlali C++23</strong><small>x86_64 lock accepted separately</small></div></div>
   </section>
