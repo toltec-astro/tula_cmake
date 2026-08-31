@@ -112,7 +112,9 @@ has:
 1. immutable Git commits for TulaCMake 3.2.0, Tula 3.1.0, Kidscpp 3.1.0, and
    Citlali 4.1.0, without pre-committing to final tag names;
 2. stable decentralized recipe-repository composition;
-3. Unity/devcontainer GCC 14 and LLVM 20 release locks without `dev_path`;
+3. devcontainer GCC 14 and LLVM 20 clean-source candidate locks without
+   `dev_path`, plus a native Unity GCC 14 development lock with real-host
+   launcher and provenance acceptance;
 4. source-fetch package tests, installed consumers, and provenance checks; and
 5. a machine-readable contract for the local-only observation fixture.
 

@@ -509,8 +509,10 @@ release concretization never uses `--force`. `2026.08-rc1` remains a release
 candidate while the stack evolves. Promotion changes its status only after the
 same manifest and locks pass acceptance; it does not repoint recipes or
 reconcretize. Buildcache mirror and trust configuration is a later optional
-optimization. Local editor configuration is not a release artifact; the
-devcontainer is the current Unity-equivalent acceptance platform.
+optimization. Local editor configuration is not a release artifact. The
+devcontainer owns the repeatable GCC 14/LLVM 20 package matrices; a native
+Unity GCC 14 development location separately validates the real x86_64 host,
+shared NFS store, launchers, and provenance boundary.
 
 Artifact and deployment provenance have different lifetimes:
 

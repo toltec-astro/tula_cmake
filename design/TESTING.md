@@ -288,7 +288,26 @@ the LLVM lock SHA-256 is
 `07085da55ba3d7f942cc10e977f02dc4a6c05595371338b8a1095d748b74944a`.
 This gate tests source snapshots, not a buildcache or provisional tags.
 
-## 14.1. Deployment-profile consistency
+## 14.1. Native Unity development acceptance
+
+The first native Unity location uses system GCC 13.3 only to bootstrap managed
+GCC 14.2, then concretizes the full Citlali graph for `cascadelake`. Its
+development lock SHA-256 is
+`cc3427db7207cfc662f56c1e8a7918593e2574ea1415a33606f2df2ff92ddca5`.
+CFITSIO/CCfits, HDF5, NetCDF C/C++4, Ceres, FFTW, the TulaCMake adapters, Tula,
+Kidscpp, and Citlali all install from the coherent graph. Citlali's five
+root-package tests pass and the sanitized location launcher reports GCC 14.2,
+C++23, clean source identities, DAG hashes, profile, and matching lock digest.
+
+Unity uses `spack install --test=root`: third-party stages are on NFS, and an
+optional `--test=all` audit found a single Perl assertion observing an NFS
+deferred-delete `.nfs*` file after 1,350,473 successful assertions. Repository
+feature matrices remain `--test=all` in the devcontainer; Unity adds the
+root-package, installed-launcher, provenance, linkage, and observation gates.
+The current acceptance is a mutable development location, not a promoted
+release lock.
+
+## 14.2. Deployment-profile consistency
 
 `just deployment-profile-consistency` compares each development and snapshot
 acceptance manifest with its packaged `tolteca_deploy` counterpart. It checks
