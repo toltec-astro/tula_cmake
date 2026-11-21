@@ -2,26 +2,12 @@
 
 ## 1. Fresh development machine
 
-The clean-machine location workflow is owned by `tolteca_deploy`. Clone the
-editable repositories as siblings, write a location config containing local
-`file://` sources (or immutable remote Git sources), and bootstrap it:
-
-```console
-uvx --from ./tolteca_deploy tolteca_deploy setup \
-  --config ./toltec_astro_dev.yaml
-cd ./toltec_astro_dev
-source dotbashrc                    # or: direnv allow
-just run update                     # reconcile sources + generate Spack env
-just cpp-install                    # concretize, install, test, smoke-check
-```
-
-The location pins Spack 1.2.2 under `.tools/spack`. Its config, build stage,
-environment, lock, and view are location-specific; its compiled store and
-download cache are user-shared by default and can be location-scoped.
-Linux profiles require GCC 14 or LLVM 20; GCC 13 is deliberately absent.
-Editor and dev-container files are local developer conveniences, not exported
-deployment inputs. The profile plus native Spack commands is the portable
-contract.
+A development machine is a `tolteca_deploy` location built from sibling
+checkouts with local `file://` sources. Set it up and build its C++
+environment as the `tolteca_deploy` location and native-environment guides
+describe. Linux profiles require GCC 14 or LLVM 20; GCC 13 is deliberately
+absent. Editor and dev-container files are local developer conveniences, not
+deployment inputs.
 
 The expected checkout inside the container is:
 
@@ -267,26 +253,8 @@ replacement for these tools.
 
 ## 7. End-user installation
 
-The released workflow is owned by a `tolteca_deploy` location:
-
-```console
-uvx --from git+https://github.com/toltec-astro/tolteca_deploy.git@v0.1.0 \
-  tolteca_deploy config write toltec_cpp_release location.yaml
-uvx --from git+https://github.com/toltec-astro/tolteca_deploy.git@v0.1.0 \
-  tolteca_deploy setup --config location.yaml
-cd /path/to/location
-source dotbashrc
-just run update
-just cpp-install
-citlali --version
-```
-
-`tolteca_deploy` packages the accepted recipe-repository sources, root spec,
-compiler/external policy, and required lock. Users still see native Spack
-concepts and commands.
-
-The current release gate builds the locked graph from source. Signed buildcache
-publication is a deferred optimization and will not change this interface.
+End users install a `tolteca_deploy` location; its guides describe the setup
+and the C++ build. Users still see native Spack concepts and commands.
 
 ## 8. External application integration
 
