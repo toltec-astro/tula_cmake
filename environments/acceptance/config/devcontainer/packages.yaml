@@ -75,9 +75,9 @@ packages:
           compilers:
             c: /usr/bin/clang-20
             cxx: /usr/bin/clang++-20
-  mariadb-c-client:
+  mysql:
     externals:
-      - spec: mariadb-c-client@3.3.17
+      - spec: mysql@8.0.46+client_only cxxstd=17
         prefix: /usr
     buildable: false
   netcdf-c:

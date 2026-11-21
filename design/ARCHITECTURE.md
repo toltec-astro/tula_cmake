@@ -141,7 +141,7 @@ tula-downstream ──> tula-boilerplate
 tlaloc ──> tula+ecsv
        ├─> tula-netcdf-cxx4
        ├─> fftw
-       ├─> mariadb-c-client
+       ├─> mysql (client)
        └─> tlaloc-katcp
 ```
 

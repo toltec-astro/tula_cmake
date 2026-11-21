@@ -360,7 +360,7 @@ tlaloc
 ├── tula-netcdf-cxx4
 ├── tlaloc-katcp
 ├── fftw
-└── mariadb-c-client
+└── mysql (client)
 ```
 
 All unrelated Tula variants are disabled; Kidscpp and Ceres are rejected from

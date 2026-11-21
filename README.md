@@ -91,7 +91,7 @@ embed the identity of whichever environment happened to build it first.
 
 The narrow Tlaloc integration is also measured in both lanes. It builds the
 full `tlaloc_clip` executable with only `tula::ecsv`, keeps NetCDF/FFTW/
-MariaDB/KATCP as Tlaloc-owned dependencies, excludes Kidscpp and Ceres, and
+MySQL/KATCP as Tlaloc-owned dependencies, excludes Kidscpp and Ceres, and
 loads a required observation 149101 tune report in its package test.
 
 ## Responsibilities

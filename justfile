@@ -724,7 +724,7 @@ tlaloc-matrix spack="spack": environment-manifests
             tula-netcdf-cxx4 \
             tlaloc-katcp \
             fftw \
-            mariadb-c-client; do
+            mysql; do
             grep -F "$required" <<<"$dag"
         done
         for excluded in kidscpp ceres-solver; do
