@@ -83,7 +83,7 @@ The narrow Tlaloc migration is accepted from its clean `main` baseline on
 `tula_ecsv_with_spack`:
 
 - Tlaloc requests only `tula COMPONENTS ecsv` and links `tula::ecsv`;
-- its own NetCDF C++4, FFTW, MariaDB, and pinned KATCP dependencies remain
+- its own NetCDF C++4, FFTW, MySQL client, and pinned KATCP dependencies remain
   direct package edges;
 - the obsolete Kidscpp IQ-to-Rx/Rx-to-IQ model path and duplicated ECSV parser
   are removed without changing the remaining readout-controller behavior;

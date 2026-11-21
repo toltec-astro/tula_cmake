@@ -643,7 +643,7 @@ FITS headers retain source + DAG provenance</pre>
 ├── tula-netcdf-cxx4
 ├── tlaloc-katcp
 ├── fftw
-└── mariadb-c-client</pre>
+└── mysql (client)</pre>
       <div class="panel"><h3>Graph assertions</h3><ul><li>all unrelated Tula variants are disabled</li><li>Kidscpp is absent</li><li>Ceres is absent</li><li>KATCP source is pinned to a commit</li><li>the full readout executable is installed</li></ul></div>
     </div>
     <div class="callout">This is a separate application root, not an extension
@@ -667,13 +667,13 @@ target_link_libraries(tlaloc_clip PRIVATE
   tula_deps::netcdf_cxx4
   tlaloc_katcp
   PkgConfig::FFTW
-  PkgConfig::MariaDB)</pre>
+  PkgConfig::MySQL)</pre>
       <pre># package.py
 depends_on("tula@3.1.0+ecsv")
 depends_on("tula-netcdf-cxx4@4.3.1")
 depends_on("tlaloc-katcp@2018.07.30")
 depends_on("fftw@3.3.10")
-depends_on("mariadb-c-client@3.3:")
+depends_on("mysql@8.0+client_only")
 
 def cmake_args(self):
     return [self.define(

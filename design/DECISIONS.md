@@ -160,7 +160,7 @@ Accepted 2026-07-31.
 
 Tlaloc consumes only `tula::ecsv` for tune-report parsing. Its former
 Kidscpp-based IQ/Rx model-evaluation path is removed, while NetCDF C++4, FFTW,
-MariaDB, and KATCP remain Tlaloc-owned direct dependencies. The full executable
+the MySQL client, and KATCP remain Tlaloc-owned direct dependencies. The full executable
 and required real tune-report test pass under GCC 14 and LLVM 20.
 
 ## D018 — ECSV views borrow stable table state
