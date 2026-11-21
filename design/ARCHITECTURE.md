@@ -469,50 +469,14 @@ dependency or copying it into an install prefix.
 
 ## 14. Integration and deployment ownership
 
-`tolteca_deploy` owns cross-repository composition without taking package
-recipes away from their source repositories:
+`tolteca_deploy` composes these repositories into deployment locations. It
+owns the development profiles and their host-library policy, release bundles,
+locks, launchers and activation; its specification and native-environment
+guide document them. Each project repository keeps its sources, CMake targets,
+recipes, variants, patches, behavior tests and `spack_repo/develop.yaml`.
 
-```text
-tolteca_deploy/src/tolteca_deploy/data/spack/
-├── development.yaml               mutable-mode Spack distribution
-├── config/
-│   └── macos-homebrew-llvm20/
-│       └── packages.yaml          exact compiler/tool externals
-├── profiles/development/
-│   ├── linux-gcc14/{profile.yaml,spack.yaml}
-│   ├── linux-llvm20/{profile.yaml,spack.yaml}
-│   ├── macos-homebrew-llvm20/{profile.yaml,spack.yaml}
-│   └── macos-homebrew-llvm20-citlali/{profile.yaml,spack.yaml}
-└── releases/2026.08-rc1/
-    ├── manifest.yaml              candidate status, Spack, recipe revisions,
-    │                              profiles, accepted lock digests
-    └── profiles/
-        ├── unity-gcc14/{profile.yaml,spack.yaml,spack.lock}
-        └── unity-llvm20/{profile.yaml,spack.yaml,spack.lock}
-
-LOCATION/
-├── .tools/spack/                  pinned Spack checkout
-├── .spack/{config,stage}/         location-specific mutable state
-├── spack/<mode>/[<release>/]<profile>/
-│                                   independent environment
-│   └── .spack-env/view/           native installed view
-└── src/                           configured source checkouts
-```
-
-Developer environments use sibling `develop:` paths and intentionally
-regenerate local locks. A versioned release bundle packaged by
-`tolteca_deploy` registers exact decentralized recipe-repository revisions
-without `develop:`; those recipes select the immutable package-source commits.
-The bundle owns separate GCC 14 and LLVM 20 profiles, locks, and accepted lock
-digests. Environment generation requires and verifies the selected lock;
-release concretization never uses `--force`. `2026.08-rc1` remains a release
-candidate while the stack evolves. Promotion changes its status only after the
-same manifest and locks pass acceptance; it does not repoint recipes or
-reconcretize. Buildcache mirror and trust configuration is a later optional
-optimization. Local editor configuration is not a release artifact. The
-devcontainer owns the repeatable GCC 14/LLVM 20 package matrices; a native
-Unity GCC 14 development location separately validates the real x86_64 host,
-shared NFS store, launchers, and provenance boundary.
+TulaCMake acceptance environments are maintainer test fixtures. They are not
+deployment inputs, and deployment profiles do not read them.
 
 Artifact and deployment provenance have different lifetimes:
 
@@ -527,21 +491,6 @@ profile and lock are location properties and are exported by
 `TOLTECA_SPACK_LOCK_SHA256`. Citlali reads them when invoked. This permits
 one content-addressed Spack prefix to be activated from multiple locations
 without recording false environment provenance in the binary.
-
-Activation alone is insufficient for schedulers or subprocess managers that
-sanitize their child environment. `tolteca_deploy` therefore generates
-`LOCATION/bin/<executable>` wrappers after installation. Each wrapper binds
-the exact environment path, view, profile, and lock digest before executing
-the absolute Spack-view binary. External callers receive only a normal full
-executable path and remain independent of both Spack and `tolteca_deploy`.
-
-The similarly shaped files have distinct authority. TulaCMake acceptance
-environments are maintainer test fixtures; `tolteca_deploy` development
-profiles and versioned release bundles are the portable operational inputs
-shipped to users. The
-`deployment-profile-consistency` gate compares their shared root spec,
-concretizer, view, and compiler policy while deliberately ignoring local
-repository includes, compiler registrations, and `develop:` paths.
 
 ## 15. CCfits provider boundary
 

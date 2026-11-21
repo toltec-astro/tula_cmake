@@ -251,7 +251,6 @@ Run the production compiler matrix:
 
 ```console
 just acceptance-matrix
-just deployment-profile-consistency
 ```
 
 Run the verified Tula ECSV component slice:

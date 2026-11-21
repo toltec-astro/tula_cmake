@@ -606,17 +606,6 @@ acceptance-matrix spack="spack": environment-manifests
             --version
     done
 
-# Check that packaged deployment profiles retain the accepted portable policy.
-deployment-profile-consistency deploy_root="../tolteca_deploy":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    deploy="{{ deploy_root }}"
-    test -f "$deploy/pyproject.toml"
-    uv run --isolated --with pyyaml python \
-        "{{ root }}/tests/check_deployment_profile_alignment.py" \
-        --tula-cmake-root "{{ root }}" \
-        --deploy-root "$deploy"
-
 # Run the installed Citlali CLI on the complete observation 149101 fixture.
 citlali-real-workdir spack="spack" compiler="gcc14": environment-manifests
     #!/usr/bin/env bash

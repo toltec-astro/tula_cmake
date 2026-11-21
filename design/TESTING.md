@@ -275,7 +275,7 @@ source-built CFITSIO/CCfits and installed OpenMP consumers also pass.
 ## 14. Immutable clean-source matrix
 
 `just snapshot-matrix` builds the complete graph from immutable Git commits in
-the Unity-equivalent devcontainer. It rejects any `dev_path`, installs package
+the devcontainer. It rejects any `dev_path`, installs package
 tests under GCC 14.2 and LLVM 20.1.2 with C++23, runs the installed Citlali
 CLI, and requires the runtime deployment profile and lock SHA-256 to match the
 active environment. The accepted locks are packaged by `tolteca_deploy`.
@@ -306,15 +306,6 @@ feature matrices remain `--test=all` in the devcontainer; Unity adds the
 root-package, installed-launcher, provenance, linkage, and observation gates.
 The current acceptance is a mutable development location, not a promoted
 release lock.
-
-## 14.2. Deployment-profile consistency
-
-`just deployment-profile-consistency` compares each development and snapshot
-acceptance manifest with its packaged `tolteca_deploy` counterpart. It checks
-the portable policy shared by both layers: root spec, concretizer, view, and
-compiler requirement. TulaCMake-only repository includes, compiler external
-registrations, and local `develop:` paths are excluded because deployment
-generates those from the selected location and project-owned metadata.
 
 ## 15. Citlali observation gate
 
