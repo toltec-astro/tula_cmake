@@ -305,7 +305,7 @@ naming remains intentionally undecided.
 
 ## D029 — Separate acceptance fixtures from deployment profiles
 
-Accepted 2026-08-05; amended 2026-08-27.
+Accepted 2026-08-05; amended 2026-08-27 and 2026-11-21.
 
 TulaCMake owns focused integration environments and complete maintainer
 acceptance environments. They live under `environments/integration/` and
@@ -316,8 +316,7 @@ as an end-user environment.
 `tolteca_deploy` owns portable development profiles and versioned release
 bundles. A bundle pins recipe-repository revisions; the selected recipes pin
 package-source revisions. It also owns the release locks and their accepted
-digests. A cross-repository consistency gate compares
-the portable policy shared by the two representations while excluding their
-intentionally different composition metadata. This makes deployment the
-operational authority without weakening TulaCMake's independent package and
-feature regression tests.
+digests. TulaCMake does not read `tolteca_deploy` profiles, and no gate
+compares the two: each repository tests its own environments. This makes
+deployment the operational authority without weakening TulaCMake's
+independent package and feature regression tests.
