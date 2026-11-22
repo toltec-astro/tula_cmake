@@ -659,7 +659,7 @@ FITS headers retain source + DAG provenance</pre>
     <div class="cols-2">
       <pre>find_package(tula 3.1 CONFIG REQUIRED
   COMPONENTS ecsv)
-find_package(TulaNetcdfCxx4 4.3
+find_package(TulaNetcdfCxx4 1.0
   CONFIG REQUIRED)
 
 target_link_libraries(tlaloc_clip PRIVATE
@@ -669,10 +669,10 @@ target_link_libraries(tlaloc_clip PRIVATE
   PkgConfig::FFTW
   PkgConfig::MySQL)</pre>
       <pre># package.py
-depends_on("tula@3.1.0+ecsv")
-depends_on("tula-netcdf-cxx4@4.3.1")
+depends_on("tula@3.1:3+ecsv")
+depends_on("tula-netcdf-cxx4@1.0:1")
 depends_on("tlaloc-katcp@2018.07.30")
-depends_on("fftw@3.3.10")
+depends_on("fftw@3.3.10:")
 depends_on("mysql@8.0+client_only")
 
 def cmake_args(self):

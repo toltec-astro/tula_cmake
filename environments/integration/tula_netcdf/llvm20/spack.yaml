@@ -26,10 +26,10 @@ spack:
       spec: tula-logging@1.0.0
       path: ../../../../packages/tula_logging
     tula-eigen3:
-      spec: tula-eigen3@3.4.0
+      spec: tula-eigen3@1.0.0
       path: ../../../../packages/tula_eigen3
     tula-netcdf-cxx4:
-      spec: tula-netcdf-cxx4@4.3.1
+      spec: tula-netcdf-cxx4@1.0.0
       path: ../../../../packages/tula_netcdf_cxx4
 
   packages:

@@ -14,9 +14,9 @@ class TulaYamlCpp(CMakePackage):
         """Select the focused develop tree or monorepo release subtree."""
         return "." if self.spec.is_develop else "packages/tula_yaml_cpp"
 
-    version("0.8.0", commit="a7d411dc9f342014586785a2c985b0fd16888f13")
+    version("1.0.0", commit="a7d411dc9f342014586785a2c985b0fd16888f13")
 
     depends_on("cmake@3.25:", type="build")
     depends_on("cxx", type="build")
-    depends_on("tula-cmake@3.2.0", type="build")
-    depends_on("yaml-cpp@0.8.0", type=("build", "link"))
+    depends_on("tula-cmake@3.2:3", type="build")
+    depends_on("yaml-cpp@0.8.0:", type=("build", "link"))

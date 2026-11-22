@@ -71,13 +71,13 @@ They may be consumed without finding Tula.
 
 | Spack package | Config package | Public target | Upstream dependency | Status |
 | --- | --- | --- | --- | --- |
-| `tula-logging@1.0.0` | `TulaLogging` | `tula_deps::logging` | fmt 9.1.0 + spdlog 1.12.0 | Measured |
-| `tula-yaml-cpp@0.8.0` | `TulaYamlCpp` | `tula_deps::yaml_cpp` | yaml-cpp 0.8.0 | Measured |
+| `tula-logging@1.0.0` | `TulaLogging` | `tula_deps::logging` | fmt 9.1.0+ and spdlog 1.12.0+ (1.x) | Measured |
+| `tula-yaml-cpp@1.0.0` | `TulaYamlCpp` | `tula_deps::yaml_cpp` | yaml-cpp 0.8.0+ | Measured |
 | `tula-csv-parser@2020.06.12` | `TulaCsvParser` | `tula_deps::csv_parser` | pinned Jerry-Ma csv-parser | Measured |
-| `tula-eigen3@3.4.0` | `TulaEigen3` | `tula_deps::eigen3` | Eigen 3.4.0 | Measured |
+| `tula-eigen3@1.0.0` | `TulaEigen3` | `tula_deps::eigen3` | Eigen 3.4.0+ (3.x) | Measured |
 | `tula-perflibs@0.1.0` | `TulaPerflibs` | `tula_deps::perflibs` | Threads and optional resolved OpenMP runtime | Measured with OpenMP enabled and disabled; exact Darwin libomp edge |
-| `tula-netcdf-cxx4@4.3.1` | `TulaNetcdfCxx4` | `tula_deps::netcdf_cxx4` | NetCDF C++4 4.3.1 | Measured |
-| `tula-ccfits@1.0.0` | `TulaCcfits` | `tula_deps::ccfits` | CCfits 2.6 + CFITSIO 4.3+ | Measured external/source under GCC 14 and LLVM 20; source under macOS LLVM 20.1.8 |
+| `tula-netcdf-cxx4@1.0.0` | `TulaNetcdfCxx4` | `tula_deps::netcdf_cxx4` | NetCDF C++4 4.3.1+ | Measured |
+| `tula-ccfits@1.0.0` | `TulaCcfits` | `tula_deps::ccfits` | CCfits 2.6+ and CFITSIO 4.3+ | Measured external/source under GCC 14 and LLVM 20; source under macOS LLVM 20.1.8 |
 
 Logging, YAML, Eigen, perflibs, NetCDF, and FITS build small relocatable packages
 from `tula_cmake/packages/`. csv-parser's generic Spack recipe installs its

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(TulaYamlCpp VERSION 0.8.0 LANGUAGES CXX)
+project(TulaYamlCpp VERSION 1.0.0 LANGUAGES CXX)
 
 find_package(TulaCMake 3 CONFIG REQUIRED)
 find_package(yaml-cpp 0.8 CONFIG REQUIRED)

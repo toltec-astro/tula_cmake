@@ -18,6 +18,6 @@ class TulaLogging(CMakePackage):
 
     depends_on("cmake@3.25:", type="build")
     depends_on("cxx", type="build")
-    depends_on("tula-cmake@3.2.0", type="build")
-    depends_on("fmt@9.1.0", type=("build", "link"))
-    depends_on("spdlog@1.12.0", type=("build", "link"))
+    depends_on("tula-cmake@3.2:3", type="build")
+    depends_on("fmt@9.1.0:", type=("build", "link"))
+    depends_on("spdlog@1.12.0:1", type=("build", "link"))

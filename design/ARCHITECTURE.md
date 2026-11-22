@@ -372,6 +372,26 @@ Organization policy is represented by ordinary packages where appropriate.
 For example, `tula-logging` installs a relocatable interface target backed by
 a compatible fmt/spdlog set.
 
+### Version constraints
+
+A dependency constraint states compatibility, not the version a site builds:
+
+- The lower bound is the lowest version the package is tested with, as an
+  open range (`fftw@3.3.10:`). Spack's `@3.3.10` is itself a range of the
+  3.3.10 patch series; recipes do not use it to pin.
+- An upper bound states a known incompatibility. When the project's CMake
+  requests a package whose config file accepts only its own major version
+  (Eigen3, spdlog, Ceres), the range stops at that major (`eigen@3.4.0:3`).
+- TolTEC packages depend on each other within one major version, matching
+  the same-major version files that TulaCMake installs (`tula@3.1:3`,
+  `tula-cmake@3.2:3`).
+- A dependency adapter has its own version for its CMake glue; the library it
+  wraps has a range.
+- A recipe version names an immutable source: a commit, or a URL with its
+  checksum.
+
+Deployment profiles and their locks choose the versions a location builds.
+
 ## 10. Artifact lifecycle
 
 ```text

@@ -22,7 +22,7 @@ spack:
       spec: tula-logging@1.0.0
       path: ../../../../packages/tula_logging
     tula-eigen3:
-      spec: tula-eigen3@3.4.0
+      spec: tula-eigen3@1.0.0
       path: ../../../../packages/tula_eigen3
   packages:
     cxx:

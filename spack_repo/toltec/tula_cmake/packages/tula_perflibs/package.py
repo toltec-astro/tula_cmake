@@ -24,9 +24,9 @@ class TulaPerflibs(CMakePackage):
 
     depends_on("cmake@3.25:", type="build")
     depends_on("cxx", type="build")
-    depends_on("tula-cmake@3.2.0", type="build")
+    depends_on("tula-cmake@3.2:3", type="build")
     depends_on(
-        "llvm-openmp@20.1.8",
+        "llvm-openmp@20.1.8:20",
         when="+openmp platform=darwin",
         type=("build", "link", "run"),
     )

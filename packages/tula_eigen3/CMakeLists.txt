@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(TulaEigen3 VERSION 3.4.0 LANGUAGES CXX)
+project(TulaEigen3 VERSION 1.0.0 LANGUAGES CXX)
 
 find_package(TulaCMake 3 CONFIG REQUIRED)
 find_package(Eigen3 3.4 CONFIG REQUIRED)
