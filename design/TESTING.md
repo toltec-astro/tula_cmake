@@ -26,7 +26,6 @@ fixtures and Spack environments.
 | CCfits provider matrix | CCfits API and CFITSIO implementation under external and source policy | `just tula-ccfits-matrix` |
 | Development acceptance matrix | Tula, Kidscpp, Citlali package tests, installed consumers, installed CLI | `just acceptance-matrix` |
 | Citlali observation gate | Full 149101 input set through the installed CLI and FITS output | `just citlali-real-workdir` |
-| Tlaloc integration matrix | Minimal ECSV closure, full executable, required real tune report, excluded Kidscpp/Ceres | `just tlaloc-matrix` |
 
 ## 3. TulaCMake fixture
 
@@ -336,7 +335,11 @@ the same OpenMP graph and processes all 123 scans. Citlali's memory diagnostic
 uses `getrusage`, including Darwin's byte-to-KiB conversion, rather than the
 Linux-only `/proc/self/status` interface.
 
-## 16. Tlaloc integration matrix
+## 16. Tlaloc integration matrix (removed)
+
+Removed on 2026-11-22. Tlaloc owns its recipe and builds in a `tolteca_deploy`
+location (profile `linux-gcc14-tlaloc`) or against one. The record below
+describes the gate as it was.
 
 The GCC 14 and LLVM 20 roots build the complete `tlaloc_clip` executable from
 the clean Tlaloc baseline. The gate asserts this graph before installation:
@@ -384,5 +387,4 @@ For each new Tula component:
 7. run GCC 14 and LLVM 20; and
 8. update the component contract, support matrix, and technical deck.
 
-Kidscpp, Citlali, and the narrow Tlaloc ECSV integration are now measured
-boundaries.
+Kidscpp and Citlali are now measured boundaries.

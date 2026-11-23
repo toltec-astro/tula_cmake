@@ -109,14 +109,6 @@ tula_cmake/environments/integration/tula_ecsv/
     └── .spack-view/
 ```
 
-Tlaloc uses the same two-lane integration layout:
-
-```text
-tula_cmake/environments/integration/tlaloc/
-├── gcc14/spack.yaml
-└── llvm20/spack.yaml
-```
-
 The YAML manifests, repository configuration, recipes, and patches are
 versioned. Development locks and views remain local because develop specs
 contain absolute checkout paths and the views link to machine-local prefixes.
@@ -207,16 +199,6 @@ consumers of the installed Tula, Kidscpp, and Citlali package configs.
 Spack hashes recipes, variants, dependency edges, and source identity. The
 explicit overwrite is required while iterating on a `develop` checkout because
 the checkout path retains its concrete DAG hash.
-
-The accepted Tlaloc matrix is also part of `just all`:
-
-```console
-just tlaloc
-
-# or one native lane
-spack -e tula_cmake/environments/integration/tlaloc/gcc14 \
-  install --test=all --overwrite --show-log-on-error
-```
 
 The edit/build/install boundaries remain visible on disk:
 

@@ -35,8 +35,6 @@ not claim it.
 | Installed Tula/Kidscpp/Citlali consumers | 3/3 | 3/3 |
 | Installed Citlali CLI | pass | pass |
 | Immutable source-release graph (no `dev_path`) | pass | pass |
-| Tlaloc package and real tune-reader test | pass | pass |
-| Installed Tlaloc executable present | pass | pass |
 
 The focused CCfits/CFITSIO adapter and the complete Citlali root are also
 measured on native macOS 26 arm64 with Homebrew LLVM 20.1.8 and C++23.
@@ -62,7 +60,6 @@ the LAPACK build edge; the measured 2026-08-03 graph used GCC 15.2.0.
 | Tula → Kidscpp → Citlali | Exact non-skipped package-test totals, installed consumers, and installed CLI | `just acceptance-matrix` | Measured with GCC 14 and LLVM 20 |
 | Immutable source snapshot | Commit-pinned sources, required locks, no `dev_path`, installed CLI provenance | `just snapshot-matrix` | Measured with GCC 14 and LLVM 20 |
 | Citlali observation 149101 | Eleven TolTEC streams, telescope stream, APT, 123 scans, raw/filtered FITS output | `just citlali-real-workdir` plus native location run | Measured with GCC 14 and macOS Homebrew LLVM 20 |
-| Tlaloc | Minimal Tula ECSV closure, full CLI build, real tune-report reader, no Kidscpp/Ceres | `just tlaloc-matrix` | Measured with GCC 14 and LLVM 20 |
 
 ## 3. Dependency adapter packages
 
@@ -141,12 +138,6 @@ It validates:
 The dev-container gate currently loads eleven regular reports under
 `tolteca_test_data/data_lmt/toltec/reduced`. Valid work-directory report
 symlinks are preferred when their external targets are mounted.
-
-The Tlaloc package test independently reads the observation 149101 tune file
-from `tolteca_test_data/tolteca_workdir/data`. It checks a nonempty table, the
-fourteen-column schema, finite endpoint values, and ObsNum/SubObsNum/ScanNum
-metadata. The fixture is required: its absence fails configuration rather than
-silently skipping the test.
 
 The observation-level Citlali gate uses the work-directory fixture at
 `tolteca_test_data/tolteca_workdir/redu/citlali_o149101_0_2_c1.yaml`.

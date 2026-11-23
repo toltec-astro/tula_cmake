@@ -75,11 +75,6 @@ packages:
           compilers:
             c: /usr/bin/clang-20
             cxx: /usr/bin/clang++-20
-  mysql:
-    externals:
-      - spec: mysql@8.0.46+client_only cxxstd=17
-        prefix: /usr
-    buildable: false
   netcdf-c:
     externals:
       - spec: netcdf-c@4.9.2~dap~hdf4~jna~mpi+netcdf4+pic+shared

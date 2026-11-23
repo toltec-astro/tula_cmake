@@ -89,10 +89,8 @@ C++ standard, package spec, and DAG. Citlali reads the active deployment
 profile and lock identity at runtime so a shared Spack installation cannot
 embed the identity of whichever environment happened to build it first.
 
-The narrow Tlaloc integration is also measured in both lanes. It builds the
-full `tlaloc_clip` executable with only `tula::ecsv`, keeps NetCDF/FFTW/
-MySQL/KATCP as Tlaloc-owned dependencies, excludes Kidscpp and Ceres, and
-loads a required observation 149101 tune report in its package test.
+Tlaloc owns its recipe and is built in a `tolteca_deploy` location (profile
+`linux-gcc14-tlaloc`) or against one; TulaCMake has no Tlaloc gate.
 
 ## Responsibilities
 
@@ -268,14 +266,12 @@ just tula-netcdf-matrix
 just tula-ccfits-matrix
 just tula-grppi-matrix
 just tula-fitting-matrix
-just tlaloc-matrix
 ```
 
 These component commands concretize and install Tula under GCC 14 and LLVM
 20, run package CTests, validate minimal dependency graphs, and build
 independent installed consumers. `acceptance-matrix` remains the separate
-Tula → Kidscpp → Citlali gate. `tlaloc-matrix` is the independent readout
-controller gate.
+Tula → Kidscpp → Citlali gate.
 
 The root spec controls reachable transitive variants directly:
 
