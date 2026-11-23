@@ -1,6 +1,7 @@
 spack:
   include:
     - ../../../acceptance/config/repos.yaml
+    - ../../../acceptance/config/stage.yaml
     - ../../../acceptance/config/devcontainer/packages.yaml
   specs:
     - tula@3.1.0+grppi~openmp %cxx=gcc@14.2.0

@@ -1,0 +1,7 @@
+# Each environment stages builds in its own directory. Spack reuses a
+# configured develop build without reconfiguring it when the install tree
+# changes, so a stage shared between environments or install trees can install
+# nothing.
+config:
+  build_stage:
+    - $env/.spack-stage

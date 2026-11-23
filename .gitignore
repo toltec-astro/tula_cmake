@@ -16,3 +16,4 @@ environments/production/*/.spack-env
 environments/**/spack.lock
 environments/**/.spack-env/
 environments/**/.spack-view
+environments/**/.spack-stage

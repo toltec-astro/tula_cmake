@@ -1,6 +1,7 @@
 spack:
   include:
     - ../../config/repos.yaml
+    - ../../config/stage.yaml
     - ../../config/devcontainer/packages.yaml
 
   specs:

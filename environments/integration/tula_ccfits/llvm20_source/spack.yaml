@@ -1,6 +1,7 @@
 spack:
   include:
     - ../../../acceptance/config/repos.yaml
+    - ../../../acceptance/config/stage.yaml
     - ../../../acceptance/config/source-fits/packages.yaml
     - ../../../acceptance/config/devcontainer/packages.yaml
 

@@ -112,6 +112,10 @@ tula_cmake/environments/integration/tula_ecsv/
 The YAML manifests, repository configuration, recipes, and patches are
 versioned. Development locks and views remain local because develop specs
 contain absolute checkout paths and the views link to machine-local prefixes.
+Each environment stages its builds in its own `.spack-stage/`
+(`environments/acceptance/config/stage.yaml`): Spack reuses a configured
+develop build without reconfiguring it, so a stage shared with another
+environment or install tree can leave the new install tree empty.
 
 The FITS adapter has an explicit provider matrix:
 
