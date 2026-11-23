@@ -17,3 +17,11 @@ environments/**/spack.lock
 environments/**/.spack-env/
 environments/**/.spack-view
 environments/**/.spack-stage
+
+# Design records (design-records skill): the specification, architecture and
+# decision records are tracked; working notes stay local.
+/design/*
+!/design/spec.md
+!/design/architecture.md
+!/design/decisions/
+!/design/refs/
