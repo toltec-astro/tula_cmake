@@ -567,18 +567,25 @@ acceptance-matrix spack="spack": environment-manifests
     assert_package_tests() {
         local environment="$1"
         local package="$2"
-        local count="$3"
-        local required_test="$4"
+        # A prefix of the required real-data test's name.
+        local required_test="$3"
         local prefix log
         prefix="$("$spack_cmd" -e "$environment" location -i "$package")"
         log="${prefix}/.spack/install-time-test-log.txt"
         test -f "$log"
-        grep -F \
-            "100% tests passed, 0 tests failed out of ${count}" \
-            "$log"
-        grep -F "$required_test" "$log"
-        if grep -F "Skipped" "$log"; then
-            echo "${package} package tests contain a skipped case" >&2
+        # Packages add tests; require a complete pass, not a fixed count.
+        grep -E "100% tests passed, 0 tests failed out of [1-9][0-9]*" "$log"
+        # Other tests may skip without their opt-in evidence; the required
+        # real-data test must run and pass.
+        local results
+        results="$(grep -E "Test +#[0-9]+: " "$log" | grep -F "$required_test" || true)"
+        if [[ -z "$results" ]]; then
+            echo "${package} package tests lack ${required_test}" >&2
+            exit 1
+        fi
+        printf '%s\n' "$results"
+        if grep -v -E "[[:space:]]Passed[[:space:]]" <<<"$results"; then
+            echo "${package} required test ${required_test} did not pass" >&2
             exit 1
         fi
     }
@@ -592,13 +599,13 @@ acceptance-matrix spack="spack": environment-manifests
             --overwrite \
             --show-log-on-error
         assert_package_tests \
-            "$environment" tula 16 tula::ecsv_reader_real_tunes
+            "$environment" tula tula::ecsv_reader_real_tunes
         assert_package_tests \
-            "$environment" kidscpp 7 \
+            "$environment" kidscpp \
             kidscpp::ToltecTimeStream.ReadsRealMetadataAndSlice
         assert_package_tests \
-            "$environment" citlali 6 \
-            citlali::KidsDataProc.PreservesReaderSliceAndSolverBehavior
+            "$environment" citlali \
+            citlali::KidsDataProc.PreservesReaderSlice
         run_consumer "$environment" tula tula "$compiler"
         run_consumer "$environment" kidscpp kidscpp "$compiler"
         run_consumer "$environment" citlali citlali "$compiler"

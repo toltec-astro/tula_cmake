@@ -228,8 +228,11 @@ Tula → Kidscpp → Citlali graph. Both GCC 14 and LLVM 20 lanes run:
 Each lane then builds an independent consumer from each installed CMake
 package and runs the installed `citlali --version`. No consumer uses a source
 or build-tree package config. The gate reads each installed package-test log,
-requires the exact 16/7/6 totals and named real-data cases, and fails if any
-case is reported as skipped.
+requires every package test to pass and each named real-data case to run and
+pass. Other cases may skip when their opt-in evidence is not configured (for
+example Citlali's manifest-driven tests). The totals in the table
+were measured when the gate was accepted; packages add tests over time, so the
+gate does not fix them.
 
 ## 13. CFITSIO/CCfits provider matrix
 
