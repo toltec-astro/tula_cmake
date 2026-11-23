@@ -40,7 +40,7 @@ target_link_libraries(my_app PRIVATE tula::ecsv)
 ```
 
 If the installed Tula lacks a requested component, `tula_FOUND` is false and
-configuration fails. Tula's `design/COMPONENTS.md` lists the components and
+configuration fails. Tula's `docs/components.md` lists the components and
 their variants.
 
 | Namespace | Meaning | Example |

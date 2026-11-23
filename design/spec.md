@@ -86,8 +86,9 @@ features with Spack variants on the root spec.
 - Each source repository owns the recipes for its packages in
   `spack_repo/toltec/<namespace>/` (Spack package API v2). TulaCMake's
   repository `toltec.tula_cmake` holds the recipes for `tula-cmake`, the
-  adapters, and the NetCDF C++4 override with its patch. It holds no recipe
-  of another repository.
+  shared adapters, and the NetCDF C++4 override with its patch. It holds no
+  recipe of another repository. Adapters that only Tula components use are
+  Tula's.
 - A recipe owns the versions and source identity, patches for those
   versions, variants, conditional dependency edges, the mapping from variants
   to CMake cache variables, the dependency types, and package-specific build
